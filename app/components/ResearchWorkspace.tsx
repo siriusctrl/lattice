@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  Article as ArticleIcon,
   ArrowLeft,
   ArrowRight,
+  ChatsCircle,
   CursorClick,
   Graph,
   Moon,
@@ -11,6 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArticleView } from "@/app/components/ArticleView";
 import { GraphPreview } from "@/app/components/GraphPreview";
 import {
   FollowupTurn,
@@ -25,8 +28,10 @@ import {
   ResearchNode,
   ROOT_NODE_ID,
 } from "@/app/lib/mock-research";
+import { getArticleSectionForNode } from "@/app/lib/article-research";
 
 type Theme = "light" | "dark";
+type WorkspaceView = "explore" | "article";
 
 type SelectionState = TextSelection & {
   nodeId: string;
@@ -97,6 +102,10 @@ function getPathToNode(
 export function ResearchWorkspace() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
+  const [workspaceView, setWorkspaceView] =
+    useState<WorkspaceView>("explore");
+  const [articleFocusSectionId, setArticleFocusSectionId] =
+    useState("overview");
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
   const [forwardStack, setForwardStack] = useState<string[]>([]);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
@@ -167,6 +176,7 @@ export function ResearchWorkspace() {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (workspaceView !== "explore") return;
       const target = event.target as HTMLElement;
       if (target.matches("input, textarea, [contenteditable='true']")) return;
       if (event.altKey && event.key === "ArrowLeft" && stack.length > 1) {
@@ -191,7 +201,7 @@ export function ResearchWorkspace() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [forwardStack, stack]);
+  }, [forwardStack, stack, workspaceView]);
 
   useEffect(
     () => () => {
@@ -284,6 +294,20 @@ export function ResearchWorkspace() {
     setStack(stack.slice(0, index + 1));
     setForwardStack([]);
     setSelection(null);
+  }
+
+  function openArticleForNode(nodeId: string) {
+    setArticleFocusSectionId(getArticleSectionForNode(nodeId));
+    setGraphExpanded(false);
+    setSelection(null);
+    setWorkspaceView("article");
+  }
+
+  function openSourceCard(nodeId: string) {
+    setWorkspaceView("explore");
+    setGraphExpanded(false);
+    setSelection(null);
+    if (nodeId !== activeId) focusFromGraph(nodeId);
   }
 
   function askFollowup(nodeId: string, question: string) {
@@ -416,60 +440,105 @@ export function ResearchWorkspace() {
           <span>Lattice</span>
         </div>
 
-        <nav className="history-controls" aria-label="节点浏览历史">
+        <nav className="view-switch" aria-label="工作区视图">
           <button
             type="button"
-            className="icon-button"
-            onClick={goBack}
-            disabled={stack.length <= 1}
-            aria-label="返回上一层"
-            title="返回上一层"
+            className={workspaceView === "explore" ? "view-active" : ""}
+            onClick={() => setWorkspaceView("explore")}
+            aria-pressed={workspaceView === "explore"}
+            aria-label="Explore"
           >
-            <ArrowLeft size={17} />
+            <ChatsCircle size={15} weight="fill" aria-hidden="true" />
+            <span>Explore</span>
           </button>
           <button
             type="button"
-            className="icon-button"
-            onClick={goForward}
-            disabled={forwardStack.length === 0}
-            aria-label="前进"
-            title="前进"
+            className={workspaceView === "article" ? "view-active" : ""}
+            onClick={() => openArticleForNode(activeId)}
+            aria-pressed={workspaceView === "article"}
+            aria-label="Article"
           >
-            <ArrowRight size={17} />
+            <ArticleIcon size={15} weight="fill" aria-hidden="true" />
+            <span>Article</span>
           </button>
         </nav>
 
-        <div className="breadcrumb" aria-label="当前研究路径">
-          {stack.map((nodeId, index) => {
-            const node = nodes[nodeId];
-            if (!node) return null;
-            const hidden = stack.length > 4 && index > 0 && index < stack.length - 3;
-            if (hidden) {
-              return index === 1 ? (
-                <span className="breadcrumb-ellipsis" key="ellipsis">
-                  …
-                </span>
-              ) : null;
-            }
-            return (
-              <span className="breadcrumb-segment" key={`${nodeId}-${index}`}>
-                {index > 0 && !(stack.length > 4 && index === stack.length - 3) ? (
-                  <i aria-hidden="true">/</i>
-                ) : null}
+        <div className="topbar-context">
+          {workspaceView === "explore" ? (
+            <>
+              <nav className="history-controls" aria-label="节点浏览历史">
                 <button
                   type="button"
-                  onClick={() => focusBreadcrumb(index)}
-                  aria-current={index === stack.length - 1 ? "page" : undefined}
+                  className="icon-button"
+                  onClick={goBack}
+                  disabled={stack.length <= 1}
+                  aria-label="返回上一层"
+                  title="返回上一层"
                 >
-                  {node.shortTitle}
+                  <ArrowLeft size={17} />
                 </button>
-              </span>
-            );
-          })}
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={goForward}
+                  disabled={forwardStack.length === 0}
+                  aria-label="前进"
+                  title="前进"
+                >
+                  <ArrowRight size={17} />
+                </button>
+              </nav>
+
+              <div className="breadcrumb" aria-label="当前研究路径">
+                {stack.map((nodeId, index) => {
+                  const node = nodes[nodeId];
+                  if (!node) return null;
+                  const hidden =
+                    stack.length > 4 &&
+                    index > 0 &&
+                    index < stack.length - 3;
+                  if (hidden) {
+                    return index === 1 ? (
+                      <span className="breadcrumb-ellipsis" key="ellipsis">
+                        …
+                      </span>
+                    ) : null;
+                  }
+                  return (
+                    <span
+                      className="breadcrumb-segment"
+                      key={`${nodeId}-${index}`}
+                    >
+                      {index > 0 &&
+                      !(stack.length > 4 && index === stack.length - 3) ? (
+                        <i aria-hidden="true">/</i>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => focusBreadcrumb(index)}
+                        aria-current={
+                          index === stack.length - 1 ? "page" : undefined
+                        }
+                      >
+                        {node.shortTitle}
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="article-context" aria-label="当前成稿">
+              <span>动态成稿</span>
+              <i aria-hidden="true">/</i>
+              <strong>Elon Musk</strong>
+              <small>{discoveredIds.size} 张来源 Card</small>
+            </div>
+          )}
         </div>
 
         <div className="topbar-actions">
-          {!graphVisible ? (
+          {workspaceView === "explore" && !graphVisible ? (
             <button
               type="button"
               className="toolbar-button"
@@ -506,7 +575,9 @@ export function ResearchWorkspace() {
         </div>
       </header>
 
-      <section className="workspace-stage" aria-label="卡片研究空间">
+      {workspaceView === "explore" ? (
+        <>
+          <section className="workspace-stage" aria-label="卡片研究空间">
         <div className="workspace-topic" aria-hidden="true">
           <span>当前研究</span>
           <strong>Elon Musk</strong>
@@ -535,6 +606,7 @@ export function ResearchWorkspace() {
                   onAnchor={openNode}
                   onAsk={askFollowup}
                   onTextSelection={updateSelection}
+                  onOpenArticle={openArticleForNode}
                   reduceMotion={reduceMotion}
                 />
               );
@@ -576,48 +648,60 @@ export function ResearchWorkspace() {
           <CursorClick size={16} weight="bold" aria-hidden="true" />
           <span>点击高亮，或直接选中文字</span>
         </div>
-      </section>
+          </section>
 
-      <AnimatePresence>
-        {graphVisible ? (
-          <GraphPreview
-            nodes={nodes}
-            discoveredIds={discoveredIds}
-            potentialIds={potentialIds}
-            edges={edges}
-            activeId={activeId}
-            expanded={graphExpanded}
-            visible={graphVisible}
-            onExpandedChange={setGraphExpanded}
-            onVisibleChange={setGraphVisible}
-            onFocusNode={focusFromGraph}
-            reduceMotion={reduceMotion}
-          />
-        ) : null}
-      </AnimatePresence>
+          <AnimatePresence>
+            {graphVisible ? (
+              <GraphPreview
+                nodes={nodes}
+                discoveredIds={discoveredIds}
+                potentialIds={potentialIds}
+                edges={edges}
+                activeId={activeId}
+                expanded={graphExpanded}
+                visible={graphVisible}
+                onExpandedChange={setGraphExpanded}
+                onVisibleChange={setGraphVisible}
+                onFocusNode={focusFromGraph}
+                reduceMotion={reduceMotion}
+              />
+            ) : null}
+          </AnimatePresence>
 
-      <AnimatePresence>
-        {selection ? (
-          <motion.div
-            className="selection-menu"
-            style={{
-              left: selectionLeft,
-              top: Math.max(78, selection.rect.top - 50),
-            }}
-            initial={
-              reduceMotion ? false : { opacity: 0, y: 7, scale: 0.96 }
-            }
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 360, damping: 27 }}
-          >
-            <button type="button" onClick={forkSelection}>
-              <CursorClick size={15} weight="bold" />
-              从选区分叉
-            </button>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+          <AnimatePresence>
+            {selection ? (
+              <motion.div
+                className="selection-menu"
+                style={{
+                  left: selectionLeft,
+                  top: Math.max(78, selection.rect.top - 50),
+                }}
+                initial={
+                  reduceMotion ? false : { opacity: 0, y: 7, scale: 0.96 }
+                }
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 360, damping: 27 }}
+              >
+                <button type="button" onClick={forkSelection}>
+                  <CursorClick size={15} weight="bold" />
+                  从选区分叉
+                </button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </>
+      ) : (
+        <ArticleView
+          nodes={nodes}
+          discoveredIds={discoveredIds}
+          edges={edges}
+          followups={followups}
+          focusSectionId={articleFocusSectionId}
+          onOpenSource={openSourceCard}
+          reduceMotion={reduceMotion}
+        />
+      )}
     </main>
   );
 }

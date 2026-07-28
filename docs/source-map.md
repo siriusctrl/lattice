@@ -16,6 +16,8 @@
   - graph focus
   - custom selection nodes
   - local mock follow-ups
+  - Explore and Article mode switching
+  - Card-to-article and article-to-Card navigation
   - theme state
 
 - `app/components/ResearchCard.tsx`
@@ -31,6 +33,12 @@
   - potential and discovered node styling
   - graph node navigation
 
+- `app/components/ArticleView.tsx`
+  - continuous article surface
+  - ordered section navigation
+  - synthesis and developing states
+  - source Card rail
+
 ## Data
 
 - `app/lib/mock-research.ts`
@@ -40,11 +48,17 @@
   - possible graph edges
   - graph coordinates
 
+- `app/lib/article-research.ts`
+  - node-to-section mapping
+  - incremental section compilation
+  - multi-path crisis synthesis
+
 ## Assets
 
 - `public/assets/elon-musk-portrait.webp`: open-license portrait
 - `public/assets/falcon-editorial.webp`: generated rocket image
 - `public/assets/roadster-editorial.webp`: generated electric roadster image
+- `public/og.png`: generated social preview of Explore becoming Article
 - `public/favicon.svg`: Lattice stacked-card mark
 
 ## Verification

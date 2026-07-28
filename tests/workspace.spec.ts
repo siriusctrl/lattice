@@ -58,6 +58,43 @@ test("builds a converging DAG when two branches reach the 2008 crisis", async ({
   await expect(page.getByTestId("graph-preview")).toContainText("4 个节点");
 });
 
+test("compiles a flat article and traces sections back to source cards", async ({
+  page,
+}) => {
+  await page.locator('[data-anchor-target="spacex"]').click();
+  await page.locator('[data-anchor-target="crisis"]').click();
+  await page.getByRole("button", { name: "Article", exact: true }).click();
+
+  await expect(page.getByTestId("article-view")).toBeVisible();
+  await expect(page.getByTestId("article-section-crisis")).toContainText(
+    "等待交叉验证",
+  );
+  await expect(
+    page.getByTestId("article-sources").locator('[data-source-node="spacex"]'),
+  ).toBeVisible();
+
+  await page
+    .getByTestId("article-sources")
+    .locator('[data-source-node="spacex"]')
+    .click();
+  await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+
+  await page.getByRole("button", { name: "Elon Musk" }).first().click();
+  await page.locator('[data-anchor-target="tesla"]').click();
+  await page.locator('[data-anchor-target="crisis"]').click();
+  await page.getByRole("button", { name: "Article", exact: true }).click();
+
+  await expect(page.getByTestId("article-section-crisis")).toContainText(
+    "双路径综合",
+  );
+  await expect(
+    page.getByTestId("article-sources").locator('[data-source-node="tesla"]'),
+  ).toBeVisible();
+});
+
 test("supports local followups and user-selected text forks", async ({
   page,
 }) => {
@@ -108,4 +145,11 @@ test("persists the theme choice and remains usable on a phone viewport", async (
   await expect(page.getByTestId("research-card-musk")).toBeVisible();
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(width).toBeLessThanOrEqual(390);
+
+  await page.getByRole("button", { name: "Article", exact: true }).click();
+  await expect(page.getByTestId("article-view")).toBeVisible();
+  const articleWidth = await page.evaluate(
+    () => document.documentElement.scrollWidth,
+  );
+  expect(articleWidth).toBeLessThanOrEqual(390);
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Article,
   ArrowUpRight,
   PaperPlaneTilt,
   Quotes,
@@ -39,6 +40,7 @@ type ResearchCardProps = {
   onAnchor: (targetId: string) => void;
   onAsk: (nodeId: string, question: string) => void;
   onTextSelection: (selection: TextSelection | null) => void;
+  onOpenArticle: (nodeId: string) => void;
   reduceMotion: boolean;
 };
 
@@ -83,6 +85,7 @@ export function ResearchCard({
   onAnchor,
   onAsk,
   onTextSelection,
+  onOpenArticle,
   reduceMotion,
 }: ResearchCardProps) {
   const [question, setQuestion] = useState("");
@@ -176,7 +179,22 @@ export function ResearchCard({
             </>
           ) : null}
         </div>
-        <span className="card-layer">0{Math.min(layerIndex + 1, 9)}</span>
+        <div className="card-header-actions">
+          {active ? (
+            <button
+              type="button"
+              className="card-article-link"
+              onClick={() => onOpenArticle(node.id)}
+              aria-label={`查看“${node.shortTitle}”在成稿中的位置`}
+            >
+              <Article size={13} weight="fill" aria-hidden="true" />
+              <span>查看成稿</span>
+            </button>
+          ) : null}
+          <span className="card-layer">
+            0{Math.min(layerIndex + 1, 9)}
+          </span>
+        </div>
       </header>
 
       <div className="card-scroll" onMouseUp={handleMouseUp}>

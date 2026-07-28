@@ -2,22 +2,21 @@
 
 ## Product model
 
-Lattice presents a simple browsing experience over four separate internal
-structures:
+Lattice presents two user views over three separate internal representations:
 
 ```text
-Focus stack
-    |
 Append-only user actions
-    |
-Exploration DAG
-    |
-Context compiler
+       |
+       +--> Card conversations
+       |
+       +--> Exploration DAG
+       |
+       +--> Flat Article projection
 ```
 
-Only the focus stack and graph projection exist in this frontend prototype.
-Model-driven context compilation and durable event storage remain intentionally
-outside the mock.
+The Card stack, exploration graph, and deterministic Article projection exist
+in this frontend prototype. Model-driven compilation and durable event storage
+remain intentionally outside the mock.
 
 ## Current frontend state
 
@@ -29,6 +28,8 @@ outside the mock.
 - graph edges created by actual exploration
 - local follow-up turns
 - user-selected custom nodes
+- Explore and Article view state
+- the current Article focus section
 - theme and graph window state
 
 The static fixture defines every prepared biography node, its anchor targets,
@@ -52,6 +53,27 @@ A card is a focused research unit, not a single message. It can contain:
 
 The active card owns pointer input. Earlier cards remain visible as inert layers
 to preserve spatial memory.
+
+## Article model
+
+Article is a flat, continuously readable document. It is not one Markdown file
+per Card, and its section hierarchy does not mirror the exploration DAG.
+
+`article-research.ts` currently acts as a deterministic compiler. It reads:
+
+- discovered Card ids
+- actual graph edges
+- nodes that contain local follow-up turns
+
+It returns ordered article sections with prose, synthesis status, and source
+Card ids. When only the SpaceX path reaches the 2008 crisis, the section remains
+marked as waiting for cross-checking. When the Tesla path reaches the same node,
+the existing section becomes a two-path synthesis without asking the user to
+merge anything.
+
+Every article section keeps provenance. Opening a source returns to the original
+Card and restores its exploration context. Opening Article from a Card scrolls
+to the corresponding flat section.
 
 ## Model and harness connection
 
@@ -103,7 +125,7 @@ The next technical layer should add:
 1. an append-only event store
 2. a model adapter with streamed events
 3. a context compiler service
-4. Markdown materialization
+4. flat Markdown or article materialization
 5. file snapshot identities
 6. read-only and writable harness capability policies
 

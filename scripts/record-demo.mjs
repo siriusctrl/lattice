@@ -82,24 +82,22 @@ await page.screenshot({
   path: new URL("frame-03-crisis.png", proofRoot).pathname,
 });
 
-await page
-  .getByTestId("graph-preview")
-  .getByRole("button", { name: "展开研究图" })
-  .click();
-await page.waitForTimeout(700);
-await page.getByTestId("theme-toggle").click();
+await page.getByRole("button", { name: "Article", exact: true }).click();
+await page.getByTestId("article-section-crisis").waitFor();
+await page.mouse.move(1400, 30);
 await page.waitForTimeout(950);
 await page.screenshot({
-  path: new URL("frame-04-dark-graph.png", proofRoot).pathname,
+  path: new URL("frame-04-article-draft.png", proofRoot).pathname,
 });
 
 await page
-  .getByTestId("graph-preview")
-  .getByRole("button", { name: "缩小研究图" })
+  .getByTestId("article-sources")
+  .locator('[data-source-node="spacex"]')
   .click();
-await page.waitForTimeout(450);
+await page.getByTestId("research-card-spacex").waitFor();
+await page.waitForTimeout(650);
 await page.getByRole("button", { name: "Elon Musk" }).first().click();
-await page.waitForTimeout(600);
+await page.waitForTimeout(500);
 
 await page.locator('[data-anchor-target="tesla"]').hover();
 await page.waitForTimeout(300);
@@ -112,6 +110,36 @@ await page.waitForTimeout(800);
 await page.screenshot({
   path: new URL("frame-05-converged-dag.png", proofRoot).pathname,
 });
+
+await page
+  .getByTestId("graph-preview")
+  .getByRole("button", { name: "展开研究图" })
+  .click();
+await page.waitForTimeout(700);
+await page.getByTestId("theme-toggle").click();
+await page.waitForTimeout(950);
+await page.screenshot({
+  path: new URL("frame-06-dark-graph.png", proofRoot).pathname,
+});
+
+await page
+  .getByTestId("graph-preview")
+  .getByRole("button", { name: "缩小研究图" })
+  .click();
+await page.getByRole("button", { name: "Article", exact: true }).click();
+await page.getByTestId("article-section-crisis").waitFor();
+await page.mouse.move(1400, 30);
+await page.waitForTimeout(1_050);
+await page.screenshot({
+  path: new URL("frame-07-article-converged.png", proofRoot).pathname,
+});
+
+await page
+  .getByTestId("article-sources")
+  .locator('[data-source-node="tesla"]')
+  .click();
+await page.getByTestId("research-card-tesla").waitFor();
+await page.waitForTimeout(650);
 
 const activeCard = page.locator('[data-active="true"]');
 const composer = activeCard.getByPlaceholder("沿这个分支继续问...");
@@ -131,18 +159,17 @@ await activeCard.locator(".research-copy > p").nth(2).evaluate((paragraph) => {
 });
 await page.waitForTimeout(650);
 await page.screenshot({
-  path: new URL("frame-06-selection.png", proofRoot).pathname,
+  path: new URL("frame-08-selection.png", proofRoot).pathname,
 });
 await page.getByRole("button", { name: "从选区分叉" }).click();
 await page.waitForTimeout(800);
 
-await page
-  .getByTestId("graph-preview")
-  .getByRole("button", { name: "展开研究图" })
-  .click();
-await page.waitForTimeout(1_300);
+await page.locator('[data-active="true"] .card-article-link').click();
+await page.getByTestId("article-section-research-notes").waitFor();
+await page.mouse.move(1400, 30);
+await page.waitForTimeout(1_200);
 await page.screenshot({
-  path: new URL("frame-07-final-graph.png", proofRoot).pathname,
+  path: new URL("frame-09-final-article.png", proofRoot).pathname,
 });
 
 await page.close();

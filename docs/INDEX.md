@@ -1,9 +1,9 @@
 # Documentation
 
-- [Architecture](architecture.md): product state, graph projection, and future
-  model connection
+- [Architecture](architecture.md): Card, graph, flat Article, and future model
+  connection
 - [Source map](source-map.md): file ownership and recommended reading path
-- [Verification](verification.md): build, browser, theme, and recording gates
+- [Verification](verification.md): build, dual-view, theme, and recording gates
 
 The prototype's current product behavior is summarized in the root
 [README](../README.md). Long-term product decisions should move into explicit

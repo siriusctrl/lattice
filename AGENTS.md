@@ -26,6 +26,9 @@ and context semantics behind the scenes.
 - Follow-up questions stay inside the active node.
 - User text selection creates a new sourced node.
 - The graph is visible but secondary to reading.
+- Explore preserves the original conversation and spatial card history.
+- Article is one flat document, never a visual copy of the research DAG.
+- Article sections can cite multiple Cards, and each citation can reopen its Card.
 - Users never perform a manual merge operation.
 - Past answer content is not rewritten when graph context changes.
 
@@ -46,6 +49,10 @@ and context semantics behind the scenes.
 - `ResearchWorkspace` owns focus stack, graph events, and card navigation.
 - `ResearchCard` owns only local rendering, selection capture, and its composer.
 - `GraphPreview` is a projection. It must not become the source of graph state.
+- `ArticleView` renders a flat document and source trace. It does not own research
+  truth or mutate the graph.
+- Article compilation rules and node-to-section mapping belong in
+  `article-research.ts`.
 - Mock biography content and coordinates belong in `mock-research.ts`.
 - Durable model integration should enter through a typed adapter, not component
   fetch calls distributed across the tree.

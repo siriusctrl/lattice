@@ -31,9 +31,13 @@ test("server-renders the Lattice research workspace", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Lattice - Graph-native AI research<\/title>/i);
+  assert.match(
+    html,
+    /<title>Lattice - Explore naturally, leave with an article<\/title>/i,
+  );
   assert.match(html, /介绍一下马斯克/);
   assert.match(html, /研究图/);
+  assert.match(html, /Article/);
   assert.match(html, /Elon Musk/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/i);
   assert.doesNotMatch(html, /react-loading-skeleton/i);
@@ -47,7 +51,8 @@ test("keeps product metadata and removes the disposable starter preview", async 
   ]);
 
   assert.match(page, /ResearchWorkspace/);
-  assert.match(layout, /Lattice - Graph-native AI research/);
+  assert.match(layout, /Explore naturally, leave with an article/);
+  assert.match(layout, /og\.png/);
   assert.match(packageJson, /lattice-research-prototype/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 

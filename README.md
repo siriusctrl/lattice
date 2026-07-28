@@ -1,9 +1,9 @@
 # Lattice
 
 Lattice is a high-fidelity prototype for graph-native AI research. The user
-reads one answer at a time, opens highlighted ideas as stacked cards, asks
-follow-up questions inside the current card, and watches a research graph form
-without managing branches manually.
+explores naturally through stacked conversation cards while the product keeps
+the research graph and continuously compiles useful material into one flat,
+readable article.
 
 The included scenario explores Elon Musk's biography. It is intentionally rich
 enough to demonstrate a tree becoming a DAG when the SpaceX and Tesla branches
@@ -18,11 +18,17 @@ both converge on the 2008 crisis.
 - Reopen discovered nodes from the graph preview.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
+- Switch between the original Explore workspace and a continuous Article.
+- Watch article sections grow from draft to cross-branch synthesis.
+- Trace any article section back to the Card conversations that produced it.
+- Jump from a Card directly to its location in the article.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
 
 This version uses a deterministic mock research model. The interaction contract
-is real, while model calls and persistence are the next implementation layer.
+is real, including the distinction between original conversation, exploration
+provenance, and the compiled article. Model calls and persistence are the next
+implementation layer.
 
 ## Quick start
 
@@ -50,7 +56,7 @@ route, or local sidecar should own credentials, file access, model calls, and
 Codex or Claude Code process control. The boundary looks like this:
 
 ```text
-React card workspace
+React Explore and Article workspace
         |
    SSE or WebSocket
         |
@@ -87,7 +93,9 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - [docs/source-map.md](docs/source-map.md): file ownership and reading path
 - `app/components/ResearchWorkspace.tsx`: interaction state and navigation
 - `app/components/ResearchCard.tsx`: card content, anchors, selection, follow-ups
+- `app/components/ArticleView.tsx`: flat article and source-card traceability
 - `app/components/GraphPreview.tsx`: compact and expanded graph
+- `app/lib/article-research.ts`: incremental article compiler fixture
 - `app/lib/mock-research.ts`: Musk research fixture and graph coordinates
 - `scripts/record-demo.mjs`: deterministic browser recording
 
@@ -96,4 +104,5 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 The Elon Musk portrait is credited to The Royal Society and Debbie Rowe under
 CC BY-SA 4.0 through Wikimedia Commons. The rocket and early electric roadster
 images were generated specifically for this prototype with the built-in OpenAI
-image generation workflow.
+image generation workflow. The social preview image was also generated for this
+project from the finished Explore and Article interfaces.
