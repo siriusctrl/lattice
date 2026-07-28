@@ -23,7 +23,6 @@ remain intentionally outside the mock.
 `ResearchWorkspace` owns:
 
 - the active card stack
-- forward navigation history
 - discovered node ids
 - graph edges created by actual exploration
 - local follow-up turns
@@ -49,10 +48,14 @@ A card is a focused research unit, not a single message. It can contain:
 - multiple semantic anchors
 - local follow-up turns
 - source media
-- an automatically derived digest in a future version
+
+The answer body should remain normal chat. Labeled digests, temporary
+conclusions, and reading-guide callouts belong in the Article compiler, not in
+the source Card.
 
 The active card owns pointer input. Earlier cards remain visible as inert layers
-to preserve spatial memory.
+to preserve spatial memory. Closing the active card pops only the focus stack;
+the discovered node and graph edge remain available.
 
 ## Article model
 

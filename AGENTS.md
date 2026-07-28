@@ -22,7 +22,7 @@ and context semantics behind the scenes.
 
 - Clicking an anchor creates or reuses a research node.
 - Following an already discovered relationship must not duplicate node content.
-- Browser back and forward affect focus history, not the persisted graph.
+- Closing the active Card changes focus but never deletes the persisted graph.
 - Follow-up questions stay inside the active node.
 - User text selection creates a new sourced node.
 - The graph is visible but secondary to reading.
@@ -31,6 +31,8 @@ and context semantics behind the scenes.
 - Article sections can cite multiple Cards, and each citation can reopen its Card.
 - Users never perform a manual merge operation.
 - Past answer content is not rewritten when graph context changes.
+- Card answers should read like normal chat. Do not add labeled conclusion,
+  digest, or reading-guide callouts.
 
 ## Visual invariants
 

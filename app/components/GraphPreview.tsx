@@ -45,11 +45,19 @@ export function GraphPreview({
 }: GraphPreviewProps) {
   if (!visible) return null;
 
-  const visibleIds = new Set([...discoveredIds, ...potentialIds]);
+  const visibleIds = new Set(
+    expanded
+      ? [...discoveredIds, ...potentialIds]
+      : [...discoveredIds],
+  );
   const visibleNodes = [...visibleIds]
     .map((id) => nodes[id])
     .filter((node): node is ResearchNode => Boolean(node));
   const edgeMap = new Map(edges.map((edge) => [edgeKey(edge), edge]));
+  const incomingCounts = new Map<string, number>();
+  for (const edge of edges) {
+    incomingCounts.set(edge.to, (incomingCounts.get(edge.to) ?? 0) + 1);
+  }
 
   const candidateEdges: GraphEdge[] = [];
   for (const edge of edges) {
@@ -58,20 +66,22 @@ export function GraphPreview({
     }
   }
 
-  for (const to of potentialIds) {
-    const possible = {
-      from: activeId,
-      to,
-      kind: "fork" as const,
-    };
-    if (
-      nodes[activeId] &&
-      nodes[to] &&
-      !candidateEdges.some(
-        (edge) => edge.from === activeId && edge.to === to,
-      )
-    ) {
-      candidateEdges.push(possible);
+  if (expanded) {
+    for (const to of potentialIds) {
+      const possible = {
+        from: activeId,
+        to,
+        kind: "fork" as const,
+      };
+      if (
+        nodes[activeId] &&
+        nodes[to] &&
+        !candidateEdges.some(
+          (edge) => edge.from === activeId && edge.to === to,
+        )
+      ) {
+        candidateEdges.push(possible);
+      }
     }
   }
 
@@ -131,6 +141,8 @@ export function GraphPreview({
               const to = nodes[edge.to];
               if (!from || !to) return null;
               const actual = edgeMap.has(edgeKey(edge));
+              const converging =
+                actual && (incomingCounts.get(edge.to) ?? 0) > 1;
               return (
                 <motion.line
                   key={`${edge.from}-${edge.to}-${actual ? "actual" : "hint"}`}
@@ -142,11 +154,12 @@ export function GraphPreview({
                     "graph-edge",
                     actual ? "graph-edge-discovered" : "graph-edge-potential",
                     edge.kind === "synthesis" ? "graph-edge-synthesis" : "",
+                    converging ? "graph-edge-convergence" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   initial={reduceMotion ? false : { pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: actual ? 1 : 0.34 }}
+                  animate={{ pathLength: 1, opacity: actual ? 0.92 : 0.25 }}
                   transition={{ duration: 0.42 }}
                 />
               );

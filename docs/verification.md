@@ -17,7 +17,7 @@ scenario, and the graph shell render without the disposable starter preview.
 `verify:ui` launches Chromium and checks:
 
 - anchor fork creation
-- card back and forward behavior
+- direct active-card closing without graph deletion
 - graph node counts
 - a converging SpaceX and Tesla DAG
 - local follow-up loading and completion

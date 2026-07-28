@@ -10,7 +10,7 @@
 
 - `app/components/ResearchWorkspace.tsx`
   - focus stack
-  - back and forward navigation
+  - direct active-branch closing
   - fork creation
   - converging DAG edges
   - graph focus
@@ -21,7 +21,7 @@
   - theme state
 
 - `app/components/ResearchCard.tsx`
-  - card surface and content
+  - normal chat answer surface and content
   - anchor rendering
   - source prompt
   - follow-up composer

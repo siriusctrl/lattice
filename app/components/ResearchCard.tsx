@@ -181,19 +181,18 @@ export function ResearchCard({
         </div>
         <div className="card-header-actions">
           {active ? (
-            <button
-              type="button"
-              className="card-article-link"
-              onClick={() => onOpenArticle(node.id)}
-              aria-label={`查看“${node.shortTitle}”在成稿中的位置`}
-            >
-              <Article size={13} weight="fill" aria-hidden="true" />
-              <span>查看成稿</span>
-            </button>
+            <>
+              <button
+                type="button"
+                className="card-article-link"
+                onClick={() => onOpenArticle(node.id)}
+                aria-label={`查看“${node.shortTitle}”在成稿中的位置`}
+              >
+                <Article size={13} weight="fill" aria-hidden="true" />
+                <span>查看成稿</span>
+              </button>
+            </>
           ) : null}
-          <span className="card-layer">
-            0{Math.min(layerIndex + 1, 9)}
-          </span>
         </div>
       </header>
 
@@ -276,13 +275,12 @@ export function ResearchCard({
             }
 
             return (
-              <aside
-                className="insight-block"
+              <p
+                className="chat-plain-paragraph"
                 key={`${node.id}-insight-${index}`}
               >
-                <span>{block.label}</span>
-                <p>{block.content}</p>
-              </aside>
+                {block.content}
+              </p>
             );
           })}
         </div>
@@ -319,12 +317,12 @@ export function ResearchCard({
       </div>
 
       <form className="card-composer" onSubmit={handleSubmit}>
-        <label htmlFor={`ask-${node.id}`}>继续追问</label>
+        <label htmlFor={`ask-${node.id}`}>发消息</label>
         <input
           id={`ask-${node.id}`}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="沿这个分支继续问..."
+          placeholder="继续问..."
           autoComplete="off"
           disabled={!active || thinking}
         />

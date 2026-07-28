@@ -96,7 +96,7 @@ await page
   .click();
 await page.getByTestId("research-card-spacex").waitFor();
 await page.waitForTimeout(650);
-await page.getByRole("button", { name: "Elon Musk" }).first().click();
+await page.getByRole("button", { name: "关闭当前分支" }).click();
 await page.waitForTimeout(500);
 
 await page.locator('[data-anchor-target="tesla"]').hover();
@@ -142,7 +142,7 @@ await page.getByTestId("research-card-tesla").waitFor();
 await page.waitForTimeout(650);
 
 const activeCard = page.locator('[data-active="true"]');
-const composer = activeCard.getByPlaceholder("沿这个分支继续问...");
+const composer = activeCard.getByPlaceholder("继续问...");
 await composer.fill("这更像莽撞，还是一种可复制的风险方法？");
 await activeCard.getByRole("button", { name: "发送追问" }).click();
 await page.waitForTimeout(1_300);

@@ -2,14 +2,13 @@
 
 import {
   Article as ArticleIcon,
-  ArrowLeft,
-  ArrowRight,
   ChatsCircle,
   CursorClick,
   Graph,
   Moon,
   Stack,
   Sun,
+  X,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -107,7 +106,6 @@ export function ResearchWorkspace() {
   const [articleFocusSectionId, setArticleFocusSectionId] =
     useState("overview");
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
-  const [forwardStack, setForwardStack] = useState<string[]>([]);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
     () => new Set([ROOT_NODE_ID]),
   );
@@ -174,35 +172,6 @@ export function ResearchWorkspace() {
     };
   }, []);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (workspaceView !== "explore") return;
-      const target = event.target as HTMLElement;
-      if (target.matches("input, textarea, [contenteditable='true']")) return;
-      if (event.altKey && event.key === "ArrowLeft" && stack.length > 1) {
-        event.preventDefault();
-        const popped = stack[stack.length - 1];
-        setStack(stack.slice(0, -1));
-        setForwardStack([popped, ...forwardStack]);
-        setSelection(null);
-      }
-      if (
-        event.altKey &&
-        event.key === "ArrowRight" &&
-        forwardStack.length > 0
-      ) {
-        event.preventDefault();
-        const [next, ...rest] = forwardStack;
-        setStack([...stack, next]);
-        setForwardStack(rest);
-        setSelection(null);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [forwardStack, stack, workspaceView]);
-
   useEffect(
     () => () => {
       if (forkTimer.current) clearTimeout(forkTimer.current);
@@ -244,7 +213,6 @@ export function ResearchWorkspace() {
             ? stack.slice(0, existingIndex + 1)
             : [...stack, targetId],
         );
-        setForwardStack([]);
         setForkingTargetId(null);
       };
 
@@ -257,19 +225,9 @@ export function ResearchWorkspace() {
     [activeId, forkingTargetId, nodes, reduceMotion, stack],
   );
 
-  function goBack() {
+  function closeActiveBranch() {
     if (stack.length <= 1 || forkingTargetId) return;
-    const popped = stack[stack.length - 1];
     setStack(stack.slice(0, -1));
-    setForwardStack([popped, ...forwardStack]);
-    setSelection(null);
-  }
-
-  function goForward() {
-    if (forwardStack.length === 0 || forkingTargetId) return;
-    const [next, ...rest] = forwardStack;
-    setStack([...stack, next]);
-    setForwardStack(rest);
     setSelection(null);
   }
 
@@ -278,13 +236,11 @@ export function ResearchWorkspace() {
     const existingIndex = stack.lastIndexOf(nodeId);
     if (existingIndex >= 0) {
       setStack(stack.slice(0, existingIndex + 1));
-      setForwardStack([]);
       return;
     }
 
     const path = getPathToNode(nodeId, edges);
     setStack(path ?? [ROOT_NODE_ID, nodeId]);
-    setForwardStack([]);
     setSelection(null);
     if (window.innerWidth < 760) setGraphExpanded(false);
   }
@@ -292,7 +248,6 @@ export function ResearchWorkspace() {
   function focusBreadcrumb(index: number) {
     if (index >= stack.length - 1) return;
     setStack(stack.slice(0, index + 1));
-    setForwardStack([]);
     setSelection(null);
   }
 
@@ -415,7 +370,6 @@ export function ResearchWorkspace() {
       }),
     );
     setStack([...stack, nodeId]);
-    setForwardStack([]);
     setSelection(null);
     window.getSelection()?.removeAllRanges();
   }
@@ -465,68 +419,43 @@ export function ResearchWorkspace() {
 
         <div className="topbar-context">
           {workspaceView === "explore" ? (
-            <>
-              <nav className="history-controls" aria-label="节点浏览历史">
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={goBack}
-                  disabled={stack.length <= 1}
-                  aria-label="返回上一层"
-                  title="返回上一层"
-                >
-                  <ArrowLeft size={17} />
-                </button>
-                <button
-                  type="button"
-                  className="icon-button"
-                  onClick={goForward}
-                  disabled={forwardStack.length === 0}
-                  aria-label="前进"
-                  title="前进"
-                >
-                  <ArrowRight size={17} />
-                </button>
-              </nav>
-
-              <div className="breadcrumb" aria-label="当前研究路径">
-                {stack.map((nodeId, index) => {
-                  const node = nodes[nodeId];
-                  if (!node) return null;
-                  const hidden =
-                    stack.length > 4 &&
-                    index > 0 &&
-                    index < stack.length - 3;
-                  if (hidden) {
-                    return index === 1 ? (
-                      <span className="breadcrumb-ellipsis" key="ellipsis">
-                        …
-                      </span>
-                    ) : null;
-                  }
-                  return (
-                    <span
-                      className="breadcrumb-segment"
-                      key={`${nodeId}-${index}`}
-                    >
-                      {index > 0 &&
-                      !(stack.length > 4 && index === stack.length - 3) ? (
-                        <i aria-hidden="true">/</i>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => focusBreadcrumb(index)}
-                        aria-current={
-                          index === stack.length - 1 ? "page" : undefined
-                        }
-                      >
-                        {node.shortTitle}
-                      </button>
+            <div className="breadcrumb" aria-label="当前研究路径">
+              {stack.map((nodeId, index) => {
+                const node = nodes[nodeId];
+                if (!node) return null;
+                const hidden =
+                  stack.length > 4 &&
+                  index > 0 &&
+                  index < stack.length - 3;
+                if (hidden) {
+                  return index === 1 ? (
+                    <span className="breadcrumb-ellipsis" key="ellipsis">
+                      …
                     </span>
-                  );
-                })}
-              </div>
-            </>
+                  ) : null;
+                }
+                return (
+                  <span
+                    className="breadcrumb-segment"
+                    key={`${nodeId}-${index}`}
+                  >
+                    {index > 0 &&
+                    !(stack.length > 4 && index === stack.length - 3) ? (
+                      <i aria-hidden="true">/</i>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => focusBreadcrumb(index)}
+                      aria-current={
+                        index === stack.length - 1 ? "page" : undefined
+                      }
+                    >
+                      {node.shortTitle}
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
           ) : (
             <div className="article-context" aria-label="当前成稿">
               <span>动态成稿</span>
@@ -614,6 +543,26 @@ export function ResearchWorkspace() {
           </AnimatePresence>
 
           <AnimatePresence>
+            {stack.length > 1 && !forkingTargetId ? (
+              <motion.button
+                type="button"
+                className="branch-close-button"
+                onClick={closeActiveBranch}
+                aria-label="关闭当前分支"
+                title="关闭当前分支"
+                initial={
+                  reduceMotion ? false : { opacity: 0, scale: 0.88 }
+                }
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.16 }}
+              >
+                <X size={15} weight="bold" aria-hidden="true" />
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
+
+          <AnimatePresence>
             {forkingTargetId ? (
               <motion.div
                 className="forking-card"
@@ -646,7 +595,7 @@ export function ResearchWorkspace() {
 
         <div className="selection-hint">
           <CursorClick size={16} weight="bold" aria-hidden="true" />
-          <span>点击高亮，或直接选中文字</span>
+          <span>点击下划线，或直接选中文字</span>
         </div>
           </section>
 

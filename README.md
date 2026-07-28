@@ -11,10 +11,11 @@ both converge on the 2008 crisis.
 
 ## What works
 
-- Click a highlighted anchor to fork a new card.
+- Click a thin underlined anchor to fork a new card.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
-- Navigate backward, forward, or through the breadcrumb path.
+- Close the active branch directly from the Card header.
+- Reopen explored material from the breadcrumb or research graph.
 - Reopen discovered nodes from the graph preview.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
