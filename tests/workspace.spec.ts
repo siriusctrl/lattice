@@ -17,6 +17,12 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
 }) => {
   await expect(page.getByText("读法", { exact: true })).toHaveCount(0);
   await expect(page.getByText("暂时结论", { exact: true })).toHaveCount(0);
+  const rootCard = page.getByTestId("research-card-musk");
+  await expect(rootCard.locator(".card-header")).toHaveCount(0);
+  await expect(rootCard.locator(".card-title-group")).toHaveCount(0);
+  await expect(rootCard.getByText("查看成稿", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".workspace-topic")).toHaveCount(0);
+  await expect(page.locator(".selection-hint")).toHaveCount(0);
   await expect(
     page.getByTestId("graph-preview").locator(".graph-node-potential"),
   ).toHaveCount(0);
@@ -32,6 +38,59 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
   await expect(
     page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
   ).toHaveCount(1);
+  const edgeGeometry = await page
+    .getByTestId("graph-preview")
+    .locator(".graph-edge-discovered")
+    .evaluate((line) => {
+      const svgLine = line as SVGLineElement;
+      const svg = svgLine.ownerSVGElement;
+      const fromId = svgLine.getAttribute("data-edge-from");
+      const toId = svgLine.getAttribute("data-edge-to");
+      if (!svg || !fromId || !toId) throw new Error("Incomplete graph edge");
+
+      const from = svg.querySelector<SVGCircleElement>(
+        `[data-node-id="${fromId}"] circle`,
+      );
+      const to = svg.querySelector<SVGCircleElement>(
+        `[data-node-id="${toId}"] circle`,
+      );
+      if (!from || !to) throw new Error("Missing graph endpoint");
+
+      const lineMatrix = svgLine.getScreenCTM();
+      const fromMatrix = from.getScreenCTM();
+      const toMatrix = to.getScreenCTM();
+      if (!lineMatrix || !fromMatrix || !toMatrix) {
+        throw new Error("Missing graph transform");
+      }
+
+      const lineStart = new DOMPoint(
+        Number(line.getAttribute("x1")),
+        Number(line.getAttribute("y1")),
+      ).matrixTransform(lineMatrix);
+      const lineEnd = new DOMPoint(
+        Number(line.getAttribute("x2")),
+        Number(line.getAttribute("y2")),
+      ).matrixTransform(lineMatrix);
+      const fromCenter = new DOMPoint(0, 0).matrixTransform(fromMatrix);
+      const toCenter = new DOMPoint(0, 0).matrixTransform(toMatrix);
+
+      return {
+        startDistance: Math.hypot(
+          lineStart.x - fromCenter.x,
+          lineStart.y - fromCenter.y,
+        ),
+        endDistance: Math.hypot(
+          lineEnd.x - toCenter.x,
+          lineEnd.y - toCenter.y,
+        ),
+        dashArray: getComputedStyle(svgLine).strokeDasharray,
+        pathLength: svgLine.getAttribute("pathLength"),
+      };
+    });
+  expect(edgeGeometry.startDistance).toBeLessThan(0.1);
+  expect(edgeGeometry.endDistance).toBeLessThan(0.1);
+  expect(edgeGeometry.dashArray).toBe("none");
+  expect(edgeGeometry.pathLength).toBeNull();
 
   await page.getByRole("button", { name: "关闭当前分支" }).click();
   await expect(page.getByTestId("research-card-musk")).toHaveAttribute(

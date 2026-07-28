@@ -49,9 +49,10 @@ A card is a focused research unit, not a single message. It can contain:
 - local follow-up turns
 - source media
 
-The answer body should remain normal chat. Labeled digests, temporary
-conclusions, and reading-guide callouts belong in the Article compiler, not in
-the source Card.
+The entire Card should remain normal chat. It does not render answer titles,
+metadata headers, labeled digests, temporary conclusions, reading-guide
+callouts, or Article shortcuts. Those editorial structures belong in the
+Article compiler, not in the source Card.
 
 The active card owns pointer input. Earlier cards remain visible as inert layers
 to preserve spatial memory. Closing the active card pops only the focus stack;
@@ -75,8 +76,7 @@ the existing section becomes a two-path synthesis without asking the user to
 merge anything.
 
 Every article section keeps provenance. Opening a source returns to the original
-Card and restores its exploration context. Opening Article from a Card scrolls
-to the corresponding flat section.
+Card and restores its exploration context.
 
 ## Model and harness connection
 

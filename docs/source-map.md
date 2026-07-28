@@ -21,7 +21,7 @@
   - theme state
 
 - `app/components/ResearchCard.tsx`
-  - normal chat answer surface and content
+  - metadata-free chat answer surface and content
   - anchor rendering
   - source prompt
   - follow-up composer

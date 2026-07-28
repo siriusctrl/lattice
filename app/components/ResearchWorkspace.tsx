@@ -507,12 +507,6 @@ export function ResearchWorkspace() {
       {workspaceView === "explore" ? (
         <>
           <section className="workspace-stage" aria-label="卡片研究空间">
-        <div className="workspace-topic" aria-hidden="true">
-          <span>当前研究</span>
-          <strong>Elon Musk</strong>
-          <i>{discoveredIds.size.toString().padStart(2, "0")} nodes</i>
-        </div>
-
         <div className="deck-wrap">
           <div className="deck-shadow deck-shadow-one" aria-hidden="true" />
           <div className="deck-shadow deck-shadow-two" aria-hidden="true" />
@@ -527,15 +521,11 @@ export function ResearchWorkspace() {
                   node={node}
                   active={index === stack.length - 1}
                   layerIndex={layerIndex}
-                  sourceTitle={
-                    index > 0 ? nodes[stack[index - 1]]?.shortTitle : undefined
-                  }
                   followups={followups[nodeId] ?? []}
                   thinking={thinkingNodeId === nodeId}
                   onAnchor={openNode}
                   onAsk={askFollowup}
                   onTextSelection={updateSelection}
-                  onOpenArticle={openArticleForNode}
                   reduceMotion={reduceMotion}
                 />
               );
@@ -593,10 +583,6 @@ export function ResearchWorkspace() {
           </AnimatePresence>
         </div>
 
-        <div className="selection-hint">
-          <CursorClick size={16} weight="bold" aria-hidden="true" />
-          <span>点击下划线，或直接选中文字</span>
-        </div>
           </section>
 
           <AnimatePresence>

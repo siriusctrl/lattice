@@ -404,45 +404,11 @@ input:focus-visible,
   overflow: hidden;
 }
 
-.workspace-topic {
-  position: absolute;
-  top: 50%;
-  left: 28px;
-  display: flex;
-  width: 122px;
-  flex-direction: column;
-  transform: translateY(-50%);
-}
-
-.workspace-topic span {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workspace-topic strong {
-  margin-top: 8px;
-  color: var(--ink);
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
-}
-
-.workspace-topic i {
-  margin-top: 5px;
-  color: var(--faint);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-  font-style: normal;
-}
-
 .deck-wrap {
   position: absolute;
   top: 50%;
-  left: 51%;
-  width: min(760px, calc(100vw - 470px));
+  left: 50%;
+  width: min(760px, calc(100vw - 420px));
   height: min(772px, calc(100dvh - 100px));
   min-height: 590px;
   transform: translate(-50%, -50%);
@@ -494,85 +460,10 @@ input:focus-visible,
   filter: saturate(0.72);
 }
 
-.card-header {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  min-height: 47px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 22px;
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-}
-
-.card-origin {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  color: var(--muted);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-}
-
-.card-origin-separator {
-  width: 18px;
-  height: 1px;
-  margin: 0 9px;
-  background: var(--line-strong);
-}
-
-.card-source {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding-right: 32px;
-}
-
-.card-article-link {
-  display: inline-flex;
-  height: 27px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 9px;
-  font-weight: 650;
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease,
-    transform 120ms ease;
-}
-
-.card-article-link svg {
-  color: var(--accent-strong);
-}
-
-.card-article-link:hover {
-  border-color: color-mix(in srgb, var(--accent-strong) 30%, var(--line));
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
-  color: var(--ink);
-}
-
-.card-article-link:active {
-  transform: translateY(1px) scale(0.98);
-}
-
 .branch-close-button {
   position: absolute;
-  top: 10px;
-  right: 13px;
+  top: 14px;
+  right: 16px;
   z-index: 48;
   display: grid;
   width: 28px;
@@ -605,7 +496,7 @@ input:focus-visible,
   position: relative;
   min-height: 0;
   flex: 1;
-  padding: 26px 40px 42px;
+  padding: 34px 40px 42px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -658,50 +549,6 @@ input:focus-visible,
   line-height: 1.65;
 }
 
-.card-introduction {
-  margin-bottom: 28px;
-}
-
-.card-introduction-split {
-  display: grid;
-  grid-template-columns: 184px minmax(0, 1fr);
-  align-items: end;
-  gap: 30px;
-}
-
-.card-title-group {
-  align-self: center;
-}
-
-.card-short-title {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--accent-strong);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.card-title-group h1 {
-  max-width: 13ch;
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(36px, 4vw, 48px);
-  font-weight: 610;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
-}
-
-.card-lead {
-  max-width: 38ch;
-  margin: 18px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
 .card-image {
   position: relative;
   overflow: hidden;
@@ -727,11 +574,14 @@ input:focus-visible,
   transform: scale(1.012);
 }
 
-.card-image-portrait {
-  height: 246px;
+.card-image-chat-portrait {
+  float: right;
+  width: 150px;
+  height: 200px;
+  margin: 0 0 23px 30px;
 }
 
-.card-image-portrait img {
+.card-image-chat-portrait img {
   object-position: 50% 19%;
 }
 
@@ -761,6 +611,12 @@ input:focus-visible,
 
 .research-copy {
   max-width: 63ch;
+}
+
+.research-copy::after {
+  display: block;
+  clear: both;
+  content: "";
 }
 
 .research-copy > p {
@@ -1091,21 +947,6 @@ input:focus-visible,
   letter-spacing: -0.035em;
 }
 
-.selection-hint {
-  position: absolute;
-  bottom: 22px;
-  left: 28px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.selection-hint svg {
-  color: var(--accent-strong);
-}
-
 .selection-menu {
   position: fixed;
   z-index: 90;
@@ -1222,7 +1063,6 @@ input:focus-visible,
 
 .graph-edge-synthesis {
   stroke: color-mix(in srgb, var(--accent-strong) 70%, var(--line));
-  stroke-dasharray: 2.2 2;
 }
 
 .graph-edge-potential {
@@ -1961,17 +1801,9 @@ input:focus-visible,
 }
 
 @media (max-width: 1120px) {
-  .workspace-topic {
-    display: none;
-  }
-
   .deck-wrap {
     left: 45%;
     width: min(730px, calc(100vw - 330px));
-  }
-
-  .selection-hint {
-    display: none;
   }
 
   .article-workspace {
@@ -2112,31 +1944,8 @@ input:focus-visible,
     border-radius: 18px;
   }
 
-  .card-header {
-    padding: 0 16px;
-  }
-
   .card-scroll {
-    padding: 21px 20px 34px;
-  }
-
-  .card-introduction-split {
-    grid-template-columns: 116px minmax(0, 1fr);
-    align-items: center;
-    gap: 18px;
-  }
-
-  .card-image-portrait {
-    height: 158px;
-  }
-
-  .card-title-group h1 {
-    font-size: clamp(31px, 9vw, 42px);
-  }
-
-  .card-lead {
-    margin-top: 12px;
-    font-size: 12px;
+    padding: 32px 20px 34px;
   }
 
   .card-image-landscape {
@@ -2161,16 +1970,6 @@ input:focus-visible,
 
   .prompt-block {
     margin-bottom: 20px;
-  }
-
-  .card-article-link span {
-    display: none;
-  }
-
-  .card-article-link {
-    width: 27px;
-    justify-content: center;
-    padding: 0;
   }
 
   .article-workspace {
@@ -2283,26 +2082,10 @@ input:focus-visible,
 }
 
 @media (max-width: 460px) {
-  .card-introduction-split {
-    display: block;
-  }
-
-  .card-image-portrait {
-    width: 108px;
-    height: 140px;
-    float: left;
-    margin: 0 18px 12px 0;
-  }
-
-  .card-title-group {
-    min-height: 150px;
-    padding-top: 7px;
-  }
-
-  .card-introduction::after {
-    display: table;
-    clear: both;
-    content: "";
+  .card-image-chat-portrait {
+    width: 104px;
+    height: 138px;
+    margin: 0 0 18px 18px;
   }
 
   .card-composer {

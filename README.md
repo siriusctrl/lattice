@@ -14,7 +14,7 @@ both converge on the 2008 crisis.
 - Click a thin underlined anchor to fork a new card.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
-- Close the active branch directly from the Card header.
+- Close the active branch directly from the Card corner.
 - Reopen explored material from the breadcrumb or research graph.
 - Reopen discovered nodes from the graph preview.
 - Reach one node from multiple branches without duplicating it.
@@ -22,7 +22,6 @@ both converge on the 2008 crisis.
 - Switch between the original Explore workspace and a continuous Article.
 - Watch article sections grow from draft to cross-branch synthesis.
 - Trace any article section back to the Card conversations that produced it.
-- Jump from a Card directly to its location in the article.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
 
@@ -93,7 +92,7 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - [docs/INDEX.md](docs/INDEX.md): documentation entry point
 - [docs/source-map.md](docs/source-map.md): file ownership and reading path
 - `app/components/ResearchWorkspace.tsx`: interaction state and navigation
-- `app/components/ResearchCard.tsx`: card content, anchors, selection, follow-ups
+- `app/components/ResearchCard.tsx`: plain chat content, anchors, selection, follow-ups
 - `app/components/ArticleView.tsx`: flat article and source-card traceability
 - `app/components/GraphPreview.tsx`: compact and expanded graph
 - `app/lib/article-research.ts`: incremental article compiler fixture

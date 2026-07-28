@@ -31,8 +31,9 @@ and context semantics behind the scenes.
 - Article sections can cite multiple Cards, and each citation can reopen its Card.
 - Users never perform a manual merge operation.
 - Past answer content is not rewritten when graph context changes.
-- Card answers should read like normal chat. Do not add labeled conclusion,
-  digest, or reading-guide callouts.
+- Cards should read like normal chat from top to bottom. Do not add answer
+  titles, metadata headers, Article shortcuts, labeled conclusions, digests, or
+  reading-guide callouts.
 
 ## Visual invariants
 

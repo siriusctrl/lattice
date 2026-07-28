@@ -164,7 +164,7 @@ await page.screenshot({
 await page.getByRole("button", { name: "从选区分叉" }).click();
 await page.waitForTimeout(800);
 
-await page.locator('[data-active="true"] .card-article-link').click();
+await page.getByRole("button", { name: "Article", exact: true }).click();
 await page.getByTestId("article-section-research-notes").waitFor();
 await page.mouse.move(1400, 30);
 await page.waitForTimeout(1_200);

@@ -146,6 +146,8 @@ export function GraphPreview({
               return (
                 <motion.line
                   key={`${edge.from}-${edge.to}-${actual ? "actual" : "hint"}`}
+                  data-edge-from={edge.from}
+                  data-edge-to={edge.to}
                   x1={from.position.x}
                   y1={from.position.y}
                   x2={to.position.x}
@@ -158,9 +160,9 @@ export function GraphPreview({
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  initial={reduceMotion ? false : { pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: actual ? 0.92 : 0.25 }}
-                  transition={{ duration: 0.42 }}
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: actual ? 0.92 : 0.25 }}
+                  transition={{ duration: 0.24 }}
                 />
               );
             })}
@@ -173,6 +175,7 @@ export function GraphPreview({
               return (
                 <g
                   key={node.id}
+                  data-node-id={node.id}
                   className={[
                     "graph-node",
                     isDiscovered

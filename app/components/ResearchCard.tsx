@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Article,
   ArrowUpRight,
   PaperPlaneTilt,
   Quotes,
@@ -34,13 +33,11 @@ type ResearchCardProps = {
   node: ResearchNode;
   active: boolean;
   layerIndex: number;
-  sourceTitle?: string;
   followups: FollowupTurn[];
   thinking: boolean;
   onAnchor: (targetId: string) => void;
   onAsk: (nodeId: string, question: string) => void;
   onTextSelection: (selection: TextSelection | null) => void;
-  onOpenArticle: (nodeId: string) => void;
   reduceMotion: boolean;
 };
 
@@ -79,13 +76,11 @@ export function ResearchCard({
   node,
   active,
   layerIndex,
-  sourceTitle,
   followups,
   thinking,
   onAnchor,
   onAsk,
   onTextSelection,
-  onOpenArticle,
   reduceMotion,
 }: ResearchCardProps) {
   const [question, setQuestion] = useState("");
@@ -169,33 +164,6 @@ export function ResearchCard({
       }}
       aria-hidden={!active}
     >
-      <header className="card-header">
-        <div className="card-origin">
-          <span className="card-year">{node.year}</span>
-          {sourceTitle ? (
-            <>
-              <span className="card-origin-separator" aria-hidden="true" />
-              <span className="card-source">来自 {sourceTitle}</span>
-            </>
-          ) : null}
-        </div>
-        <div className="card-header-actions">
-          {active ? (
-            <>
-              <button
-                type="button"
-                className="card-article-link"
-                onClick={() => onOpenArticle(node.id)}
-                aria-label={`查看“${node.shortTitle}”在成稿中的位置`}
-              >
-                <Article size={13} weight="fill" aria-hidden="true" />
-                <span>查看成稿</span>
-              </button>
-            </>
-          ) : null}
-        </div>
-      </header>
-
       <div className="card-scroll" onMouseUp={handleMouseUp}>
         <div className="prompt-block">
           <span className="prompt-avatar" aria-hidden="true">
@@ -204,41 +172,29 @@ export function ResearchCard({
           <p>{node.userPrompt}</p>
         </div>
 
-        <div
-          className={`card-introduction ${
-            node.image?.tone === "portrait" ? "card-introduction-split" : ""
-          }`}
-        >
-          {node.image?.tone === "portrait" ? (
-            <figure className="card-image card-image-portrait">
-              <Image
-                src={node.image.src}
-                alt={node.image.alt}
-                fill
-                priority={node.id === "musk"}
-                sizes="(max-width: 720px) 116px, 184px"
-                unoptimized
-              />
-              {node.image.credit ? (
-                <figcaption>
-                  <a
-                    href={node.image.creditUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {node.image.credit}
-                  </a>
-                </figcaption>
-              ) : null}
-            </figure>
-          ) : null}
-
-          <div className="card-title-group">
-            <span className="card-short-title">{node.shortTitle}</span>
-            <h1>{node.title}</h1>
-            <p className="card-lead">{node.lead}</p>
-          </div>
-        </div>
+        {node.image?.tone === "portrait" ? (
+          <figure className="card-image card-image-chat-portrait">
+            <Image
+              src={node.image.src}
+              alt={node.image.alt}
+              fill
+              priority={node.id === "musk"}
+              sizes="(max-width: 720px) 104px, 150px"
+              unoptimized
+            />
+            {node.image.credit ? (
+              <figcaption>
+                <a
+                  href={node.image.creditUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {node.image.credit}
+                </a>
+              </figcaption>
+            ) : null}
+          </figure>
+        ) : null}
 
         {node.image?.tone === "landscape" ? (
           <figure className="card-image card-image-landscape">

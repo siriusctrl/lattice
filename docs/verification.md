@@ -19,6 +19,7 @@ scenario, and the graph shell render without the disposable starter preview.
 - anchor fork creation
 - direct active-card closing without graph deletion
 - graph node counts
+- graph edges reaching both endpoint centers without path clipping
 - a converging SpaceX and Tesla DAG
 - local follow-up loading and completion
 - user text selection forks
