@@ -30,6 +30,8 @@
 
 - `app/components/GraphPreview.tsx`
   - compact and expanded graph projections
+  - layered layout recomputed from the visible DAG
+  - crowded-label suppression and hover reveal
   - potential and discovered node styling
   - graph node navigation
 
@@ -46,7 +48,7 @@
   - visible mock copy
   - prepared anchors
   - possible graph edges
-  - graph coordinates
+  - graph ordering hints
 
 - `app/lib/article-research.ts`
   - node-to-section mapping
@@ -55,10 +57,7 @@
 
 ## Assets
 
-- `public/assets/elon-musk-portrait.webp`: open-license portrait
-- `public/assets/falcon-editorial.webp`: generated rocket image
-- `public/assets/roadster-editorial.webp`: generated electric roadster image
-- `public/og.png`: generated social preview of Explore becoming Article
+- `public/og.png`: social preview of Explore becoming Article
 - `public/favicon.svg`: Lattice stacked-card mark
 
 ## Verification

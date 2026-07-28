@@ -27,14 +27,21 @@ const SECTION_BY_NODE: Record<string, string> = {
   origin: "early-life",
   blastar: "early-life",
   migration: "early-life",
+  education: "early-life",
   zip2: "capital",
   paypal: "capital",
   spacex: "industrial-bets",
   tesla: "industrial-bets",
   falcon4: "industrial-bets",
   roadster: "industrial-bets",
+  starlink: "scale-systems",
+  model3: "scale-systems",
+  energy: "scale-systems",
+  neuralink: "new-frontiers",
+  boring: "new-frontiers",
   crisis: "crisis",
   risk: "risk-pattern",
+  management: "risk-pattern",
   x: "platforms",
   xai: "platforms",
 };
@@ -79,6 +86,7 @@ export function buildArticleSections({
     "origin",
     "blastar",
     "migration",
+    "education",
   ]);
   if (earlySources.length > 0) {
     sections.push({
@@ -141,6 +149,26 @@ export function buildArticleSections({
     });
   }
 
+  const scaleSources = discoveredSources(discoveredIds, [
+    "starlink",
+    "model3",
+    "energy",
+  ]);
+  if (scaleSources.length > 0) {
+    sections.push({
+      id: "scale-systems",
+      eyebrow: "2009 以后",
+      title: "从产品证明走向规模系统",
+      paragraphs: [
+        "Falcon 1 与 Roadster 证明了最小系统能够成立；Starlink、Model 3 和 Tesla Energy 则要求火箭复用、卫星制造、工厂、供应链、发电与储能在更大规模上共同运行。",
+        "这一阶段的核心不再是单次技术突破，而是组织能否长期重复同一结果。规模带来现金流和网络效应，也放大治理、劳动、安全与公共基础设施问题。",
+      ],
+      sourceIds: scaleSources,
+      status: "compiled",
+      statusLabel: "规模化材料",
+    });
+  }
+
   if (discoveredIds.has("crisis")) {
     const fromSpaceX = hasEdge(edges, "spacex", "crisis");
     const fromTesla = hasEdge(edges, "tesla", "crisis");
@@ -172,7 +200,12 @@ export function buildArticleSections({
   }
 
   const riskSources = new Set(
-    discoveredSources(discoveredIds, ["risk", "crisis", "falcon4"]),
+    discoveredSources(discoveredIds, [
+      "risk",
+      "management",
+      "crisis",
+      "falcon4",
+    ]),
   );
   for (const nodeId of followupNodeIds) {
     if (["spacex", "tesla", "crisis", "risk"].includes(nodeId)) {
@@ -208,6 +241,25 @@ export function buildArticleSections({
       sourceIds: platformSources,
       status: "developing",
       statusLabel: "持续更新",
+    });
+  }
+
+  const frontierSources = discoveredSources(discoveredIds, [
+    "neuralink",
+    "boring",
+  ]);
+  if (frontierSources.length > 0) {
+    sections.push({
+      id: "new-frontiers",
+      eyebrow: "2016 以后",
+      title: "同一套方法进入新的约束",
+      paragraphs: [
+        "Neuralink 与 The Boring Company 都从一个极大的长期问题出发，再把它压缩成可以演示和验证的工程项目。但医疗设备与城市基础设施拥有比互联网产品更慢的证据周期和更重的公共责任。",
+        "这些分支因此不是简单的公司扩张，而是对同一套管理与风险方法的边界测试：速度何时创造信息，何时又会跳过不能被压缩的安全、监管与治理过程。",
+      ],
+      sourceIds: frontierSources,
+      status: "developing",
+      statusLabel: "持续验证",
     });
   }
 

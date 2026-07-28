@@ -20,6 +20,7 @@ scenario, and the graph shell render without the disposable starter preview.
 - direct active-card closing without graph deletion
 - graph node counts
 - graph edges reaching both endpoint centers without path clipping
+- dynamic graph reflow with minimum node spacing under a nine-node load
 - a converging SpaceX and Tesla DAG
 - local follow-up loading and completion
 - user text selection forks

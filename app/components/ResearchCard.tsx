@@ -8,7 +8,6 @@ import {
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { FormEvent, MouseEvent, useMemo, useState } from "react";
-import Image from "next/image";
 import type {
   InlineText,
   ResearchNode,
@@ -171,42 +170,6 @@ export function ResearchCard({
           </span>
           <p>{node.userPrompt}</p>
         </div>
-
-        {node.image?.tone === "portrait" ? (
-          <figure className="card-image card-image-chat-portrait">
-            <Image
-              src={node.image.src}
-              alt={node.image.alt}
-              fill
-              priority={node.id === "musk"}
-              sizes="(max-width: 720px) 104px, 150px"
-              unoptimized
-            />
-            {node.image.credit ? (
-              <figcaption>
-                <a
-                  href={node.image.creditUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {node.image.credit}
-                </a>
-              </figcaption>
-            ) : null}
-          </figure>
-        ) : null}
-
-        {node.image?.tone === "landscape" ? (
-          <figure className="card-image card-image-landscape">
-            <Image
-              src={node.image.src}
-              alt={node.image.alt}
-              fill
-              sizes="(max-width: 720px) calc(100vw - 62px), 680px"
-              unoptimized
-            />
-          </figure>
-        ) : null}
 
         <div className="research-copy">
           {node.blocks.map((block, index) => {

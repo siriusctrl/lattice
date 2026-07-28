@@ -5,9 +5,10 @@ explores naturally through stacked conversation cards while the product keeps
 the research graph and continuously compiles useful material into one flat,
 readable article.
 
-The included scenario explores Elon Musk's biography. It is intentionally rich
-enough to demonstrate a tree becoming a DAG when the SpaceX and Tesla branches
-both converge on the 2008 crisis.
+The included scenario explores Elon Musk's biography through more than twenty
+prepared nodes spanning early life, internet companies, industrial systems,
+energy, infrastructure, brain-computer interfaces, X, xAI, management, and
+risk. Independent branches can converge on shared events or interpretations.
 
 ## What works
 
@@ -19,6 +20,7 @@ both converge on the 2008 crisis.
 - Reopen discovered nodes from the graph preview.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
+- Watch the graph reflow as discovered branches make the DAG denser.
 - Switch between the original Explore workspace and a continuous Article.
 - Watch article sections grow from draft to cross-branch synthesis.
 - Trace any article section back to the Card conversations that produced it.
@@ -96,13 +98,5 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/components/ArticleView.tsx`: flat article and source-card traceability
 - `app/components/GraphPreview.tsx`: compact and expanded graph
 - `app/lib/article-research.ts`: incremental article compiler fixture
-- `app/lib/mock-research.ts`: Musk research fixture and graph coordinates
+- `app/lib/mock-research.ts`: Musk research fixture, relations, and layout hints
 - `scripts/record-demo.mjs`: deterministic browser recording
-
-## Image notes
-
-The Elon Musk portrait is credited to The Royal Society and Debbie Rowe under
-CC BY-SA 4.0 through Wikimedia Commons. The rocket and early electric roadster
-images were generated specifically for this prototype with the built-in OpenAI
-image generation workflow. The social preview image was also generated for this
-project from the finished Explore and Article interfaces.

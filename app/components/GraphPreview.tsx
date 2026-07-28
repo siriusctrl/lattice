@@ -30,6 +30,113 @@ function edgeKey(edge: GraphEdge) {
   return `${edge.from}:${edge.to}:${edge.kind}`;
 }
 
+type LayoutPoint = {
+  x: number;
+  y: number;
+  depth: number;
+};
+
+function buildDynamicLayout(
+  visibleNodes: ResearchNode[],
+  visibleEdges: GraphEdge[],
+) {
+  const nodeById = new Map(visibleNodes.map((node) => [node.id, node]));
+  const incoming = new Map<string, string[]>();
+  const outgoing = new Map<string, string[]>();
+  const indegree = new Map<string, number>();
+  const depth = new Map<string, number>();
+
+  for (const node of visibleNodes) {
+    incoming.set(node.id, []);
+    outgoing.set(node.id, []);
+    indegree.set(node.id, 0);
+    depth.set(node.id, 0);
+  }
+
+  for (const edge of visibleEdges) {
+    if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) continue;
+    outgoing.get(edge.from)?.push(edge.to);
+    incoming.get(edge.to)?.push(edge.from);
+    indegree.set(edge.to, (indegree.get(edge.to) ?? 0) + 1);
+  }
+
+  const queue = visibleNodes
+    .filter((node) => (indegree.get(node.id) ?? 0) === 0)
+    .sort((a, b) => {
+      if (a.id === "musk") return -1;
+      if (b.id === "musk") return 1;
+      return a.position.y - b.position.y;
+    })
+    .map((node) => node.id);
+  const visited = new Set<string>();
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift();
+    if (!nodeId) break;
+    visited.add(nodeId);
+
+    for (const nextId of outgoing.get(nodeId) ?? []) {
+      depth.set(
+        nextId,
+        Math.max(depth.get(nextId) ?? 0, (depth.get(nodeId) ?? 0) + 1),
+      );
+      const nextIndegree = (indegree.get(nextId) ?? 1) - 1;
+      indegree.set(nextId, nextIndegree);
+      if (nextIndegree === 0) queue.push(nextId);
+    }
+  }
+
+  for (const node of visibleNodes) {
+    if (!visited.has(node.id)) {
+      depth.set(node.id, Math.max(1, Math.round(node.position.x / 18)));
+    }
+  }
+
+  const maxDepth = Math.max(0, ...depth.values());
+  const layers = new Map<number, ResearchNode[]>();
+  for (const node of visibleNodes) {
+    const nodeDepth = depth.get(node.id) ?? 0;
+    layers.set(nodeDepth, [...(layers.get(nodeDepth) ?? []), node]);
+  }
+
+  const positions = new Map<string, LayoutPoint>();
+  for (let layer = 0; layer <= maxDepth; layer += 1) {
+    const layerNodes = layers.get(layer) ?? [];
+    layerNodes.sort((a, b) => {
+      const predecessorY = (node: ResearchNode) => {
+        const positionedParents = (incoming.get(node.id) ?? [])
+          .map((id) => positions.get(id)?.y)
+          .filter((value): value is number => value !== undefined);
+        if (positionedParents.length === 0) return node.position.y;
+        return (
+          positionedParents.reduce((sum, value) => sum + value, 0) /
+          positionedParents.length
+        );
+      };
+      return predecessorY(a) - predecessorY(b);
+    });
+
+    const padding = layerNodes.length > 10 ? 5 : layerNodes.length > 6 ? 7 : 10;
+    const availableHeight = 100 - padding * 2;
+    layerNodes.forEach((node, index) => {
+      positions.set(node.id, {
+        x:
+          maxDepth === 0
+            ? 50
+            : 8 + (layer / Math.max(1, maxDepth)) * 84,
+        y:
+          layerNodes.length === 1
+            ? 50
+            : padding +
+              (index / Math.max(1, layerNodes.length - 1)) * availableHeight,
+        depth: layer,
+      });
+    });
+  }
+
+  return positions;
+}
+
 export function GraphPreview({
   nodes,
   discoveredIds,
@@ -85,6 +192,9 @@ export function GraphPreview({
     }
   }
 
+  const layout = buildDynamicLayout(visibleNodes, candidateEdges);
+  const crowdedLabels = visibleNodes.length > 7;
+
   return (
     <motion.aside
       layout
@@ -139,7 +249,9 @@ export function GraphPreview({
             {candidateEdges.map((edge) => {
               const from = nodes[edge.from];
               const to = nodes[edge.to];
-              if (!from || !to) return null;
+              const fromPoint = layout.get(edge.from);
+              const toPoint = layout.get(edge.to);
+              if (!from || !to || !fromPoint || !toPoint) return null;
               const actual = edgeMap.has(edgeKey(edge));
               const converging =
                 actual && (incomingCounts.get(edge.to) ?? 0) > 1;
@@ -148,10 +260,10 @@ export function GraphPreview({
                   key={`${edge.from}-${edge.to}-${actual ? "actual" : "hint"}`}
                   data-edge-from={edge.from}
                   data-edge-to={edge.to}
-                  x1={from.position.x}
-                  y1={from.position.y}
-                  x2={to.position.x}
-                  y2={to.position.y}
+                  x1={fromPoint.x}
+                  y1={fromPoint.y}
+                  x2={toPoint.x}
+                  y2={toPoint.y}
                   className={[
                     "graph-edge",
                     actual ? "graph-edge-discovered" : "graph-edge-potential",
@@ -172,10 +284,14 @@ export function GraphPreview({
             {visibleNodes.map((node) => {
               const isDiscovered = discoveredIds.has(node.id);
               const isActive = node.id === activeId;
+              const point = layout.get(node.id);
+              if (!point) return null;
+              const labelOnLeft = point.x > 76;
               return (
                 <g
                   key={node.id}
                   data-node-id={node.id}
+                  data-layout-depth={point.depth}
                   className={[
                     "graph-node",
                     isDiscovered
@@ -185,7 +301,7 @@ export function GraphPreview({
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  transform={`translate(${node.position.x} ${node.position.y})`}
+                  transform={`translate(${point.x} ${point.y})`}
                   role={isDiscovered ? "button" : undefined}
                   tabIndex={isDiscovered ? 0 : undefined}
                   aria-label={
@@ -217,9 +333,14 @@ export function GraphPreview({
                   />
                   {expanded && isDiscovered ? (
                     <text
-                      x={node.position.x > 76 ? -5 : 5}
+                      className={
+                        crowdedLabels && !isActive
+                          ? "graph-node-label-crowded"
+                          : undefined
+                      }
+                      x={labelOnLeft ? -5 : 5}
                       y={-4}
-                      textAnchor={node.position.x > 76 ? "end" : "start"}
+                      textAnchor={labelOnLeft ? "end" : "start"}
                     >
                       {node.shortTitle}
                     </text>

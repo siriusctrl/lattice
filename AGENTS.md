@@ -26,6 +26,8 @@ and context semantics behind the scenes.
 - Follow-up questions stay inside the active node.
 - User text selection creates a new sourced node.
 - The graph is visible but secondary to reading.
+- The graph reflows from the currently visible DAG. Fixture coordinates are
+  ordering hints only and must not become fixed screen positions.
 - Explore preserves the original conversation and spatial card history.
 - Article is one flat document, never a visual copy of the research DAG.
 - Article sections can cite multiple Cards, and each citation can reopen its Card.
@@ -56,7 +58,8 @@ and context semantics behind the scenes.
   truth or mutate the graph.
 - Article compilation rules and node-to-section mapping belong in
   `article-research.ts`.
-- Mock biography content and coordinates belong in `mock-research.ts`.
+- Mock biography content, relations, and layout hints belong in
+  `mock-research.ts`.
 - Durable model integration should enter through a typed adapter, not component
   fetch calls distributed across the tree.
 - Keep credentials and harness process control out of browser code.

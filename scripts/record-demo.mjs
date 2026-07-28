@@ -73,9 +73,15 @@ await page.screenshot({
   path: new URL("frame-02-spacex.png", proofRoot).pathname,
 });
 
-await page.locator('[data-anchor-target="crisis"]').hover();
+await page
+  .getByTestId("research-card-spacex")
+  .locator('[data-anchor-target="crisis"]')
+  .hover();
 await page.waitForTimeout(350);
-await page.locator('[data-anchor-target="crisis"]').click();
+await page
+  .getByTestId("research-card-spacex")
+  .locator('[data-anchor-target="crisis"]')
+  .click();
 await page.getByTestId("research-card-crisis").waitFor();
 await page.waitForTimeout(800);
 await page.screenshot({
@@ -99,17 +105,52 @@ await page.waitForTimeout(650);
 await page.getByRole("button", { name: "关闭当前分支" }).click();
 await page.waitForTimeout(500);
 
-await page.locator('[data-anchor-target="tesla"]').hover();
+await page
+  .getByTestId("research-card-musk")
+  .locator('[data-anchor-target="tesla"]')
+  .hover();
 await page.waitForTimeout(300);
-await page.locator('[data-anchor-target="tesla"]').click();
+await page
+  .getByTestId("research-card-musk")
+  .locator('[data-anchor-target="tesla"]')
+  .click();
 await page.getByTestId("research-card-tesla").waitFor();
 await page.waitForTimeout(700);
-await page.locator('[data-anchor-target="crisis"]').click();
+await page
+  .getByTestId("research-card-tesla")
+  .locator('[data-anchor-target="crisis"]')
+  .click();
 await page.getByTestId("research-card-crisis").waitFor();
 await page.waitForTimeout(800);
 await page.screenshot({
   path: new URL("frame-05-converged-dag.png", proofRoot).pathname,
 });
+
+const focusRoot = async () => {
+  await page.getByRole("button", { name: "Elon Musk" }).first().click();
+  await page
+    .locator('[data-testid="research-card-musk"][data-active="true"]')
+    .waitFor();
+};
+const openPreparedNode = async (sourceId, targetId, nodeId) => {
+  await page
+    .getByTestId(`research-card-${sourceId}`)
+    .locator(`[data-anchor-target="${targetId}"]`)
+    .first()
+    .click();
+  await page
+    .locator(`[data-testid="research-card-${nodeId}"][data-active="true"]`)
+    .waitFor();
+  await page.waitForTimeout(420);
+};
+
+await focusRoot();
+await openPreparedNode("musk", "education", "education");
+await focusRoot();
+await openPreparedNode("musk", "zip2", "zip2");
+await openPreparedNode("zip2", "paypal", "paypal");
+await openPreparedNode("paypal", "x", "x");
+await openPreparedNode("x", "xai", "xai");
 
 await page
   .getByTestId("graph-preview")
@@ -134,6 +175,11 @@ await page.screenshot({
   path: new URL("frame-07-article-converged.png", proofRoot).pathname,
 });
 
+await page
+  .locator(".article-outline")
+  .getByRole("button", { name: "把退出所得投入工业系统" })
+  .click();
+await page.waitForTimeout(400);
 await page
   .getByTestId("article-sources")
   .locator('[data-source-node="tesla"]')

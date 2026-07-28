@@ -32,8 +32,10 @@ remain intentionally outside the mock.
 - theme and graph window state
 
 The static fixture defines every prepared biography node, its anchor targets,
-and its graph coordinates. The interface only reveals nodes that the user has
-discovered, plus faint potential children of the active node.
+and fallback ordering hints. The interface only reveals nodes that the user has
+discovered, plus faint potential children of the active node. `GraphPreview`
+recomputes a layered layout from the visible DAG whenever nodes or edges change,
+so fixture coordinates never become fixed screen positions.
 
 When the user reaches the 2008 crisis from both SpaceX and Tesla, Lattice adds a
 second incoming edge to the existing crisis node. The content is reused, so the
@@ -47,7 +49,6 @@ A card is a focused research unit, not a single message. It can contain:
 - a prepared or streamed answer
 - multiple semantic anchors
 - local follow-up turns
-- source media
 
 The entire Card should remain normal chat. It does not render answer titles,
 metadata headers, labeled digests, temporary conclusions, reading-guide

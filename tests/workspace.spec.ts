@@ -18,6 +18,7 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
   await expect(page.getByText("读法", { exact: true })).toHaveCount(0);
   await expect(page.getByText("暂时结论", { exact: true })).toHaveCount(0);
   const rootCard = page.getByTestId("research-card-musk");
+  await expect(rootCard.locator("img")).toHaveCount(0);
   await expect(rootCard.locator(".card-header")).toHaveCount(0);
   await expect(rootCard.locator(".card-title-group")).toHaveCount(0);
   await expect(rootCard.getByText("查看成稿", { exact: true })).toHaveCount(0);
@@ -29,6 +30,11 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
   await expect(
     page.getByRole("button", { name: "关闭当前分支" }),
   ).toHaveCount(0);
+  const underlineOffset = await rootCard
+    .locator('[data-anchor-target="origin"] > span')
+    .first()
+    .evaluate((label) => getComputedStyle(label).textUnderlineOffset);
+  expect(underlineOffset).toBe("1px");
   await page.locator('[data-anchor-target="spacex"]').click();
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
     "data-active",
@@ -106,19 +112,118 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
   );
 });
 
+test("reflows a crowded graph as new branches are discovered", async ({
+  page,
+}) => {
+  const openFromCard = async (
+    sourceId: string,
+    targetId: string,
+    nodeId: string,
+  ) => {
+    await page
+      .getByTestId(`research-card-${sourceId}`)
+      .locator(`[data-anchor-target="${targetId}"]`)
+      .first()
+      .click();
+    await expect(page.getByTestId(`research-card-${nodeId}`)).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  };
+  const returnToRoot = async () => {
+    await page.getByRole("button", { name: "Elon Musk" }).first().click();
+    await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+      "data-active",
+      "true",
+    );
+  };
+
+  await openFromCard("musk", "origin", "origin");
+  const originBefore = await page
+    .getByTestId("graph-preview")
+    .locator('[data-node-id="origin"]')
+    .getAttribute("transform");
+
+  await returnToRoot();
+  await openFromCard("musk", "education", "education");
+  await returnToRoot();
+  await openFromCard("musk", "zip2", "zip2");
+  await openFromCard("zip2", "paypal", "paypal");
+  await openFromCard("paypal", "x", "x");
+  await openFromCard("x", "xai", "xai");
+  await returnToRoot();
+  await openFromCard("musk", "spacex", "spacex");
+  await returnToRoot();
+  await openFromCard("musk", "tesla", "tesla");
+
+  await expect(page.getByTestId("graph-preview")).toContainText("9 个节点");
+  await page.getByRole("button", { name: "展开研究图" }).click();
+
+  const graph = page.getByTestId("graph-preview");
+  const originAfter = await graph
+    .locator('[data-node-id="origin"]')
+    .getAttribute("transform");
+  expect(originAfter).not.toBe(originBefore);
+
+  const layoutMetrics = await graph
+    .locator(".graph-node-discovered")
+    .evaluateAll((groups) => {
+      const centers = groups.map((group) => {
+        const matrix = (group as SVGGElement).getScreenCTM();
+        if (!matrix) throw new Error("Missing graph node transform");
+        const center = new DOMPoint(0, 0).matrixTransform(matrix);
+        return { x: center.x, y: center.y };
+      });
+      let minimumDistance = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < centers.length; index += 1) {
+        for (let other = index + 1; other < centers.length; other += 1) {
+          minimumDistance = Math.min(
+            minimumDistance,
+            Math.hypot(
+              centers[index].x - centers[other].x,
+              centers[index].y - centers[other].y,
+            ),
+          );
+        }
+      }
+      return { minimumDistance, nodeCount: centers.length };
+    });
+
+  expect(layoutMetrics.nodeCount).toBe(9);
+  expect(layoutMetrics.minimumDistance).toBeGreaterThan(24);
+  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(8);
+});
+
 test("builds a converging DAG when two branches reach the 2008 crisis", async ({
   page,
 }) => {
   await page.locator('[data-anchor-target="spacex"]').click();
-  await page.locator('[data-anchor-target="crisis"]').click();
+  await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page
+    .getByTestId("research-card-spacex")
+    .locator('[data-anchor-target="crisis"]')
+    .click();
   await expect(page.getByTestId("research-card-crisis")).toHaveAttribute(
     "data-active",
     "true",
   );
 
   await page.getByRole("button", { name: "Elon Musk" }).first().click();
-  await page.locator('[data-anchor-target="tesla"]').click();
-  await page.locator('[data-anchor-target="crisis"]').click();
+  await page
+    .getByTestId("research-card-musk")
+    .locator('[data-anchor-target="tesla"]')
+    .click();
+  await expect(page.getByTestId("research-card-tesla")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page
+    .getByTestId("research-card-tesla")
+    .locator('[data-anchor-target="crisis"]')
+    .click();
 
   await expect(page.getByTestId("research-card-crisis")).toHaveAttribute(
     "data-active",
@@ -137,7 +242,18 @@ test("compiles a flat article and traces sections back to source cards", async (
   page,
 }) => {
   await page.locator('[data-anchor-target="spacex"]').click();
-  await page.locator('[data-anchor-target="crisis"]').click();
+  await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page
+    .getByTestId("research-card-spacex")
+    .locator('[data-anchor-target="crisis"]')
+    .click();
+  await expect(page.getByTestId("research-card-crisis")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
   await page.getByRole("button", { name: "Article", exact: true }).click();
 
   await expect(page.getByTestId("article-view")).toBeVisible();
@@ -158,8 +274,22 @@ test("compiles a flat article and traces sections back to source cards", async (
   );
 
   await page.getByRole("button", { name: "Elon Musk" }).first().click();
-  await page.locator('[data-anchor-target="tesla"]').click();
-  await page.locator('[data-anchor-target="crisis"]').click();
+  await page
+    .getByTestId("research-card-musk")
+    .locator('[data-anchor-target="tesla"]')
+    .click();
+  await expect(page.getByTestId("research-card-tesla")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await page
+    .getByTestId("research-card-tesla")
+    .locator('[data-anchor-target="crisis"]')
+    .click();
+  await expect(page.getByTestId("research-card-crisis")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
   await page.getByRole("button", { name: "Article", exact: true }).click();
 
   await expect(page.getByTestId("article-section-crisis")).toContainText(
