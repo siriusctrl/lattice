@@ -23,6 +23,7 @@ remain intentionally outside the mock.
 `ResearchWorkspace` owns:
 
 - the active card stack
+- the active index and Deck Spread gesture state
 - visible node ids, initialized with the complete prepared artifact
 - the complete prepared graph plus user-created edges
 - local follow-up turns
@@ -62,9 +63,22 @@ metadata headers, labeled digests, temporary conclusions, reading-guide
 callouts, or Article shortcuts. Those editorial structures belong in the
 Article compiler, not in the source Card.
 
-The active card owns pointer input. Earlier cards remain visible as inert layers
-to preserve spatial memory. Closing the active card pops only the focus stack;
-the complete graph remains unchanged.
+The current ordered root-to-leaf lineage is a Deck, with an independent active
+index. In its default stacked state, the active card owns content input while
+earlier and later cards remain inert layers. Closing a card moves focus backward
+without deleting the rest of the Deck or the graph.
+
+Deck Spread turns that same lineage into a temporary navigation surface. On
+desktop, cards fan across the available horizontal space with adaptive overlap.
+On compact screens, they form a centered coverflow that moves with horizontal
+swipes. Hover, keyboard focus, or touch selection exposes the persisted
+fork-time title outside the chat content. Choosing a card collapses the Deck
+around that historical focus.
+
+If the user only reads, every later card remains available. If they open an
+anchor or create a selection fork from the historical card, the current Deck
+keeps its shared prefix and grows a new suffix. Nodes from the previous suffix
+remain in the complete DAG.
 
 ## Article model
 

@@ -411,7 +411,13 @@ input:focus-visible,
   width: min(760px, calc(100vw - 420px));
   height: min(772px, calc(100dvh - 100px));
   min-height: 590px;
+  isolation: isolate;
+  touch-action: pan-y;
   transform: translate(-50%, -50%);
+}
+
+.deck-wrap-spread {
+  cursor: default;
 }
 
 .deck-shadow {
@@ -422,12 +428,111 @@ input:focus-visible,
   background: var(--surface-deep);
   opacity: 0.34;
   transform: rotate(0.8deg);
+  transition: opacity 180ms ease;
 }
 
 .deck-shadow-two {
   inset: 20px -17px -20px 17px;
   opacity: 0.2;
   transform: rotate(1.25deg);
+}
+
+.deck-wrap-spread .deck-shadow {
+  opacity: 0;
+}
+
+.deck-spread-caption {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 150;
+  display: flex;
+  max-width: min(360px, calc(100vw - 104px));
+  height: 34px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  box-shadow:
+    0 12px 28px color-mix(in srgb, var(--ink) 11%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--ink);
+  pointer-events: none;
+  translate: -50% 0;
+  backdrop-filter: blur(16px) saturate(112%);
+  -webkit-backdrop-filter: blur(16px) saturate(112%);
+}
+
+.deck-spread-caption span {
+  flex: none;
+  color: var(--accent-strong);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.deck-spread-caption strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-spread-handle {
+  position: absolute;
+  top: 50%;
+  left: -44px;
+  z-index: 160;
+  display: grid;
+  width: 32px;
+  min-height: 56px;
+  padding: 8px 0 7px;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  box-shadow:
+    0 13px 28px color-mix(in srgb, var(--ink) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 78%, transparent);
+  color: var(--muted);
+  cursor: ew-resize;
+  touch-action: none;
+  translate: 0 -50%;
+  user-select: none;
+  -webkit-user-select: none;
+  backdrop-filter: blur(15px) saturate(110%);
+  -webkit-backdrop-filter: blur(15px) saturate(110%);
+}
+
+.deck-spread-handle span {
+  color: var(--ink-soft);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.deck-spread-handle:hover,
+.deck-spread-handle[data-open="true"] {
+  border-color: color-mix(
+    in srgb,
+    var(--accent-strong) 44%,
+    var(--line-strong)
+  );
+  background: color-mix(in srgb, var(--surface-raised) 90%, var(--accent) 10%);
+  color: var(--accent-strong);
+}
+
+.deck-spread-handle:active {
+  cursor: grabbing;
 }
 
 .research-card {
@@ -441,6 +546,11 @@ input:focus-visible,
   background: var(--surface);
   box-shadow: var(--card-shadow);
   transform-origin: 50% 100%;
+  will-change: transform, opacity;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
 
 .research-card::after {
@@ -459,11 +569,57 @@ input:focus-visible,
   filter: saturate(0.72);
 }
 
+.research-card-deck-mode {
+  cursor: pointer;
+  transform-origin: 50% 66%;
+}
+
+.research-card-deck-mode .card-scroll,
+.research-card-deck-mode .card-composer {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.research-card-deck-previewed {
+  border-color: color-mix(
+    in srgb,
+    var(--accent-strong) 48%,
+    var(--line-strong)
+  );
+  box-shadow:
+    0 40px 90px color-mix(in srgb, var(--ink) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+  filter: saturate(1);
+}
+
+.deck-card-picker {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--surface) 7%, transparent);
+  color: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.deck-card-picker > span,
+.deck-card-picker > strong {
+  display: none;
+}
+
+.deck-card-picker:focus-visible {
+  outline-offset: -5px;
+}
+
 .branch-close-button {
   position: absolute;
   top: 14px;
   right: 16px;
-  z-index: 48;
+  z-index: 145;
   display: grid;
   width: 28px;
   height: 28px;
@@ -850,6 +1006,18 @@ input:focus-visible,
   backdrop-filter: blur(22px) saturate(120%);
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   transform-origin: 100% 0;
+  transition:
+    opacity 220ms ease,
+    filter 220ms ease,
+    scale 220ms ease;
+}
+
+.workspace-deck-open
+  .graph-preview:not(.graph-preview-expanded) {
+  opacity: 0.18 !important;
+  filter: saturate(0.35);
+  pointer-events: none;
+  scale: 0.97;
 }
 
 .graph-preview-expanded {
@@ -1795,6 +1963,15 @@ input:focus-visible,
     width: calc(100vw - 22px);
     height: calc(100dvh - 82px);
     min-height: 0;
+  }
+
+  .deck-spread-caption {
+    max-width: calc(100vw - 92px);
+  }
+
+  .deck-spread-handle {
+    top: 53%;
+    left: 8px;
   }
 
   .research-card {

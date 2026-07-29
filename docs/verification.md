@@ -23,6 +23,8 @@ ready for GitHub Pages.
 
 - immediate prepared-card navigation without a hover preview or generation state
 - direct active-card closing without graph deletion
+- adaptive desktop Deck Spread with historical Card selection
+- compact coverflow swiping and focus selection at phone widths
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
@@ -57,14 +59,15 @@ This produces:
 The recording follows one deterministic path:
 
 1. open the Musk root card
-2. fork to SpaceX
-3. fork to the 2008 crisis
-4. inspect the completed flat article
-5. return through a source Card and reach the same crisis through Tesla
-6. expand the full graph, inspect a node label, and switch to dark mode
-7. inspect the two-path article synthesis
-8. return to Tesla and visibly complete a local follow-up
-9. select source text, create a custom fork, and inspect its place in the article
+2. build a five-Card early-life Deck and drag it into Deck Spread
+3. return to a historical Card without deleting its later history
+4. fork to SpaceX and then the 2008 crisis
+5. inspect the completed flat article
+6. return through a source Card and reach the same crisis through Tesla
+7. expand the full graph, inspect a node label, and switch to dark mode
+8. inspect the two-path article synthesis
+9. return to Tesla and visibly complete a local follow-up
+10. select source text, create a custom fork, and inspect its place in the article
 
 Inspect both themes, graph legibility, card depth, focus movement, composer
 feedback, the final multi-parent crisis node, Article readability, and source

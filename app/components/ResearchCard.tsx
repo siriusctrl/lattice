@@ -11,7 +11,6 @@ import {
   FormEvent,
   MouseEvent,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -38,11 +37,25 @@ export type TextSelection = {
 type ResearchCardProps = {
   node: ResearchNode;
   active: boolean;
-  layerIndex: number;
+  deckIndex: number;
+  deckSize: number;
+  deckMode: boolean;
+  deckPreviewed: boolean;
+  motionState: {
+    x: number;
+    y: number;
+    scale: number;
+    rotate: number;
+    opacity: number;
+    zIndex: number;
+  };
+  draggingDeck: boolean;
   followups: FollowupTurn[];
   thinking: boolean;
   onAnchor: (targetId: string) => void;
   onAsk: (nodeId: string, question: string) => void;
+  onDeckPreview: (index: number) => void;
+  onDeckSelect: (index: number) => void;
   onTextSelection: (selection: TextSelection | null) => void;
   reduceMotion: boolean;
 };
@@ -78,28 +91,24 @@ function InlineContent({
 export function ResearchCard({
   node,
   active,
-  layerIndex,
+  deckIndex,
+  deckSize,
+  deckMode,
+  deckPreviewed,
+  motionState,
+  draggingDeck,
   followups,
   thinking,
   onAnchor,
   onAsk,
+  onDeckPreview,
+  onDeckSelect,
   onTextSelection,
   reduceMotion,
 }: ResearchCardProps) {
   const [question, setQuestion] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousTurnCount = useRef(followups.length);
-
-  const cardTransform = useMemo(() => {
-    const distance = Math.min(layerIndex, 5);
-    return {
-      x: -distance * 16,
-      y: distance * 9,
-      scale: 1 - distance * 0.014,
-      rotate: distance * -0.46,
-      opacity: distance > 4 ? 0 : 1,
-    };
-  }, [layerIndex]);
 
   useEffect(() => {
     const receivedAnswer = followups.length > previousTurnCount.current;
@@ -148,9 +157,12 @@ export function ResearchCard({
 
   return (
     <motion.article
-      className={`research-card ${active ? "research-card-active" : ""}`}
+      className={`research-card ${active ? "research-card-active" : ""} ${
+        deckMode ? "research-card-deck-mode" : ""
+      } ${deckPreviewed ? "research-card-deck-previewed" : ""}`}
       data-testid={`research-card-${node.id}`}
       data-active={active ? "true" : "false"}
+      data-deck-index={deckIndex}
       initial={
         reduceMotion
           ? false
@@ -162,24 +174,51 @@ export function ResearchCard({
               rotate: 1.2,
             }
       }
-      animate={cardTransform}
+      animate={{
+        x: motionState.x,
+        y: motionState.y,
+        scale: motionState.scale,
+        rotate: motionState.rotate,
+        opacity: motionState.opacity,
+      }}
       exit={
         reduceMotion
           ? { opacity: 0 }
           : { opacity: 0, x: 92, y: 38, scale: 0.96, rotate: 1.5 }
       }
-      transition={{
-        type: "spring",
-        stiffness: 275,
-        damping: 29,
-        mass: 0.86,
-      }}
+      transition={
+        draggingDeck || reduceMotion
+          ? { duration: 0 }
+          : {
+              type: "spring",
+              stiffness: 275,
+              damping: 29,
+              mass: 0.86,
+            }
+      }
       style={{
-        zIndex: 20 - layerIndex,
-        pointerEvents: active ? "auto" : "none",
+        zIndex: motionState.zIndex,
+        pointerEvents: active || deckMode ? "auto" : "none",
       }}
-      aria-hidden={!active}
+      aria-hidden={!active && !deckMode}
     >
+      {deckMode ? (
+        <button
+          type="button"
+          className="deck-card-picker"
+          aria-label={`打开 Card ${deckIndex + 1}：${node.shortTitle}`}
+          onClick={() => onDeckSelect(deckIndex)}
+          onFocus={() => onDeckPreview(deckIndex)}
+          onPointerEnter={() => onDeckPreview(deckIndex)}
+        >
+          <span>
+            {String(deckIndex + 1).padStart(2, "0")} /{" "}
+            {String(deckSize).padStart(2, "0")}
+          </span>
+          <strong>{node.shortTitle}</strong>
+        </button>
+      ) : null}
+
       <div
         ref={scrollRef}
         className="card-scroll"

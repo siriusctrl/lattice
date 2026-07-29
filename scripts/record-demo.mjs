@@ -64,11 +64,58 @@ await page
 await page.waitForTimeout(1_100);
 await page.screenshot({ path: new URL("frame-01-root.png", proofRoot).pathname });
 
+await page.locator('[data-anchor-target="origin"]').click();
+await page
+  .getByTestId("research-card-origin")
+  .locator('[data-anchor-target="migration"]')
+  .click();
+await page
+  .getByTestId("research-card-migration")
+  .locator('[data-anchor-target="education"]')
+  .click();
+await page
+  .getByTestId("research-card-education")
+  .locator('[data-anchor-target="zip2"]')
+  .click();
+await page.waitForTimeout(700);
+
+const deckHandle = page.getByRole("button", { name: "摊开 5 张 Card" });
+const deckHandleBounds = await deckHandle.boundingBox();
+if (!deckHandleBounds) throw new Error("Deck handle is unavailable");
+await page.mouse.move(
+  deckHandleBounds.x + deckHandleBounds.width / 2,
+  deckHandleBounds.y + deckHandleBounds.height / 2,
+);
+await page.mouse.down();
+await page.mouse.move(
+  deckHandleBounds.x + deckHandleBounds.width / 2 + 300,
+  deckHandleBounds.y + deckHandleBounds.height / 2,
+  { steps: 18 },
+);
+await page.mouse.up();
+await page
+  .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
+  .hover({ position: { x: 12, y: 220 } });
+await page.waitForTimeout(900);
+await page.screenshot({
+  path: new URL("frame-02-deck-spread.png", proofRoot).pathname,
+});
+
+await page
+  .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
+  .click({ position: { x: 12, y: 220 } });
+await page.waitForTimeout(700);
+await page.screenshot({
+  path: new URL("frame-03-history-focus.png", proofRoot).pathname,
+});
+await page.getByRole("button", { name: "Elon Musk" }).first().click();
+await page.waitForTimeout(450);
+
 await page.locator('[data-anchor-target="spacex"]').click();
 await page.getByTestId("research-card-spacex").waitFor();
 await page.waitForTimeout(850);
 await page.screenshot({
-  path: new URL("frame-02-spacex.png", proofRoot).pathname,
+  path: new URL("frame-04-spacex.png", proofRoot).pathname,
 });
 
 await page
@@ -78,7 +125,7 @@ await page
 await page.getByTestId("research-card-crisis").waitFor();
 await page.waitForTimeout(800);
 await page.screenshot({
-  path: new URL("frame-03-crisis.png", proofRoot).pathname,
+  path: new URL("frame-05-crisis.png", proofRoot).pathname,
 });
 
 await page.getByRole("button", { name: "Article", exact: true }).click();
@@ -86,7 +133,7 @@ await page.getByTestId("article-section-crisis").waitFor();
 await page.mouse.move(1400, 30);
 await page.waitForTimeout(950);
 await page.screenshot({
-  path: new URL("frame-04-article-draft.png", proofRoot).pathname,
+  path: new URL("frame-06-article-draft.png", proofRoot).pathname,
 });
 
 await page
@@ -111,7 +158,7 @@ await page
 await page.getByTestId("research-card-crisis").waitFor();
 await page.waitForTimeout(800);
 await page.screenshot({
-  path: new URL("frame-05-converged-dag.png", proofRoot).pathname,
+  path: new URL("frame-07-converged-dag.png", proofRoot).pathname,
 });
 
 await page
@@ -126,7 +173,7 @@ await page
   .hover();
 await page.waitForTimeout(950);
 await page.screenshot({
-  path: new URL("frame-06-dark-graph.png", proofRoot).pathname,
+  path: new URL("frame-08-dark-graph.png", proofRoot).pathname,
 });
 
 await page
@@ -138,7 +185,7 @@ await page.getByTestId("article-section-crisis").waitFor();
 await page.mouse.move(1400, 30);
 await page.waitForTimeout(1_050);
 await page.screenshot({
-  path: new URL("frame-07-article-converged.png", proofRoot).pathname,
+  path: new URL("frame-09-article-converged.png", proofRoot).pathname,
 });
 
 await page
@@ -161,7 +208,7 @@ await page.getByTestId("followup-thread-tesla").waitFor();
 await page.getByTestId("followup-thread-tesla").scrollIntoViewIfNeeded();
 await page.waitForTimeout(1_500);
 await page.screenshot({
-  path: new URL("frame-08-followup.png", proofRoot).pathname,
+  path: new URL("frame-10-followup.png", proofRoot).pathname,
 });
 await page.waitForTimeout(1_000);
 
@@ -178,7 +225,7 @@ await activeCard.locator(".research-copy > p").nth(2).evaluate((paragraph) => {
 });
 await page.waitForTimeout(650);
 await page.screenshot({
-  path: new URL("frame-09-selection.png", proofRoot).pathname,
+  path: new URL("frame-11-selection.png", proofRoot).pathname,
 });
 await page.getByRole("button", { name: "从选区分叉" }).click();
 await page.waitForTimeout(800);
@@ -188,7 +235,7 @@ await page.getByTestId("article-section-research-notes").waitFor();
 await page.mouse.move(1400, 30);
 await page.waitForTimeout(1_200);
 await page.screenshot({
-  path: new URL("frame-10-final-article.png", proofRoot).pathname,
+  path: new URL("frame-12-final-article.png", proofRoot).pathname,
 });
 
 await page.close();

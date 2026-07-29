@@ -17,6 +17,9 @@ risk. Independent branches can converge on shared events or interpretations.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
 - Close the active branch directly from the Card corner.
+- Drag or click the exposed Deck handle to fan the current path across the
+  workspace, then select any earlier Card without deleting later history.
+- Swipe through the same Deck as a compact coverflow on phone widths.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
@@ -101,7 +104,7 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - [docs/INDEX.md](docs/INDEX.md): documentation entry point
 - [docs/source-map.md](docs/source-map.md): file ownership and reading path
 - `app/components/ResearchWorkspace.tsx`: interaction state and navigation
-- `app/components/ResearchCard.tsx`: plain chat content, anchors, selection, follow-ups
+- `app/components/ResearchCard.tsx`: plain chat content, Deck hit area, anchors, selection, follow-ups
 - `app/components/ArticleView.tsx`: flat article and source-card traceability
 - `app/components/GraphPreview.tsx`: compact and expanded graph
 - `app/lib/article-research.ts`: incremental article compiler fixture

@@ -4,6 +4,7 @@ import {
   Article as ArticleIcon,
   ChatsCircle,
   CursorClick,
+  DotsSixVertical,
   Graph,
   Moon,
   Stack,
@@ -11,7 +12,15 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  CSSProperties,
+  PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ArticleView } from "@/app/components/ArticleView";
 import { GraphPreview } from "@/app/components/GraphPreview";
 import {
@@ -34,6 +43,19 @@ type WorkspaceView = "explore" | "article";
 type SelectionState = TextSelection & {
   nodeId: string;
 };
+
+type DeckDragState = {
+  pointerId: number;
+  startX: number;
+  startProgress: number;
+  moved: boolean;
+};
+
+const clamp = (value: number, minimum = 0, maximum = 1) =>
+  Math.min(maximum, Math.max(minimum, value));
+
+const mix = (from: number, to: number, progress: number) =>
+  from + (to - from) * progress;
 
 const FOLLOWUP_ANSWERS: Record<string, string> = {
   musk: "从整张人生图看，最稳定的线索不是某一家公司的成功，而是资本再投入、控制权与技术时间尺度三者不断重新组合。",
@@ -119,6 +141,12 @@ export function ResearchWorkspace() {
   const [articleFocusSectionId, setArticleFocusSectionId] =
     useState("overview");
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
+  const [activeDeckIndex, setActiveDeckIndex] = useState(0);
+  const [deckProgress, setDeckProgress] = useState(0);
+  const [deckDragging, setDeckDragging] = useState(false);
+  const [deckDragOriginOpen, setDeckDragOriginOpen] = useState(false);
+  const [deckPreviewIndex, setDeckPreviewIndex] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(1440);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
     () => new Set(Object.keys(MOCK_RESEARCH_NODES)),
   );
@@ -136,13 +164,49 @@ export function ResearchWorkspace() {
   const followupCounter = useRef(0);
   const customNodeCounter = useRef(0);
   const askTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deckDrag = useRef<DeckDragState | null>(null);
+  const deckSwipe = useRef<{ pointerId: number; startX: number } | null>(
+    null,
+  );
+  const suppressDeckClick = useRef(false);
 
   const nodes = useMemo(
     () => ({ ...MOCK_RESEARCH_NODES, ...customNodes }),
     [customNodes],
   );
-  const activeId = stack[stack.length - 1] ?? ROOT_NODE_ID;
+  const activeIndex = Math.min(activeDeckIndex, stack.length - 1);
+  const activeId = stack[activeIndex] ?? ROOT_NODE_ID;
   const activeNode = nodes[activeId] ?? nodes[ROOT_NODE_ID];
+  const deckMode = stack.length > 1 && deckProgress > 0.035;
+  const deckOpen = deckProgress > 0.5;
+  const compactDeck = viewportWidth <= 720;
+  const previewIndex = Math.min(deckPreviewIndex, stack.length - 1);
+  const previewNode = nodes[stack[previewIndex]] ?? activeNode;
+  const estimatedDeckWidth =
+    viewportWidth > 1120
+      ? Math.min(760, viewportWidth - 420)
+      : viewportWidth > 900
+        ? Math.min(730, viewportWidth - 330)
+        : Math.min(700, viewportWidth - 42);
+  const desktopSpreadRoom = Math.max(
+    120,
+    Math.min(760, viewportWidth - estimatedDeckWidth - 80),
+  );
+  const desktopDeckGap =
+    stack.length <= 1
+      ? 0
+      : Math.min(
+          156,
+          Math.max(54, desktopSpreadRoom / (stack.length - 1)),
+        );
+  const desktopDeckSpan = desktopDeckGap * Math.max(0, stack.length - 1);
+  const dockHandleToSpreadEdge = deckDragging
+    ? deckDragOriginOpen
+    : deckOpen;
+  const deckHandleOffset =
+    !compactDeck && dockHandleToSpreadEdge
+      ? -desktopDeckSpan / 2 + 58
+      : 0;
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("lattice-theme");
@@ -168,6 +232,24 @@ export function ResearchWorkspace() {
   }, []);
 
   useEffect(() => {
+    const updateViewport = () => setViewportWidth(window.innerWidth);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!deckMode) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setDeckProgress(0);
+      setDeckPreviewIndex(activeIndex);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [activeIndex, deckMode]);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("lattice-theme", theme);
   }, [theme]);
@@ -190,19 +272,28 @@ export function ResearchWorkspace() {
     (targetId: string) => {
       if (!nodes[targetId] || targetId === activeId) return;
       setSelection(null);
-      const existingIndex = stack.lastIndexOf(targetId);
-      setStack(
+      const activePath = stack.slice(0, activeIndex + 1);
+      const existingIndex = activePath.lastIndexOf(targetId);
+      const nextStack =
         existingIndex >= 0
-          ? stack.slice(0, existingIndex + 1)
-          : [...stack, targetId],
-      );
+          ? stack
+          : [...activePath, targetId];
+      const nextIndex =
+        existingIndex >= 0 ? existingIndex : nextStack.length - 1;
+      setStack(nextStack);
+      setActiveDeckIndex(nextIndex);
+      setDeckPreviewIndex(nextIndex);
+      setDeckProgress(0);
     },
-    [activeId, nodes, stack],
+    [activeId, activeIndex, nodes, stack],
   );
 
   function closeActiveBranch() {
-    if (stack.length <= 1) return;
-    setStack(stack.slice(0, -1));
+    if (activeIndex <= 0) return;
+    const nextIndex = activeIndex - 1;
+    setActiveDeckIndex(nextIndex);
+    setDeckPreviewIndex(nextIndex);
+    setDeckProgress(0);
     setSelection(null);
   }
 
@@ -210,19 +301,27 @@ export function ResearchWorkspace() {
     if (!discoveredIds.has(nodeId) || nodeId === activeId) return;
     const existingIndex = stack.lastIndexOf(nodeId);
     if (existingIndex >= 0) {
-      setStack(stack.slice(0, existingIndex + 1));
+      setActiveDeckIndex(existingIndex);
+      setDeckPreviewIndex(existingIndex);
+      setDeckProgress(0);
       return;
     }
 
     const path = getPathToNode(nodeId, edges);
-    setStack(path ?? [ROOT_NODE_ID, nodeId]);
+    const nextStack = path ?? [ROOT_NODE_ID, nodeId];
+    setStack(nextStack);
+    setActiveDeckIndex(nextStack.length - 1);
+    setDeckPreviewIndex(nextStack.length - 1);
+    setDeckProgress(0);
     setSelection(null);
     if (window.innerWidth < 760) setGraphExpanded(false);
   }
 
   function focusBreadcrumb(index: number) {
-    if (index >= stack.length - 1) return;
-    setStack(stack.slice(0, index + 1));
+    if (index === activeIndex) return;
+    setActiveDeckIndex(index);
+    setDeckPreviewIndex(index);
+    setDeckProgress(0);
     setSelection(null);
   }
 
@@ -344,9 +443,167 @@ export function ResearchWorkspace() {
         kind: "fork",
       }),
     );
-    setStack([...stack, nodeId]);
+    const nextStack = [...stack.slice(0, activeIndex + 1), nodeId];
+    setStack(nextStack);
+    setActiveDeckIndex(nextStack.length - 1);
+    setDeckPreviewIndex(nextStack.length - 1);
+    setDeckProgress(0);
     setSelection(null);
     window.getSelection()?.removeAllRanges();
+  }
+
+  function setDeckExpanded(expanded: boolean) {
+    setDeckPreviewIndex(activeIndex);
+    setDeckProgress(expanded ? 1 : 0);
+    setSelection(null);
+  }
+
+  function beginDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (stack.length <= 1) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    deckDrag.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startProgress: deckProgress,
+      moved: false,
+    };
+    setDeckDragOriginOpen(deckProgress > 0.5);
+    setDeckDragging(true);
+  }
+
+  function updateDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    const drag = deckDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const travel = Math.min(340, Math.max(180, viewportWidth * 0.42));
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) > 3) drag.moved = true;
+    setDeckProgress(clamp(drag.startProgress + delta / travel));
+  }
+
+  function finishDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    const drag = deckDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const travel = Math.min(340, Math.max(180, viewportWidth * 0.42));
+    const progress = clamp(
+      drag.startProgress + (event.clientX - drag.startX) / travel,
+    );
+    suppressDeckClick.current = drag.moved;
+    if (drag.moved) {
+      window.setTimeout(() => {
+        suppressDeckClick.current = false;
+      }, 0);
+    }
+    setDeckProgress(progress >= 0.45 ? 1 : 0);
+    setDeckPreviewIndex(activeIndex);
+    setDeckDragging(false);
+    deckDrag.current = null;
+  }
+
+  function toggleDeck() {
+    if (suppressDeckClick.current) {
+      suppressDeckClick.current = false;
+      return;
+    }
+    setDeckExpanded(!deckOpen);
+  }
+
+  function selectDeckCard(index: number) {
+    if (suppressDeckClick.current) {
+      suppressDeckClick.current = false;
+      return;
+    }
+    setActiveDeckIndex(index);
+    setDeckPreviewIndex(index);
+    setDeckProgress(0);
+    setSelection(null);
+  }
+
+  function previewDeckCard(index: number) {
+    setDeckPreviewIndex(index);
+  }
+
+  function beginDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!deckMode || !compactDeck) return;
+    const target = event.target as HTMLElement;
+    if (target.closest(".deck-spread-handle")) return;
+    deckSwipe.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+    };
+  }
+
+  function finishDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
+    const swipe = deckSwipe.current;
+    if (
+      !swipe ||
+      swipe.pointerId !== event.pointerId ||
+      !deckMode ||
+      !compactDeck
+    ) {
+      return;
+    }
+    const delta = event.clientX - swipe.startX;
+    deckSwipe.current = null;
+    if (Math.abs(delta) < 42) return;
+    const nextIndex = clamp(
+      previewIndex + (delta < 0 ? 1 : -1),
+      0,
+      stack.length - 1,
+    );
+    suppressDeckClick.current = true;
+    setDeckPreviewIndex(nextIndex);
+    window.setTimeout(() => {
+      suppressDeckClick.current = false;
+    }, 0);
+  }
+
+  function getCardMotionState(index: number) {
+    const distanceFromActive = Math.abs(index - activeIndex);
+    const directionFromActive = Math.sign(index - activeIndex);
+    const collapsedDistance = Math.min(distanceFromActive, 5);
+    const collapsed = {
+      x: directionFromActive * collapsedDistance * 16,
+      y: collapsedDistance * 9,
+      scale: 1 - collapsedDistance * 0.014,
+      rotate:
+        directionFromActive * collapsedDistance * 0.46,
+      opacity: distanceFromActive > 4 ? 0 : 1,
+      zIndex: 60 - distanceFromActive,
+    };
+
+    let spread;
+    if (compactDeck) {
+      const previewDistance = index - previewIndex;
+      const absolutePreviewDistance = Math.abs(previewDistance);
+      spread = {
+        x: previewDistance * 64,
+        y: 25 + absolutePreviewDistance * 9,
+        scale: Math.max(0.68, 0.82 - absolutePreviewDistance * 0.045),
+        rotate: previewDistance * 0.8,
+        opacity: absolutePreviewDistance > 4 ? 0 : 1,
+        zIndex: 100 - absolutePreviewDistance,
+      };
+    } else {
+      const center = (stack.length - 1) / 2;
+      const centerDistance = index - center;
+      spread = {
+        x: centerDistance * desktopDeckGap,
+        y: 13 + Math.abs(centerDistance) * 2.4,
+        scale: index === previewIndex ? 0.965 : 0.945,
+        rotate: centerDistance * 0.52,
+        opacity: 1,
+        zIndex: 40 + index,
+      };
+    }
+
+    return {
+      x: mix(collapsed.x, spread.x, deckProgress),
+      y: mix(collapsed.y, spread.y, deckProgress),
+      scale: mix(collapsed.scale, spread.scale, deckProgress),
+      rotate: mix(collapsed.rotate, spread.rotate, deckProgress),
+      opacity: mix(collapsed.opacity, spread.opacity, deckProgress),
+      zIndex: deckMode ? spread.zIndex : collapsed.zIndex,
+    };
   }
 
   const selectionLeft = selection
@@ -360,7 +617,11 @@ export function ResearchWorkspace() {
     : 0;
 
   return (
-    <main className="workspace-shell">
+    <main
+      className={`workspace-shell ${
+        deckMode ? "workspace-deck-open" : ""
+      }`}
+    >
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">
@@ -422,7 +683,7 @@ export function ResearchWorkspace() {
                       type="button"
                       onClick={() => focusBreadcrumb(index)}
                       aria-current={
-                        index === stack.length - 1 ? "page" : undefined
+                        index === activeIndex ? "page" : undefined
                       }
                     >
                       {node.shortTitle}
@@ -482,53 +743,168 @@ export function ResearchWorkspace() {
       {workspaceView === "explore" ? (
         <>
           <section className="workspace-stage" aria-label="卡片研究空间">
-        <div className="deck-wrap">
-          <div className="deck-shadow deck-shadow-one" aria-hidden="true" />
-          <div className="deck-shadow deck-shadow-two" aria-hidden="true" />
-          <AnimatePresence initial={false}>
-            {stack.map((nodeId, index) => {
-              const node = nodes[nodeId];
-              if (!node) return null;
-              const layerIndex = stack.length - 1 - index;
-              return (
-                <ResearchCard
-                  key={`${nodeId}-${index}`}
-                  node={node}
-                  active={index === stack.length - 1}
-                  layerIndex={layerIndex}
-                  followups={followups[nodeId] ?? []}
-                  thinking={thinkingNodeId === nodeId}
-                  onAnchor={openNode}
-                  onAsk={askFollowup}
-                  onTextSelection={updateSelection}
-                  reduceMotion={reduceMotion}
-                />
-              );
-            })}
-          </AnimatePresence>
+            <div
+              className={`deck-wrap ${
+                deckMode ? "deck-wrap-spread" : ""
+              }`}
+              data-testid="research-deck"
+              data-deck-mode={deckMode ? "spread" : "stacked"}
+              data-deck-size={stack.length}
+              style={
+                { "--deck-progress": deckProgress } as CSSProperties
+              }
+              onPointerDown={beginDeckSwipe}
+              onPointerUp={finishDeckSwipe}
+              onPointerCancel={() => {
+                deckSwipe.current = null;
+              }}
+            >
+              <div
+                className="deck-shadow deck-shadow-one"
+                aria-hidden="true"
+              />
+              <div
+                className="deck-shadow deck-shadow-two"
+                aria-hidden="true"
+              />
 
-          <AnimatePresence>
-            {stack.length > 1 ? (
-              <motion.button
-                type="button"
-                className="branch-close-button"
-                onClick={closeActiveBranch}
-                aria-label="关闭当前分支"
-                title="关闭当前分支"
-                initial={
-                  reduceMotion ? false : { opacity: 0, scale: 0.88 }
-                }
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.16 }}
-              >
-                <X size={15} weight="bold" aria-hidden="true" />
-              </motion.button>
-            ) : null}
-          </AnimatePresence>
+              <AnimatePresence>
+                {deckMode ? (
+                  <motion.div
+                    className="deck-spread-caption"
+                    data-testid="deck-spread-caption"
+                    role="status"
+                    aria-live="polite"
+                    initial={
+                      reduceMotion ? false : { opacity: 0, y: 8 }
+                    }
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.18 }}
+                  >
+                    <span>
+                      {String(previewIndex + 1).padStart(2, "0")} /{" "}
+                      {String(stack.length).padStart(2, "0")}
+                    </span>
+                    <strong>{previewNode.shortTitle}</strong>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
 
-        </div>
+              <AnimatePresence initial={false}>
+                {stack.map((nodeId, index) => {
+                  const node = nodes[nodeId];
+                  if (!node) return null;
+                  return (
+                    <ResearchCard
+                      key={`${nodeId}-${index}`}
+                      node={node}
+                      active={index === activeIndex}
+                      deckIndex={index}
+                      deckSize={stack.length}
+                      deckMode={deckMode}
+                      deckPreviewed={
+                        deckMode && index === previewIndex
+                      }
+                      motionState={getCardMotionState(index)}
+                      draggingDeck={deckDragging}
+                      followups={followups[nodeId] ?? []}
+                      thinking={thinkingNodeId === nodeId}
+                      onAnchor={openNode}
+                      onAsk={askFollowup}
+                      onDeckPreview={previewDeckCard}
+                      onDeckSelect={selectDeckCard}
+                      onTextSelection={updateSelection}
+                      reduceMotion={reduceMotion}
+                    />
+                  );
+                })}
+              </AnimatePresence>
 
+              <AnimatePresence>
+                {stack.length > 1 ? (
+                  <motion.button
+                    type="button"
+                    className="deck-spread-handle"
+                    data-open={deckOpen ? "true" : "false"}
+                    onClick={toggleDeck}
+                    onPointerDown={beginDeckDrag}
+                    onPointerMove={updateDeckDrag}
+                    onPointerUp={finishDeckDrag}
+                    onPointerCancel={finishDeckDrag}
+                    onKeyDown={(event) => {
+                      if (!deckMode) return;
+                      if (
+                        event.key !== "ArrowLeft" &&
+                        event.key !== "ArrowRight"
+                      ) {
+                        return;
+                      }
+                      event.preventDefault();
+                      setDeckPreviewIndex((current) =>
+                        clamp(
+                          current + (event.key === "ArrowRight" ? 1 : -1),
+                          0,
+                          stack.length - 1,
+                        ),
+                      );
+                    }}
+                    aria-label={
+                      deckOpen
+                        ? `收拢 ${stack.length} 张 Card`
+                        : `摊开 ${stack.length} 张 Card`
+                    }
+                    aria-pressed={deckOpen}
+                    title={deckOpen ? "向左拖动收拢" : "向右拖动摊开"}
+                    initial={
+                      reduceMotion ? false : { opacity: 0, x: 7, scale: 0.9 }
+                    }
+                    animate={{
+                      opacity: 1,
+                      x: deckHandleOffset,
+                      scale: 1,
+                    }}
+                    exit={{ opacity: 0, x: 5, scale: 0.9 }}
+                    transition={
+                      reduceMotion
+                        ? { duration: 0 }
+                        : {
+                            type: "spring",
+                            stiffness: 380,
+                            damping: 28,
+                          }
+                    }
+                  >
+                    <DotsSixVertical
+                      size={16}
+                      weight="bold"
+                      aria-hidden="true"
+                    />
+                    <span>{stack.length}</span>
+                  </motion.button>
+                ) : null}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {activeIndex > 0 && !deckMode ? (
+                  <motion.button
+                    type="button"
+                    className="branch-close-button"
+                    onClick={closeActiveBranch}
+                    aria-label="关闭当前分支"
+                    title="关闭当前分支"
+                    initial={
+                      reduceMotion ? false : { opacity: 0, scale: 0.88 }
+                    }
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <X size={15} weight="bold" aria-hidden="true" />
+                  </motion.button>
+                ) : null}
+              </AnimatePresence>
+            </div>
           </section>
 
           <AnimatePresence>

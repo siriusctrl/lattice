@@ -26,6 +26,13 @@ and context semantics behind the scenes.
 - Clicking an anchor focuses an existing prepared node without changing graph
   geometry or duplicating content.
 - Closing the active Card changes focus but never deletes the persisted graph.
+- A Deck is the current ordered root-to-leaf lineage. Its focus may sit on any
+  Card, and Card selection inside a spread does not delete later Cards.
+- Deck Spread is a navigation mode, not a second content view. On desktop it
+  fans the lineage across available width; on compact screens it becomes a
+  swipeable coverflow.
+- Starting a new fork from a historical Card replaces only the current
+  lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
 - User text selection creates a new sourced node.
 - The graph is visible but secondary to reading.
@@ -59,14 +66,18 @@ and context semantics behind the scenes.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
+- Deck movement must stay continuous with the drag distance and settle with
+  spring weight. Avoid binary layout jumps or equal-width thumbnail grids.
 - Respect reduced-motion and reduced-transparency preferences.
 - Keep all visible copy free of long dash punctuation.
 - Use Phosphor for icons. Do not add hand-authored icon paths.
 
 ## Implementation boundaries
 
-- `ResearchWorkspace` owns focus stack, graph events, and card navigation.
-- `ResearchCard` owns only local rendering, selection capture, and its composer.
+- `ResearchWorkspace` owns Deck lineage, historical focus, spread gestures,
+  graph events, and card navigation.
+- `ResearchCard` owns local rendering, its navigation hit area, selection
+  capture, and its composer. It does not own Deck state.
 - `GraphPreview` is a projection. It must not become the source of graph state.
 - `ArticleView` renders a flat document and source trace. It does not own research
   truth or mutate the graph.

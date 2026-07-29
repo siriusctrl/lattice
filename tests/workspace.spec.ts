@@ -169,6 +169,131 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   );
 });
 
+test("spreads a deep deck and returns to an earlier card without deleting history", async ({
+  page,
+}) => {
+  await page.locator('[data-anchor-target="origin"]').click();
+  await page
+    .getByTestId("research-card-origin")
+    .locator('[data-anchor-target="migration"]')
+    .click();
+  await page
+    .getByTestId("research-card-migration")
+    .locator('[data-anchor-target="education"]')
+    .click();
+  await page
+    .getByTestId("research-card-education")
+    .locator('[data-anchor-target="zip2"]')
+    .click();
+
+  const deck = page.getByTestId("research-deck");
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+
+  await page.getByRole("button", { name: "摊开 5 张 Card" }).click();
+  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
+  await expect(page.getByTestId("deck-spread-caption")).toContainText(
+    "Zip2",
+  );
+  await expect(page.locator(".deck-card-picker")).toHaveCount(5);
+
+  const readSpreadGeometry = () =>
+    page.locator(".research-card").evaluateAll((cards) => {
+      const centers = cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left + rect.width / 2;
+      });
+      return {
+        ordered: centers.every(
+          (center, index) => index === 0 || center > centers[index - 1],
+        ),
+        span: Math.max(...centers) - Math.min(...centers),
+      };
+    });
+  await expect.poll(async () => (await readSpreadGeometry()).span).toBeGreaterThan(
+    300,
+  );
+  const spreadGeometry = await readSpreadGeometry();
+  expect(spreadGeometry.ordered).toBe(true);
+
+  const originPicker = page.getByRole("button", {
+    name: "打开 Card 2：比勒陀利亚",
+  });
+  await originPicker.hover({ position: { x: 12, y: 220 } });
+  await expect(page.getByTestId("deck-spread-caption")).toContainText(
+    "比勒陀利亚",
+  );
+  await originPicker.click({ position: { x: 12, y: 220 } });
+
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(page.getByTestId("research-card-zip2")).toBeAttached();
+
+  await page
+    .getByTestId("research-card-origin")
+    .locator('[data-anchor-target="blastar"]')
+    .click();
+  await expect(page.getByTestId("research-card-blastar")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(deck).toHaveAttribute("data-deck-size", "3");
+  await expect(
+    page
+      .getByTestId("graph-preview")
+      .locator('[data-node-id="zip2"]'),
+  ).toBeVisible();
+});
+
+test("uses a swipeable coverflow for the deck on a phone viewport", async ({
+  page,
+}) => {
+  await page.locator('[data-anchor-target="origin"]').click();
+  await page
+    .getByTestId("research-card-origin")
+    .locator('[data-anchor-target="migration"]')
+    .click();
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  const deck = page.getByTestId("research-deck");
+  await page.getByRole("button", { name: "摊开 3 张 Card" }).click();
+  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
+  await expect(page.getByTestId("deck-spread-caption")).toContainText(
+    "迁往加拿大",
+  );
+
+  const deckBounds = await deck.boundingBox();
+  if (!deckBounds) throw new Error("Missing mobile deck bounds");
+  const centerY = deckBounds.y + deckBounds.height * 0.54;
+  await page.mouse.move(deckBounds.x + deckBounds.width * 0.35, centerY);
+  await page.mouse.down();
+  await page.mouse.move(
+    deckBounds.x + deckBounds.width * 0.7,
+    centerY,
+    { steps: 8 },
+  );
+  await page.mouse.up();
+
+  await expect(page.getByTestId("deck-spread-caption")).toContainText(
+    "比勒陀利亚",
+  );
+  await page
+    .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
+    .click();
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  const documentWidth = await page.evaluate(
+    () => document.documentElement.scrollWidth,
+  );
+  expect(documentWidth).toBeLessThanOrEqual(390);
+});
+
 test("keeps the completed graph fixed while active focus moves smoothly", async ({
   page,
 }) => {

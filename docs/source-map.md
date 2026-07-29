@@ -9,7 +9,9 @@
 ## Interaction
 
 - `app/components/ResearchWorkspace.tsx`
-  - focus stack
+  - Deck lineage and independent historical focus
+  - continuous desktop spread gesture
+  - compact swipeable coverflow
   - direct active-branch closing
   - prepared graph state
   - custom fork creation
@@ -22,6 +24,7 @@
 
 - `app/components/ResearchCard.tsx`
   - metadata-free chat answer surface and content
+  - accessible Deck navigation hit area
   - anchor rendering
   - source prompt
   - follow-up composer
@@ -66,7 +69,7 @@
 ## Verification
 
 - `playwright.config.ts`: desktop browser verification environment
-- `tests/workspace.spec.ts`: interaction, DAG, selection, theme, and mobile tests
+- `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile tests
 - `tests/rendered-html.test.mjs`: production Worker HTML checks
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording
