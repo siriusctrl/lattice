@@ -24,6 +24,11 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   await expect(rootCard.getByText("查看成稿", { exact: true })).toHaveCount(0);
   await expect(page.locator(".workspace-topic")).toHaveCount(0);
   await expect(page.locator(".selection-hint")).toHaveCount(0);
+  await expect(page.getByText("当前位置", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByTestId("graph-preview").locator(".graph-focus-bar"),
+  ).toContainText("Elon Musk");
+  await expect(page.locator(".graph-active-label")).toHaveCount(0);
   await expect(
     page.getByTestId("graph-preview").locator(".graph-node-potential"),
   ).toHaveCount(0);
@@ -58,6 +63,25 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
     "data-active",
     "true",
+  );
+  await expect(
+    page.getByTestId("graph-preview").locator(".graph-focus-bar"),
+  ).toContainText("SpaceX");
+  const compactGraphRegions = await page
+    .getByTestId("graph-preview")
+    .evaluate((graph) => {
+      const canvas = graph.querySelector(".graph-canvas");
+      const focusBar = graph.querySelector(".graph-focus-bar");
+      if (!canvas || !focusBar) throw new Error("Missing compact graph regions");
+      const canvasRect = canvas.getBoundingClientRect();
+      const barRect = focusBar.getBoundingClientRect();
+      return {
+        canvasBottom: canvasRect.bottom,
+        barTop: barRect.top,
+      };
+    });
+  expect(compactGraphRegions.barTop).toBeGreaterThanOrEqual(
+    compactGraphRegions.canvasBottom - 0.5,
   );
   await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
   await expect(

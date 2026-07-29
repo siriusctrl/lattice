@@ -423,16 +423,25 @@ export function GraphPreview({
             })}
           </g>
         </svg>
-
-        {!expanded ? (
-          <div className="graph-active-label" aria-hidden="true">
-            <span>当前位置</span>
-            <strong>{nodes[activeId]?.shortTitle}</strong>
-          </div>
-        ) : null}
       </div>
 
-      {expanded ? (
+      {!expanded ? (
+        <div
+          className="graph-focus-bar"
+          aria-label={`当前节点：${nodes[activeId]?.shortTitle}`}
+          aria-live="polite"
+        >
+          <i aria-hidden="true" />
+          <motion.strong
+            key={activeId}
+            initial={reduceMotion ? false : { opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.2 }}
+          >
+            {nodes[activeId]?.shortTitle}
+          </motion.strong>
+        </div>
+      ) : (
         <div className="graph-legend" aria-hidden="true">
           <span>
             <i className="legend-mark legend-mark-current" />
@@ -443,7 +452,7 @@ export function GraphPreview({
             研究节点
           </span>
         </div>
-      ) : null}
+      )}
     </motion.aside>
   );
 }

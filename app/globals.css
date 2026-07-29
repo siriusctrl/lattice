@@ -840,8 +840,8 @@ input:focus-visible,
   z-index: 60;
   display: grid;
   width: 286px;
-  height: 214px;
-  grid-template-rows: 41px minmax(0, 1fr);
+  height: 245px;
+  grid-template-rows: 41px minmax(0, 1fr) 31px;
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 16px;
@@ -1008,27 +1008,32 @@ input:focus-visible,
   opacity: 1;
 }
 
-.graph-active-label {
-  position: absolute;
-  bottom: 11px;
-  left: 13px;
+.graph-focus-bar {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  pointer-events: none;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
 }
 
-.graph-active-label span {
-  color: var(--faint);
-  font-size: 8px;
+.graph-focus-bar > i {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border: 1px solid var(--accent-ink);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 13%, transparent);
 }
 
-.graph-active-label strong {
-  max-width: 160px;
+.graph-focus-bar strong {
+  min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: 11px;
-  font-weight: 660;
+  font-size: 10px;
+  font-weight: 640;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1727,7 +1732,7 @@ input:focus-visible,
     right: 18px;
     bottom: 18px;
     width: 226px;
-    height: 166px;
+    height: 197px;
     transform-origin: 100% 100%;
   }
 
@@ -1835,7 +1840,7 @@ input:focus-visible,
 
   .graph-preview:not(.graph-preview-expanded) {
     width: 185px;
-    height: 139px;
+    height: 170px;
   }
 
   .graph-preview-expanded {
