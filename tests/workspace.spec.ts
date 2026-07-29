@@ -62,6 +62,48 @@ async function touchCenter(page: Page, target: Locator) {
   ]);
 }
 
+async function readCollapsedFanPivots(
+  page: Page,
+  side: "left" | "right",
+) {
+  return page.locator(".research-card").evaluateAll((cards, fanSide) => {
+    return cards
+      .filter((card) => {
+        const attribute =
+          fanSide === "left"
+            ? "data-left-fan-rotate"
+            : "data-right-fan-rotate";
+        return Math.abs(Number(card.getAttribute(attribute))) > 0;
+      })
+      .map((card) => {
+        const fanLayer =
+          fanSide === "left"
+            ? card.parentElement?.parentElement
+            : card.parentElement;
+        if (!fanLayer) throw new Error("Missing Card fan layer");
+
+        const marker = document.createElement("span");
+        marker.style.position = "absolute";
+        marker.style.bottom = "0";
+        marker.style[fanSide] = "0";
+        marker.style.width = "0";
+        marker.style.height = "0";
+        fanLayer.appendChild(marker);
+        const bounds = marker.getBoundingClientRect();
+        marker.remove();
+        return { x: bounds.left, y: bounds.top };
+      });
+  }, side);
+}
+
+function expectSharedFanPivot(pivots: { x: number; y: number }[]) {
+  expect(pivots.length).toBeGreaterThan(1);
+  const xValues = pivots.map((pivot) => pivot.x);
+  const yValues = pivots.map((pivot) => pivot.y);
+  expect(Math.max(...xValues) - Math.min(...xValues)).toBeLessThan(1);
+  expect(Math.max(...yValues) - Math.min(...yValues)).toBeLessThan(1);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("lattice-theme", "light");
@@ -407,6 +449,143 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
       .getByTestId("graph-preview")
       .locator('[data-node-id="zip2"]'),
   ).toBeVisible();
+});
+
+test("keeps a deep desktop Stack legible when focusing the root and existing suffix", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.locator('[data-anchor-target="origin"]').click();
+  await page
+    .getByTestId("research-card-origin")
+    .locator('[data-anchor-target="migration"]')
+    .click();
+  await page
+    .getByTestId("research-card-migration")
+    .locator('[data-anchor-target="education"]')
+    .click();
+  await page
+    .getByTestId("research-card-education")
+    .locator('[data-anchor-target="zip2"]')
+    .click();
+
+  const deck = page.getByTestId("research-deck");
+  const cards = page.locator(".research-card");
+  const rootCard = page.getByTestId("research-card-musk");
+  const lastCard = page.getByTestId("research-card-zip2");
+  const cardIds = ["musk", "origin", "migration", "education", "zip2"];
+
+  const readStackSurface = async () =>
+    cards.evaluateAll((elements) => {
+      const geometry = elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          active: element.getAttribute("data-active") === "true",
+          boxShadow: window.getComputedStyle(element).boxShadow,
+          left: rect.left,
+          right: rect.right,
+        };
+      });
+      const active = geometry.find((card) => card.active);
+      if (!active) throw new Error("Missing active Card");
+
+      return {
+        activeShadow: active.boxShadow,
+        inactiveShadows: geometry
+          .filter((card) => !card.active)
+          .map((card) => card.boxShadow),
+        leftExposure: active.left - Math.min(...geometry.map((card) => card.left)),
+        rightExposure:
+          Math.max(...geometry.map((card) => card.right)) - active.right,
+      };
+    });
+
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await expect(lastCard).toHaveAttribute("data-active", "true");
+  await expect
+    .poll(async () => (await readStackSurface()).leftExposure)
+    .toBeGreaterThan(20);
+  await expect
+    .poll(async () =>
+      (await readStackSurface()).inactiveShadows.every(
+        (shadow) => shadow === "none",
+      ),
+    )
+    .toBe(true);
+
+  const lastSurface = await readStackSurface();
+  expect(lastSurface.activeShadow).not.toBe("none");
+  expect(lastSurface.inactiveShadows).toEqual(["none", "none", "none", "none"]);
+  expectSharedFanPivot(await readCollapsedFanPivots(page, "left"));
+
+  await page
+    .getByTestId("graph-preview")
+    .locator('[data-node-id="musk"]')
+    .click();
+
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await expect(cards).toHaveCount(5);
+  for (const cardId of cardIds.slice(1)) {
+    await expect(page.getByTestId(`research-card-${cardId}`)).toBeAttached();
+  }
+  await expect
+    .poll(async () => (await readStackSurface()).rightExposure)
+    .toBeGreaterThan(20);
+  await expect
+    .poll(async () =>
+      (await readStackSurface()).inactiveShadows.every(
+        (shadow) => shadow === "none",
+      ),
+    )
+    .toBe(true);
+
+  const rootSurface = await readStackSurface();
+  expect(rootSurface.activeShadow).not.toBe("none");
+  expect(rootSurface.inactiveShadows).toEqual(["none", "none", "none", "none"]);
+  expectSharedFanPivot(await readCollapsedFanPivots(page, "right"));
+
+  await page.getByTestId("theme-toggle").click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect
+    .poll(async () =>
+      (await readStackSurface()).inactiveShadows.every(
+        (shadow) => shadow === "none",
+      ),
+    )
+    .toBe(true);
+  expect((await readStackSurface()).activeShadow).not.toBe("none");
+
+  // An anchor that already exists to the right only changes focus. It must not
+  // discard the remainder of the path.
+  await rootCard.locator('[data-anchor-target="origin"]').click();
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await expect(cards).toHaveCount(5);
+  for (const cardId of cardIds) {
+    await expect(page.getByTestId(`research-card-${cardId}`)).toBeAttached();
+  }
+
+  await page
+    .getByTestId("graph-preview")
+    .locator('[data-node-id="musk"]')
+    .click();
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+
+  const rightTrigger = page.getByRole("button", {
+    name: "从右侧展开 Card 路径",
+  });
+  await expect(rightTrigger).toBeVisible();
+  await rightTrigger.hover();
+  await expect(deck).toHaveAttribute("data-deck-hint", "right");
+  await rightTrigger.click();
+
+  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
+  await expect(page.locator(".deck-card-picker")).toHaveCount(5);
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
 });
 
 test("opens a folded mobile Deck before swiping and commits on tap", async ({

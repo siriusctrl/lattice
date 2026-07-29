@@ -77,6 +77,9 @@ and context semantics behind the scenes.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
+- A collapsed desktop Deck must keep its real Card edges visibly fanned at large
+  viewport sizes. Only the active reading Card owns the full elevation shadow;
+  dormant layers must not create moving shadow clouds.
 - Mobile folded-preview movement must interpolate the centered Card and its
   target, settle with spring weight, and keep earlier and later Cards on
   opposite sides. Desktop edge hints must rotate around a corner rather than

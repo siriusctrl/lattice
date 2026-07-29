@@ -88,6 +88,7 @@ await page.screenshot({
   path: new URL("frame-02-left-fan.png", proofRoot).pathname,
 });
 await deckEdge.click();
+await page.mouse.move(720, 34);
 await page.waitForTimeout(750);
 await page
   .getByRole("button", { name: "打开 Card：比勒陀利亚" })

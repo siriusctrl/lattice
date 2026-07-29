@@ -319,7 +319,7 @@ export function ResearchWorkspace() {
       if (!nodes[targetId] || targetId === activeId) return;
       setSelection(null);
       const activePath = stack.slice(0, activeIndex + 1);
-      const existingIndex = activePath.lastIndexOf(targetId);
+      const existingIndex = stack.lastIndexOf(targetId);
       const nextStack =
         existingIndex >= 0
           ? stack
@@ -741,15 +741,6 @@ export function ResearchWorkspace() {
               onPointerEnter={reenterDeckSpread}
               onPointerLeave={leaveDeckSpread}
             >
-              <div
-                className="deck-shadow deck-shadow-one"
-                aria-hidden="true"
-              />
-              <div
-                className="deck-shadow deck-shadow-two"
-                aria-hidden="true"
-              />
-
               <AnimatePresence>
                 {deckMode &&
                 (deckHoverIndex !== null || deckPreviewFocused) ? (

@@ -28,6 +28,8 @@ ready for GitHub Pages.
   of that Card and every later Card from the Deck while their graph nodes remain
 - mirrored same-side lower-corner fans, desktop Deck Spread, and dwell preview
   partition
+- legible dormant Card edges at large desktop widths, stable active-Card
+  elevation, and intact suffix history after returning to the root Card
 - vertical-only mobile reading, edge-triggered folded preview, preview-only
   swipes, and tap-to-commit with opposite Card peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
