@@ -23,7 +23,8 @@ ready for GitHub Pages.
 
 - immediate prepared-card navigation without a hover preview or generation state
 - direct active-card closing without graph deletion
-- exposed-edge fan hint, desktop Deck Spread, and dwell preview partition
+- mirrored corner-pivot edge fans, desktop Deck Spread, and dwell preview
+  partition
 - direct swipe focus with opposite Card peeks at phone widths
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render

@@ -47,6 +47,7 @@ type ResearchCardProps = {
     rotate: number;
     opacity: number;
     zIndex: number;
+    transformOrigin: string;
   };
   draggingDeck: boolean;
   followups: FollowupTurn[];
@@ -198,6 +199,7 @@ export function ResearchCard({
       }
       style={{
         zIndex: motionState.zIndex,
+        transformOrigin: motionState.transformOrigin,
         pointerEvents: active || deckMode ? "auto" : "none",
       }}
       aria-hidden={!active && !deckMode}

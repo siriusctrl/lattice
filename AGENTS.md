@@ -29,7 +29,8 @@ and context semantics behind the scenes.
 - A Deck is the current ordered root-to-leaf lineage. Its focus may sit on any
   Card, and Card selection inside a spread does not delete later Cards.
 - Deck Spread is a desktop navigation mode, not a second content view. Hovering
-  the exposed Card edge gives a small fan hint; clicking opens the lineage.
+  an exposed Card edge fans only that side around the opposite lower corner;
+  clicking opens the lineage.
 - A sustained hover previews one Card in the center. Earlier Cards collect on
   its left and later Cards collect on its right.
 - Compact screens do not have a separate spread mode or visible Deck control.
@@ -71,7 +72,8 @@ and context semantics behind the scenes.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
 - Mobile Deck movement must follow the swipe distance and settle with spring
-  weight. Desktop hover, fan, and dwell transitions must preserve card
+  weight. Desktop edge hints must rotate around a corner rather than lift the
+  stack vertically. Hover, fan, and dwell transitions must preserve card
   materiality. Avoid equal-width thumbnail grids.
 - Respect reduced-motion and reduced-transparency preferences.
 - Keep all visible copy free of long dash punctuation.

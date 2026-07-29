@@ -428,10 +428,10 @@ input:focus-visible,
 
 .deck-edge-trigger {
   position: absolute;
-  top: 18%;
-  bottom: 18%;
+  top: 10%;
+  bottom: 10%;
   z-index: 140;
-  width: 54px;
+  width: 154px;
   padding: 0;
   border: 0;
   border-radius: 14px;
@@ -441,12 +441,11 @@ input:focus-visible,
 }
 
 .deck-edge-trigger-left {
-  left: -76px;
-  width: 94px;
+  left: -136px;
 }
 
 .deck-edge-trigger-right {
-  right: -36px;
+  right: -136px;
 }
 
 .deck-edge-trigger:focus-visible {
@@ -530,7 +529,8 @@ input:focus-visible,
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
-    filter 180ms ease;
+    filter 180ms ease,
+    transform-origin 240ms cubic-bezier(0.2, 0.72, 0.24, 1);
 }
 
 .research-card::after {
@@ -551,7 +551,6 @@ input:focus-visible,
 
 .research-card-deck-mode {
   cursor: pointer;
-  transform-origin: 50% 66%;
 }
 
 .research-card-deck-mode .card-scroll,

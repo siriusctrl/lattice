@@ -17,8 +17,8 @@ risk. Independent branches can converge on shared events or interpretations.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
 - Close the active branch directly from the Card corner.
-- Hover the exposed Card edge for a small fan hint, then click it to spread the
-  current path across the desktop workspace.
+- Approach an exposed Card edge to open that side around the opposite lower
+  corner, then click it to spread the current path across the desktop workspace.
 - Rest on a Card to preview it between earlier Cards on the left and later
   Cards on the right.
 - Swipe directly between Cards on phone widths without opening another mode.

@@ -193,15 +193,25 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
 
   const readDeckGeometry = () =>
     page.locator(".research-card").evaluateAll((cards) => {
-      const centers = cards.map((card) => {
+      const geometry = cards.map((card) => {
         const rect = card.getBoundingClientRect();
-        return rect.left + rect.width / 2;
+        const styles = window.getComputedStyle(card);
+        const matrix = new DOMMatrixReadOnly(styles.transform);
+        const [originX = "0"] = styles.transformOrigin.split(" ");
+        return {
+          center: rect.left + rect.width / 2,
+          left: rect.left,
+          angle: Math.atan2(matrix.b, matrix.a) * (180 / Math.PI),
+          originRatio: Number.parseFloat(originX) / card.clientWidth,
+        };
       });
+      const centers = geometry.map((card) => card.center);
       return {
         ordered: centers.every(
           (center, index) => index === 0 || center > centers[index - 1],
         ),
         span: Math.max(...centers) - Math.min(...centers),
+        geometry,
       };
     });
 
@@ -210,10 +220,23 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   });
   await edgeTrigger.hover();
   await expect(deck).toHaveClass(/deck-wrap-hinted/);
-  await expect.poll(async () => (await readDeckGeometry()).span).toBeGreaterThan(
-    80,
+  await expect(deck).toHaveAttribute("data-deck-hint", "left");
+  await expect
+    .poll(async () => (await readDeckGeometry()).geometry[0].angle)
+    .toBeLessThan(-5);
+  const leftFan = await readDeckGeometry();
+  expect(leftFan.geometry[0].originRatio).toBeGreaterThan(0.9);
+  expect(leftFan.geometry[0].left).toBeLessThan(
+    leftFan.geometry.at(-1)?.left ?? 0,
   );
-  expect((await readDeckGeometry()).span).toBeLessThan(140);
+  expect(
+    leftFan.geometry
+      .map((card) => card.angle)
+      .every(
+        (angle, index, angles) =>
+          index === 0 || angle > angles[index - 1],
+      ),
+  ).toBe(true);
 
   await edgeTrigger.click();
   await expect(deck).toHaveAttribute("data-deck-mode", "spread");
@@ -255,6 +278,24 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     "true",
   );
   await expect(page.getByTestId("research-card-zip2")).toBeAttached();
+
+  const rightTrigger = page.getByRole("button", {
+    name: "从右侧展开 Card 路径",
+  });
+  await rightTrigger.hover();
+  await expect(deck).toHaveAttribute("data-deck-hint", "right");
+  await expect
+    .poll(async () => (await readDeckGeometry()).geometry[4].angle)
+    .toBeGreaterThan(4.5);
+  await expect
+    .poll(async () => (await readDeckGeometry()).geometry[4].originRatio)
+    .toBeLessThan(0.1);
+  const rightFan = await readDeckGeometry();
+  expect(rightFan.geometry[4].left).toBeGreaterThan(
+    rightFan.geometry[1].left,
+  );
+  await page.mouse.move(0, 0);
+  await expect(deck).toHaveAttribute("data-deck-hint", "none");
 
   await page
     .getByTestId("research-card-origin")

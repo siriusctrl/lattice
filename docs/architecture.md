@@ -70,8 +70,10 @@ without deleting the rest of the Deck or the graph.
 
 Deck Spread turns that same lineage into a temporary desktop navigation
 surface. The collapsed Deck has no count badge or visible mode control.
-Approaching its exposed edge opens a small physical fan; clicking that edge
-spreads the Cards across the available horizontal space with adaptive overlap.
+Approaching an exposed edge opens only that side around the opposite lower
+corner: earlier Cards fan left from the lower-right pivot, while later Cards
+fan right from the lower-left pivot. Clicking that edge spreads the Cards
+across the available horizontal space with adaptive overlap.
 A sustained hover promotes one Card into preview while earlier Cards collect
 on its left and later Cards collect on its right. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses

@@ -37,6 +37,7 @@ import { getArticleSectionForNode } from "@/app/lib/article-research";
 
 type Theme = "light" | "dark";
 type WorkspaceView = "explore" | "article";
+type DeckHintSide = "left" | "right";
 
 type SelectionState = TextSelection & {
   nodeId: string;
@@ -141,7 +142,8 @@ export function ResearchWorkspace() {
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
   const [activeDeckIndex, setActiveDeckIndex] = useState(0);
   const [deckProgress, setDeckProgress] = useState(0);
-  const [deckHinted, setDeckHinted] = useState(false);
+  const [deckHintSide, setDeckHintSide] =
+    useState<DeckHintSide | null>(null);
   const [deckPreviewIndex, setDeckPreviewIndex] = useState(0);
   const [deckHoverIndex, setDeckHoverIndex] = useState<number | null>(
     null,
@@ -183,6 +185,7 @@ export function ResearchWorkspace() {
   const activeId = stack[activeIndex] ?? ROOT_NODE_ID;
   const activeNode = nodes[activeId] ?? nodes[ROOT_NODE_ID];
   const compactDeck = viewportWidth <= 720;
+  const deckHinted = deckHintSide !== null;
   const deckMode =
     !compactDeck && stack.length > 1 && deckProgress > 0.035;
   const previewIndex = Math.min(deckPreviewIndex, stack.length - 1);
@@ -235,7 +238,7 @@ export function ResearchWorkspace() {
       setViewportWidth(width);
       if (width <= 720) {
         setDeckProgress(0);
-        setDeckHinted(false);
+        setDeckHintSide(null);
         setDeckHoverIndex(null);
         setDeckPreviewFocused(false);
       }
@@ -294,7 +297,7 @@ export function ResearchWorkspace() {
     setDeckPreviewIndex(index);
     setDeckHoverIndex(null);
     setDeckPreviewFocused(false);
-    setDeckHinted(false);
+    setDeckHintSide(null);
     setDeckProgress(0);
     setMobileSwipeDelta(0);
     setMobileSwiping(false);
@@ -473,19 +476,19 @@ export function ResearchWorkspace() {
     setDeckPreviewIndex(activeIndex);
     setDeckHoverIndex(null);
     setDeckPreviewFocused(false);
-    setDeckHinted(false);
+    setDeckHintSide(null);
     setDeckProgress(1);
     setSelection(null);
   }
 
-  function hintDeck() {
+  function hintDeck(side: DeckHintSide) {
     if (compactDeck || deckMode || stack.length <= 1) return;
-    setDeckHinted(true);
+    setDeckHintSide(side);
   }
 
-  function unhintDeck() {
+  function unhintDeck(side: DeckHintSide) {
     if (deckMode) return;
-    setDeckHinted(false);
+    setDeckHintSide((current) => (current === side ? null : current));
   }
 
   function selectDeckCard(index: number) {
@@ -605,34 +608,45 @@ export function ResearchWorkspace() {
   function getCardMotionState(index: number) {
     const distanceFromActive = Math.abs(index - activeIndex);
     const directionFromActive = Math.sign(index - activeIndex);
-    const visibleDistance = Math.min(distanceFromActive, 7);
     const hintGap =
       stack.length <= 1
         ? 0
         : Math.min(22, Math.max(10, 92 / (stack.length - 1)));
-    const collapsed = deckHinted && !compactDeck
-      ? {
-          x: directionFromActive * distanceFromActive * hintGap,
-          y: visibleDistance * 4.5,
-          scale: 1 - visibleDistance * 0.007,
-          rotate: directionFromActive * visibleDistance * 0.32,
-          opacity: 1,
-          zIndex: 60 - distanceFromActive,
-        }
-      : {
-          x:
-            directionFromActive *
-            Math.min(distanceFromActive, 5) *
-            (compactDeck ? 18 : 16),
-          y: Math.min(distanceFromActive, 5) * (compactDeck ? 7 : 9),
-          scale: 1 - Math.min(distanceFromActive, 5) * 0.014,
-          rotate:
-            directionFromActive *
-            Math.min(distanceFromActive, 5) *
-            (compactDeck ? 0.7 : 0.46),
-          opacity: distanceFromActive > 4 ? 0 : 1,
-          zIndex: 60 - distanceFromActive,
-        };
+    const collapsedBase = {
+      x:
+        directionFromActive *
+        Math.min(distanceFromActive, 5) *
+        (compactDeck ? 18 : 16),
+      y: Math.min(distanceFromActive, 5) * (compactDeck ? 7 : 9),
+      scale: 1 - Math.min(distanceFromActive, 5) * 0.014,
+      rotate:
+        directionFromActive *
+        Math.min(distanceFromActive, 5) *
+        (compactDeck ? 0.7 : 0.46),
+      opacity: distanceFromActive > 4 ? 0 : 1,
+      zIndex: 80 - distanceFromActive,
+    };
+    const onHintSide =
+      deckHintSide === "left"
+        ? index < activeIndex
+        : deckHintSide === "right"
+          ? index > activeIndex
+          : false;
+    const fanAngle = Math.min(
+      7.2,
+      1.65 + Math.max(0, distanceFromActive - 1) * 1.75,
+    );
+    const collapsed =
+      deckHinted && !compactDeck && onHintSide
+        ? {
+            x: directionFromActive * distanceFromActive * hintGap * 0.18,
+            y: distanceFromActive * 1.4,
+            scale: 1 - distanceFromActive * 0.002,
+            rotate: directionFromActive * fanAngle,
+            opacity: 1,
+            zIndex: 72 - distanceFromActive,
+          }
+        : collapsedBase;
 
     if (compactDeck && mobileSwiping) {
       const swipeProgress = clamp(
@@ -700,6 +714,13 @@ export function ResearchWorkspace() {
       rotate: mix(collapsed.rotate, spread.rotate, deckProgress),
       opacity: mix(collapsed.opacity, spread.opacity, deckProgress),
       zIndex: deckMode ? spread.zIndex : collapsed.zIndex,
+      transformOrigin: deckMode
+        ? "50% 66%"
+        : deckHintSide === "left"
+          ? "96% 94%"
+          : deckHintSide === "right"
+            ? "4% 94%"
+            : "50% 100%",
     };
   }
 
@@ -849,6 +870,7 @@ export function ResearchWorkspace() {
               data-testid="research-deck"
               data-deck-mode={deckMode ? "spread" : "stacked"}
               data-deck-size={stack.length}
+              data-deck-hint={deckHintSide ?? "none"}
               data-deck-preview={
                 deckPreviewFocused ? String(previewIndex) : "none"
               }
@@ -925,10 +947,10 @@ export function ResearchWorkspace() {
                       type="button"
                       className="deck-edge-trigger deck-edge-trigger-left"
                       onClick={openDeckSpread}
-                      onPointerEnter={hintDeck}
-                      onPointerLeave={unhintDeck}
-                      onFocus={hintDeck}
-                      onBlur={unhintDeck}
+                      onPointerEnter={() => hintDeck("left")}
+                      onPointerLeave={() => unhintDeck("left")}
+                      onFocus={() => hintDeck("left")}
+                      onBlur={() => unhintDeck("left")}
                       aria-label="从左侧展开 Card 路径"
                       initial={
                         reduceMotion ? false : { opacity: 0 }
@@ -942,10 +964,10 @@ export function ResearchWorkspace() {
                         type="button"
                         className="deck-edge-trigger deck-edge-trigger-right"
                         onClick={openDeckSpread}
-                        onPointerEnter={hintDeck}
-                        onPointerLeave={unhintDeck}
-                        onFocus={hintDeck}
-                        onBlur={unhintDeck}
+                        onPointerEnter={() => hintDeck("right")}
+                        onPointerLeave={() => unhintDeck("right")}
+                        onFocus={() => hintDeck("right")}
+                        onBlur={() => unhintDeck("right")}
                         aria-label="从右侧展开 Card 路径"
                         initial={
                           reduceMotion ? false : { opacity: 0 }
