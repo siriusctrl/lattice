@@ -120,6 +120,10 @@ await page
   .click();
 await page.waitForTimeout(700);
 await page.getByTestId("theme-toggle").click();
+await page
+  .getByTestId("graph-preview")
+  .locator('[data-node-id="origin"]')
+  .hover();
 await page.waitForTimeout(950);
 await page.screenshot({
   path: new URL("frame-06-dark-graph.png", proofRoot).pathname,

@@ -221,8 +221,9 @@ test("keeps the completed graph fixed while active focus moves smoothly", async 
   await page.getByRole("button", { name: "展开研究图" }).click();
   await expect(graph).toHaveClass(/graph-preview-expanded/);
   await expect(
-    graph.locator(".graph-legend .graph-node-total"),
+    graph.locator(".graph-focus-bar .graph-node-total"),
   ).toHaveText("21 个节点");
+  await expect(graph.locator(".graph-focus-bar")).toContainText("SpaceX");
   await page.waitForTimeout(700);
 
   const layoutMetrics = await graph
@@ -251,8 +252,38 @@ test("keeps the completed graph fixed while active focus moves smoothly", async 
 
   expect(layoutMetrics.nodeCount).toBe(21);
   expect(layoutMetrics.minimumDistance).toBeGreaterThan(18);
-  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(13);
+  await expect(graph.locator(".graph-nodes text")).toHaveCount(0);
   await expect(graph.locator(".graph-regions text")).toHaveCount(4);
+
+  await graph.locator('[data-node-id="origin"]').hover();
+  await expect(graph.locator(".graph-hover-label")).toContainText(
+    "比勒陀利亚",
+  );
+  await expect(graph.locator(".graph-edge-hovered")).toHaveCount(3);
+  await expect(graph.locator(".graph-edge-muted")).toHaveCount(23);
+  const hoverLabelLayer = await graph
+    .locator(".graph-canvas > svg")
+    .evaluate((svg) => {
+      const nodes = svg.querySelector(".graph-nodes");
+      const label = svg.querySelector(".graph-hover-label");
+      if (!nodes || !label) throw new Error("Missing graph label layer");
+      return {
+        labelAfterNodes: Boolean(
+          nodes.compareDocumentPosition(label) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        labelFill: getComputedStyle(
+          label.querySelector("rect") as SVGRectElement,
+        ).fill,
+      };
+    });
+  expect(hoverLabelLayer.labelAfterNodes).toBe(true);
+  expect(hoverLabelLayer.labelFill).not.toBe("none");
+
+  await graph.locator('[data-node-id="origin"]').focus();
+  await expect(graph.locator(".graph-hover-label")).toContainText(
+    "比勒陀利亚",
+  );
 });
 
 test("shows the completed converging DAG before cards are opened", async ({

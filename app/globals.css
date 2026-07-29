@@ -903,6 +903,11 @@ input:focus-visible,
   font-size: 2.15px;
   font-weight: 600;
   letter-spacing: 0.07em;
+  paint-order: stroke fill;
+  stroke: var(--surface-raised);
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  pointer-events: none;
 }
 
 .graph-edge {
@@ -934,6 +939,11 @@ input:focus-visible,
 .graph-edge-convergence {
   stroke: color-mix(in srgb, var(--accent-strong) 64%, var(--ink-soft));
   stroke-width: 0.78;
+}
+
+.graph-edge-hovered {
+  stroke: color-mix(in srgb, var(--accent-strong) 90%, var(--ink));
+  stroke-width: 1.08;
 }
 
 .graph-active-orbit {
@@ -980,25 +990,29 @@ input:focus-visible,
   stroke-width: 0.68;
 }
 
-.graph-node text {
-  fill: var(--ink-soft);
-  font-family: var(--font-geist-sans), sans-serif;
-  font-size: 2.7px;
-  font-weight: 620;
-  letter-spacing: -0.02em;
-  opacity: 1;
+.graph-node-hovered circle {
+  fill: var(--accent-strong);
+  stroke: var(--surface-raised);
+  stroke-width: 0.78;
+}
+
+.graph-hover-label {
   pointer-events: none;
-  transition: opacity 160ms ease;
 }
 
-.graph-node .graph-node-label-crowded {
-  opacity: 0;
+.graph-hover-label rect {
+  fill: color-mix(in srgb, var(--surface-raised) 96%, transparent);
+  stroke: var(--line-strong);
+  stroke-width: 0.48;
+  vector-effect: non-scaling-stroke;
 }
 
-.graph-node:hover .graph-node-label-crowded,
-.graph-node:focus-visible .graph-node-label-crowded,
-.graph-node-active .graph-node-label-crowded {
-  opacity: 1;
+.graph-hover-label text {
+  fill: var(--ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 2.75px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
 }
 
 .graph-focus-bar {
@@ -1032,6 +1046,11 @@ input:focus-visible,
   white-space: nowrap;
 }
 
+.graph-focus-bar-expanded {
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
 .graph-node-total {
   flex: 0 0 auto;
   margin-left: auto;
@@ -1041,46 +1060,6 @@ input:focus-visible,
   font-variant-numeric: tabular-nums;
   font-weight: 520;
   white-space: nowrap;
-}
-
-.graph-legend {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 0 15px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.graph-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legend-mark {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: var(--surface-raised);
-}
-
-.legend-mark-current {
-  border-color: var(--accent-ink);
-  background: var(--accent);
-}
-
-.legend-mark-discovered {
-  border-color: var(--surface);
-  background: var(--ink-soft);
-}
-
-.legend-mark-potential {
-  border-style: dashed;
-  border-color: var(--faint);
 }
 
 .article-workspace {

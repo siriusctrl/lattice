@@ -27,6 +27,8 @@ ready for GitHub Pages.
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
 - stable graph geometry and smooth active-focus movement during Card navigation
+- consistent hover and keyboard-focus labels that render above graph edges
+- connected-path emphasis and unrelated-edge quieting during graph inspection
 - the prepared converging SpaceX and Tesla DAG
 - local follow-up loading, completion, and automatic reveal
 - user text selection forks
@@ -59,7 +61,7 @@ The recording follows one deterministic path:
 3. fork to the 2008 crisis
 4. inspect the completed flat article
 5. return through a source Card and reach the same crisis through Tesla
-6. expand the full graph and switch to dark mode
+6. expand the full graph, inspect a node label, and switch to dark mode
 7. inspect the two-path article synthesis
 8. return to Tesla and visibly complete a local follow-up
 9. select source text, create a custom fork, and inspect its place in the article

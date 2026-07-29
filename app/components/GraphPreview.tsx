@@ -6,7 +6,8 @@ import {
   Graph,
   X,
 } from "@phosphor-icons/react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
 import type {
   GraphEdge,
   ResearchNode,
@@ -31,16 +32,13 @@ type LayoutPoint = {
   depth: number;
 };
 
-const LANDMARK_NODE_IDS = new Set([
-  "musk",
-  "origin",
-  "spacex",
-  "tesla",
-  "crisis",
-  "x",
-  "management",
-  "risk",
-]);
+type HoverLabelLayout = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  title: string;
+};
 
 function getGraphDepths(
   visibleNodes: ResearchNode[],
@@ -145,19 +143,23 @@ function hasAlternatePath(
 function getDisplayEdges(
   visibleEdges: GraphEdge[],
   activeId: string,
+  hoveredId: string | null,
 ) {
   const primaryEdges = visibleEdges.filter(
     (edge) => !hasAlternatePath(edge, visibleEdges),
   );
   const primaryKeys = new Set(primaryEdges.map(edgeKey));
-  const contextualEdges =
-    activeId === "musk"
-      ? []
-      : visibleEdges.filter(
-          (edge) =>
-            !primaryKeys.has(edgeKey(edge)) &&
-            (edge.from === activeId || edge.to === activeId),
-        );
+  const focusIds = new Set(
+    [activeId, hoveredId].filter(
+      (nodeId): nodeId is string =>
+        Boolean(nodeId) && nodeId !== "musk",
+    ),
+  );
+  const contextualEdges = visibleEdges.filter(
+    (edge) =>
+      !primaryKeys.has(edgeKey(edge)) &&
+      (focusIds.has(edge.from) || focusIds.has(edge.to)),
+  );
 
   return {
     primaryKeys,
@@ -188,17 +190,41 @@ function getEdgePath(
   ].join(" ");
 }
 
-function getLabelPlacement(nodeId: string, point: LayoutPoint) {
-  if (nodeId === "tesla") {
-    return { x: 4.6, y: 6.7, textAnchor: "start" as const };
-  }
-  if (nodeId === "management") {
-    return { x: -4.8, y: 7.2, textAnchor: "end" as const };
-  }
-  if (point.x > 76) {
-    return { x: -4.8, y: -4.1, textAnchor: "end" as const };
-  }
-  return { x: 4.8, y: -4.1, textAnchor: "start" as const };
+function getHoverLabelLayout(
+  node: ResearchNode,
+  point: LayoutPoint,
+): HoverLabelLayout {
+  const titleCharacters = Array.from(node.shortTitle);
+  const visibleCharacters =
+    titleCharacters.length > 18
+      ? [...titleCharacters.slice(0, 17), "…"]
+      : titleCharacters;
+  const title = visibleCharacters.join("");
+  const width = Math.min(
+    38,
+    Math.max(
+      12,
+      visibleCharacters.reduce(
+        (total, character) =>
+          total + (character.charCodeAt(0) > 255 ? 2.65 : 1.48),
+        0,
+      ) + 4.6,
+    ),
+  );
+  const height = 7.4;
+  const gap = 4;
+  const placeOnLeft = point.x > 64 || point.x + gap + width > 98;
+  const preferredX = placeOnLeft
+    ? point.x - gap - width
+    : point.x + gap;
+
+  return {
+    x: Math.max(2, Math.min(98 - width, preferredX)),
+    y: Math.max(2, Math.min(98 - height, point.y - height / 2)),
+    width,
+    height,
+    title,
+  };
 }
 
 export function GraphPreview({
@@ -213,6 +239,8 @@ export function GraphPreview({
   onFocusNode,
   reduceMotion,
 }: GraphPreviewProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   if (!visible) return null;
 
   const visibleIds = new Set(discoveredIds);
@@ -222,9 +250,11 @@ export function GraphPreview({
   const visibleEdges = edges.filter(
     (edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to),
   );
+  const visibleHoverId = expanded ? hoveredId : null;
   const { displayEdges, primaryKeys } = getDisplayEdges(
     visibleEdges,
     activeId,
+    visibleHoverId,
   );
   const incomingCounts = new Map<string, number>();
   for (const edge of visibleEdges) {
@@ -233,7 +263,14 @@ export function GraphPreview({
 
   const layout = buildResearchLayout(visibleNodes, visibleEdges);
   const activePoint = layout.get(activeId);
-  const crowdedLabels = visibleNodes.length > 7;
+  const hoveredNode = visibleHoverId ? nodes[visibleHoverId] : null;
+  const hoveredPoint = visibleHoverId
+    ? layout.get(visibleHoverId)
+    : null;
+  const hoverLabel =
+    hoveredNode && hoveredPoint
+      ? getHoverLabelLayout(hoveredNode, hoveredPoint)
+      : null;
 
   return (
     <motion.aside
@@ -257,7 +294,10 @@ export function GraphPreview({
           <button
             type="button"
             className="icon-button icon-button-small"
-            onClick={() => onExpandedChange(!expanded)}
+            onClick={() => {
+              setHoveredId(null);
+              onExpandedChange(!expanded);
+            }}
             aria-label={expanded ? "缩小研究图" : "展开研究图"}
             title={expanded ? "缩小" : "展开"}
           >
@@ -270,7 +310,10 @@ export function GraphPreview({
           <button
             type="button"
             className="icon-button icon-button-small"
-            onClick={() => onVisibleChange(false)}
+            onClick={() => {
+              setHoveredId(null);
+              onVisibleChange(false);
+            }}
             aria-label="关闭研究图"
             title="关闭"
           >
@@ -286,15 +329,6 @@ export function GraphPreview({
           role="img"
           aria-label={`完整研究图，共 ${discoveredIds.size} 个节点`}
         >
-          {expanded ? (
-            <g className="graph-regions" aria-hidden="true">
-              <text x="19" y="5.5">早期与互联网</text>
-              <text x="22" y="31">航天系统</text>
-              <text x="22" y="75">汽车与能源</text>
-              <text x="77" y="93">综合判断</text>
-            </g>
-          ) : null}
-
           <g className="graph-edges">
             {displayEdges.map((edge) => {
               const from = nodes[edge.from];
@@ -307,6 +341,19 @@ export function GraphPreview({
                 (incomingCounts.get(edge.to) ?? 0) > 1;
               const activeConnection =
                 edge.from === activeId || edge.to === activeId;
+              const hoverConnection =
+                visibleHoverId !== null &&
+                (edge.from === visibleHoverId ||
+                  edge.to === visibleHoverId);
+              const mutedByHover =
+                visibleHoverId !== null && !hoverConnection;
+              const opacity = visibleHoverId
+                ? hoverConnection
+                  ? 0.98
+                  : 0.12
+                : activeConnection
+                  ? 0.96
+                  : 0.56;
               return (
                 <motion.path
                   key={edgeKey(edge)}
@@ -324,12 +371,14 @@ export function GraphPreview({
                     edge.kind === "synthesis" ? "graph-edge-synthesis" : "",
                     converging ? "graph-edge-convergence" : "",
                     activeConnection ? "graph-edge-active" : "",
+                    hoverConnection ? "graph-edge-hovered" : "",
+                    mutedByHover ? "graph-edge-muted" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   initial={reduceMotion ? false : { opacity: 0 }}
-                  animate={{ opacity: activeConnection ? 0.96 : 0.56 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.28 }}
+                  animate={{ opacity }}
+                  transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 />
               );
             })}
@@ -357,13 +406,9 @@ export function GraphPreview({
           <g className="graph-nodes">
             {visibleNodes.map((node) => {
               const isActive = node.id === activeId;
+              const isHovered = node.id === visibleHoverId;
               const point = layout.get(node.id);
               if (!point) return null;
-              const label = getLabelPlacement(node.id, point);
-              const labelIsSecondary =
-                crowdedLabels &&
-                !isActive &&
-                !LANDMARK_NODE_IDS.has(node.id);
               return (
                 <g
                   key={node.id}
@@ -373,6 +418,7 @@ export function GraphPreview({
                     "graph-node",
                     "graph-node-discovered",
                     isActive ? "graph-node-active" : "",
+                    isHovered ? "graph-node-hovered" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -380,6 +426,22 @@ export function GraphPreview({
                   role="button"
                   tabIndex={0}
                   aria-label={`打开节点：${node.shortTitle}`}
+                  onMouseEnter={() => {
+                    if (expanded) setHoveredId(node.id);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredId((current) =>
+                      current === node.id ? null : current,
+                    );
+                  }}
+                  onFocus={() => {
+                    if (expanded) setHoveredId(node.id);
+                  }}
+                  onBlur={() => {
+                    setHoveredId((current) =>
+                      current === node.id ? null : current,
+                    );
+                  }}
                   onClick={() => onFocusNode(node.id)}
                   onKeyDown={(event) => {
                     if (
@@ -390,7 +452,6 @@ export function GraphPreview({
                     }
                   }}
                 >
-                  <title>{node.shortTitle}</title>
                   <motion.circle
                     r={isActive ? 2.8 : 1.9}
                     initial={reduceMotion ? false : { scale: 0 }}
@@ -401,61 +462,66 @@ export function GraphPreview({
                       damping: 24,
                     }}
                   />
-                  {expanded ? (
-                    <text
-                      className={
-                        labelIsSecondary
-                          ? "graph-node-label-crowded"
-                          : undefined
-                      }
-                      x={label.x}
-                      y={label.y}
-                      textAnchor={label.textAnchor}
-                    >
-                      {node.shortTitle}
-                    </text>
-                  ) : null}
                 </g>
               );
             })}
           </g>
+
+          {expanded ? (
+            <g className="graph-regions" aria-hidden="true">
+              <text x="19" y="5.5">早期与互联网</text>
+              <text x="22" y="31">航天系统</text>
+              <text x="22" y="75">汽车与能源</text>
+              <text x="77" y="93">综合判断</text>
+            </g>
+          ) : null}
+
+          <AnimatePresence>
+            {expanded && hoverLabel ? (
+              <motion.g
+                key={visibleHoverId}
+                className="graph-hover-label"
+                transform={`translate(${hoverLabel.x} ${hoverLabel.y})`}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.14 }}
+                aria-hidden="true"
+              >
+                <rect
+                  width={hoverLabel.width}
+                  height={hoverLabel.height}
+                  rx="2"
+                />
+                <text x="2.3" y="4.85">
+                  {hoverLabel.title}
+                </text>
+              </motion.g>
+            ) : null}
+          </AnimatePresence>
         </svg>
       </div>
 
-      {!expanded ? (
-        <div
-          className="graph-focus-bar"
-          aria-label={`当前节点：${nodes[activeId]?.shortTitle}`}
-          aria-live="polite"
+      <div
+        className={`graph-focus-bar ${
+          expanded ? "graph-focus-bar-expanded" : ""
+        }`}
+        aria-label={`当前节点：${nodes[activeId]?.shortTitle}`}
+        aria-live="polite"
+      >
+        <i aria-hidden="true" />
+        <motion.strong
+          key={activeId}
+          initial={reduceMotion ? false : { opacity: 0, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.2 }}
         >
-          <i aria-hidden="true" />
-          <motion.strong
-            key={activeId}
-            initial={reduceMotion ? false : { opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.2 }}
-          >
-            {nodes[activeId]?.shortTitle}
-          </motion.strong>
-          <span className="graph-node-total">
-            {discoveredIds.size} 个节点
-          </span>
-        </div>
-      ) : (
-        <div className="graph-legend" aria-hidden="true">
-          <span>
-            <i className="legend-mark legend-mark-current" />
-            当前
-          </span>
-          <span>
-            <i className="legend-mark legend-mark-discovered" />
-            研究节点
-          </span>
-          <span className="graph-node-total">
-            {discoveredIds.size} 个节点
-          </span>
-        </div>
-      )}
+          {nodes[activeId]?.shortTitle}
+        </motion.strong>
+        <span className="graph-node-total">
+          {discoveredIds.size} 个节点
+        </span>
+      </div>
     </motion.aside>
   );
 }

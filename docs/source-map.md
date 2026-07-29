@@ -34,7 +34,8 @@
   - transitive-reduced primary-path projection
   - curved routes over stable semantic positions
   - spring-driven active marker and contextual-edge emphasis
-  - crowded-label suppression and hover reveal
+  - one-at-a-time hover and keyboard-focus labels above the edge layer
+  - connected-path emphasis while inspecting a node
   - graph node navigation
 
 - `app/components/ArticleView.tsx`
