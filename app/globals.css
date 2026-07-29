@@ -514,6 +514,24 @@ input:focus-visible,
   white-space: nowrap;
 }
 
+.research-card-motion,
+.research-card-fan {
+  position: absolute;
+  inset: 0;
+}
+
+.research-card-motion {
+  transform-origin: 50% 66%;
+}
+
+.research-card-fan-left {
+  transform-origin: 0 100%;
+}
+
+.research-card-fan-right {
+  transform-origin: 100% 100%;
+}
+
 .research-card {
   position: absolute;
   inset: 0;
@@ -524,13 +542,10 @@ input:focus-visible,
   border-radius: 22px;
   background: var(--surface);
   box-shadow: var(--card-shadow);
-  transform-origin: 50% 100%;
-  will-change: transform, opacity;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
-    filter 180ms ease,
-    transform-origin 240ms cubic-bezier(0.2, 0.72, 0.24, 1);
+    filter 180ms ease;
 }
 
 .research-card::after {

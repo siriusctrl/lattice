@@ -16,8 +16,10 @@ risk. Independent branches can converge on shared events or interpretations.
 - Click a thin underlined anchor to open its existing conversation card.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
-- Close the active branch directly from the Card corner.
-- Approach an exposed Card edge to open that side around the opposite lower
+- Close the active branch directly from the Card corner. Closing removes that
+  Card and every later Card from the current Deck, returns focus to the previous
+  Card, and leaves the complete research graph intact.
+- Approach an exposed Card edge to open that side around its matching lower
   corner, then click it to spread the current path across the desktop workspace.
 - Rest on a Card to preview it between earlier Cards on the left and later
   Cards on the right.

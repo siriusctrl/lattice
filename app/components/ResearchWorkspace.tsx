@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -26,6 +27,11 @@ import {
   ResearchCard,
   TextSelection,
 } from "@/app/components/ResearchCard";
+import { getArticleSectionForNode } from "@/app/lib/article-research";
+import {
+  DeckHintSide,
+  getCardMotionState,
+} from "@/app/lib/deck-motion";
 import {
   ALL_POSSIBLE_EDGES,
   GraphEdge,
@@ -33,11 +39,9 @@ import {
   ResearchNode,
   ROOT_NODE_ID,
 } from "@/app/lib/mock-research";
-import { getArticleSectionForNode } from "@/app/lib/article-research";
 
 type Theme = "light" | "dark";
 type WorkspaceView = "explore" | "article";
-type DeckHintSide = "left" | "right";
 
 type SelectionState = TextSelection & {
   nodeId: string;
@@ -52,9 +56,6 @@ type MobileSwipeState = {
 
 const clamp = (value: number, minimum = 0, maximum = 1) =>
   Math.min(maximum, Math.max(minimum, value));
-
-const mix = (from: number, to: number, progress: number) =>
-  from + (to - from) * progress;
 
 const FOLLOWUP_ANSWERS: Record<string, string> = {
   musk: "从整张人生图看，最稳定的线索不是某一家公司的成功，而是资本再投入、控制权与技术时间尺度三者不断重新组合。",
@@ -322,9 +323,20 @@ export function ResearchWorkspace() {
     [activeId, activeIndex, collapseDeckTo, nodes, stack],
   );
 
-  function closeActiveBranch() {
+  function closeActiveBranch(event: ReactMouseEvent<HTMLButtonElement>) {
     if (activeIndex <= 0) return;
-    collapseDeckTo(activeIndex - 1);
+    const nextIndex = activeIndex - 1;
+    setStack((current) => current.slice(0, activeIndex));
+    collapseDeckTo(nextIndex);
+    if (event.detail === 0) {
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector<HTMLInputElement>(
+            `[data-deck-index="${nextIndex}"] .card-composer input`,
+          )
+          ?.focus();
+      });
+    }
   }
 
   function focusFromGraph(nodeId: string) {
@@ -483,6 +495,8 @@ export function ResearchWorkspace() {
 
   function hintDeck(side: DeckHintSide) {
     if (compactDeck || deckMode || stack.length <= 1) return;
+    if (side === "left" && activeIndex <= 0) return;
+    if (side === "right" && activeIndex >= stack.length - 1) return;
     setDeckHintSide(side);
   }
 
@@ -603,125 +617,6 @@ export function ResearchWorkspace() {
     mobileSwipe.current = null;
     setMobileSwipeDelta(0);
     setMobileSwiping(false);
-  }
-
-  function getCardMotionState(index: number) {
-    const distanceFromActive = Math.abs(index - activeIndex);
-    const directionFromActive = Math.sign(index - activeIndex);
-    const hintGap =
-      stack.length <= 1
-        ? 0
-        : Math.min(22, Math.max(10, 92 / (stack.length - 1)));
-    const collapsedBase = {
-      x:
-        directionFromActive *
-        Math.min(distanceFromActive, 5) *
-        (compactDeck ? 18 : 16),
-      y: Math.min(distanceFromActive, 5) * (compactDeck ? 7 : 9),
-      scale: 1 - Math.min(distanceFromActive, 5) * 0.014,
-      rotate:
-        directionFromActive *
-        Math.min(distanceFromActive, 5) *
-        (compactDeck ? 0.7 : 0.46),
-      opacity: distanceFromActive > 4 ? 0 : 1,
-      zIndex: 80 - distanceFromActive,
-    };
-    const onHintSide =
-      deckHintSide === "left"
-        ? index < activeIndex
-        : deckHintSide === "right"
-          ? index > activeIndex
-          : false;
-    const fanAngle = Math.min(
-      7.2,
-      1.65 + Math.max(0, distanceFromActive - 1) * 1.75,
-    );
-    const collapsed =
-      deckHinted && !compactDeck && onHintSide
-        ? {
-            x: directionFromActive * distanceFromActive * hintGap * 0.18,
-            y: distanceFromActive * 1.4,
-            scale: 1 - distanceFromActive * 0.002,
-            rotate: directionFromActive * fanAngle,
-            opacity: 1,
-            zIndex: 72 - distanceFromActive,
-          }
-        : collapsedBase;
-
-    if (compactDeck && mobileSwiping) {
-      const swipeProgress = clamp(
-        Math.abs(mobileSwipeDelta) / (viewportWidth * 0.55),
-      );
-      const targetIndex =
-        activeIndex + (mobileSwipeDelta < 0 ? 1 : -1);
-      if (index === activeIndex) {
-        collapsed.x = mobileSwipeDelta * 0.88;
-        collapsed.y = 0;
-        collapsed.scale = 1 - swipeProgress * 0.045;
-        collapsed.rotate = mobileSwipeDelta / 92;
-        collapsed.opacity = 1 - swipeProgress * 0.18;
-      } else if (index === targetIndex) {
-        collapsed.x = mix(collapsed.x, 0, swipeProgress);
-        collapsed.y = mix(collapsed.y, 0, swipeProgress);
-        collapsed.scale = mix(collapsed.scale, 1, swipeProgress);
-        collapsed.rotate = mix(collapsed.rotate, 0, swipeProgress);
-        collapsed.opacity = 1;
-      }
-    }
-
-    const center = (stack.length - 1) / 2;
-    const centerDistance = index - center;
-    const focusDistance = index - previewIndex;
-    const absoluteFocusDistance = Math.abs(focusDistance);
-    const spread = deckPreviewFocused
-      ? {
-          x:
-            focusDistance === 0
-              ? 0
-              : Math.sign(focusDistance) *
-                (94 + (absoluteFocusDistance - 1) * 54),
-          y:
-            focusDistance === 0
-              ? 7
-              : 25 + absoluteFocusDistance * 6,
-          scale:
-            focusDistance === 0
-              ? 0.978
-              : Math.max(0.86, 0.925 - absoluteFocusDistance * 0.012),
-          rotate:
-            focusDistance === 0
-              ? 0
-              : Math.sign(focusDistance) *
-                (0.85 + absoluteFocusDistance * 0.34),
-          opacity: absoluteFocusDistance > 6 ? 0 : 1,
-          zIndex:
-            focusDistance === 0 ? 110 : 88 - absoluteFocusDistance,
-        }
-      : {
-          x: centerDistance * desktopDeckGap,
-          y: 13 + Math.abs(centerDistance) * 2.4,
-          scale:
-            index === (deckHoverIndex ?? previewIndex) ? 0.965 : 0.945,
-          rotate: centerDistance * 0.52,
-          opacity: 1,
-          zIndex: 40 + index,
-        };
-
-    return {
-      x: mix(collapsed.x, spread.x, deckProgress),
-      y: mix(collapsed.y, spread.y, deckProgress),
-      scale: mix(collapsed.scale, spread.scale, deckProgress),
-      rotate: mix(collapsed.rotate, spread.rotate, deckProgress),
-      opacity: mix(collapsed.opacity, spread.opacity, deckProgress),
-      zIndex: deckMode ? spread.zIndex : collapsed.zIndex,
-      transformOrigin: deckMode
-        ? "50% 66%"
-        : deckHintSide === "left"
-          ? "96% 94%"
-          : deckHintSide === "right"
-            ? "4% 94%"
-            : "50% 100%",
-    };
   }
 
   const selectionLeft = selection
@@ -924,7 +819,21 @@ export function ResearchWorkspace() {
                       deckPreviewed={
                         deckMode && index === captionIndex
                       }
-                      motionState={getCardMotionState(index)}
+                      motionState={getCardMotionState(index, {
+                        activeIndex,
+                        stackLength: stack.length,
+                        compact: compactDeck,
+                        mobileSwiping,
+                        mobileSwipeDelta,
+                        viewportWidth,
+                        hintSide: deckHintSide,
+                        previewFocused: deckPreviewFocused,
+                        previewIndex,
+                        hoverIndex: deckHoverIndex,
+                        desktopGap: desktopDeckGap,
+                        progress: deckProgress,
+                        spread: deckMode,
+                      })}
                       draggingDeck={mobileSwiping}
                       followups={followups[nodeId] ?? []}
                       thinking={thinkingNodeId === nodeId}
@@ -943,22 +852,24 @@ export function ResearchWorkspace() {
               <AnimatePresence>
                 {stack.length > 1 && !compactDeck && !deckMode ? (
                   <>
-                    <motion.button
-                      type="button"
-                      className="deck-edge-trigger deck-edge-trigger-left"
-                      onClick={openDeckSpread}
-                      onPointerEnter={() => hintDeck("left")}
-                      onPointerLeave={() => unhintDeck("left")}
-                      onFocus={() => hintDeck("left")}
-                      onBlur={() => unhintDeck("left")}
-                      aria-label="从左侧展开 Card 路径"
-                      initial={
-                        reduceMotion ? false : { opacity: 0 }
-                      }
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: reduceMotion ? 0 : 0.18 }}
-                    />
+                    {activeIndex > 0 ? (
+                      <motion.button
+                        type="button"
+                        className="deck-edge-trigger deck-edge-trigger-left"
+                        onClick={openDeckSpread}
+                        onPointerEnter={() => hintDeck("left")}
+                        onPointerLeave={() => unhintDeck("left")}
+                        onFocus={() => hintDeck("left")}
+                        onBlur={() => unhintDeck("left")}
+                        aria-label="从左侧展开 Card 路径"
+                        initial={
+                          reduceMotion ? false : { opacity: 0 }
+                        }
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.18 }}
+                      />
+                    ) : null}
                     {activeIndex < stack.length - 1 ? (
                       <motion.button
                         type="button"
@@ -994,7 +905,7 @@ export function ResearchWorkspace() {
                     }
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.16 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.16 }}
                   >
                     <X size={15} weight="bold" aria-hidden="true" />
                   </motion.button>

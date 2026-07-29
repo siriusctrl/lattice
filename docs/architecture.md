@@ -65,15 +65,19 @@ Article compiler, not in the source Card.
 
 The current ordered root-to-leaf lineage is a Deck, with an independent active
 index. In its default stacked state, the active card owns content input while
-earlier and later cards remain inert layers. Closing a card moves focus backward
-without deleting the rest of the Deck or the graph.
+earlier and later cards remain inert layers. Closing a Card removes the current
+Card and every later Card from the Deck suffix, then moves focus to the previous
+Card. This changes only the active lineage: every removed Deck node and relation
+remains available in the complete research graph.
 
 Deck Spread turns that same lineage into a temporary desktop navigation
 surface. The collapsed Deck has no count badge or visible mode control.
-Approaching an exposed edge opens only that side around the opposite lower
-corner: earlier Cards fan left from the lower-right pivot, while later Cards
-fan right from the lower-left pivot. Clicking that edge spreads the Cards
-across the available horizontal space with adaptive overlap.
+Approaching an exposed edge opens only that side around its matching lower
+corner: earlier Cards share a fixed lower-left pivot, while later Cards share a
+fixed lower-right pivot. The outer layer handles Stack and Spread movement while
+two nested fan layers keep those pivots stable through hover, retraction, and
+the transition into Spread. Clicking an edge spreads the Cards across the
+available horizontal space with adaptive overlap.
 A sustained hover promotes one Card into preview while earlier Cards collect
 on its left and later Cards collect on its right. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses

@@ -12,7 +12,8 @@
   - Deck lineage and independent historical focus
   - desktop edge hint, spread, and dwell preview
   - direct compact swipe navigation
-  - direct active-branch closing
+  - active-branch closing that removes the current Deck suffix, returns focus
+    to the previous Card, and preserves the complete graph
   - prepared graph state
   - custom fork creation
   - graph focus
@@ -61,6 +62,9 @@
   - incremental section compilation
   - multi-path crisis synthesis
 
+- `app/lib/deck-motion.ts`
+  - pure Stack, fixed-pivot fan, Spread, preview, and mobile swipe geometry
+
 ## Assets
 
 - `public/og.png`: social preview of Explore becoming Article
@@ -69,7 +73,10 @@
 ## Verification
 
 - `playwright.config.ts`: desktop browser verification environment
-- `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile tests
+- `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
+  tests, including top-Card and historical middle-Card unstack regressions
+- `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
+  hinted-fan to Spread transition coverage
 - `tests/rendered-html.test.mjs`: production Worker HTML checks
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording

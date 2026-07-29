@@ -18,6 +18,7 @@ import type {
   InlineText,
   ResearchNode,
 } from "@/app/lib/mock-research";
+import type { CardMotionState } from "@/app/lib/deck-motion";
 
 export type FollowupTurn = {
   id: string;
@@ -40,15 +41,7 @@ type ResearchCardProps = {
   deckIndex: number;
   deckMode: boolean;
   deckPreviewed: boolean;
-  motionState: {
-    x: number;
-    y: number;
-    scale: number;
-    rotate: number;
-    opacity: number;
-    zIndex: number;
-    transformOrigin: string;
-  };
+  motionState: CardMotionState;
   draggingDeck: boolean;
   followups: FollowupTurn[];
   thinking: boolean;
@@ -156,14 +149,25 @@ export function ResearchCard({
     });
   }
 
+  const cardClassName = `research-card ${
+    active ? "research-card-active" : ""
+  } ${deckMode ? "research-card-deck-mode" : ""} ${
+    deckPreviewed ? "research-card-deck-previewed" : ""
+  }`;
+  const settledTransition = {
+    type: "spring" as const,
+    stiffness: 275,
+    damping: 29,
+    mass: 0.86,
+  };
+  const fanTransition = {
+    duration: reduceMotion ? 0 : 0.54,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  };
+
   return (
-    <motion.article
-      className={`research-card ${active ? "research-card-active" : ""} ${
-        deckMode ? "research-card-deck-mode" : ""
-      } ${deckPreviewed ? "research-card-deck-previewed" : ""}`}
-      data-testid={`research-card-${node.id}`}
-      data-active={active ? "true" : "false"}
-      data-deck-index={deckIndex}
+    <motion.div
+      className="research-card-motion"
       initial={
         reduceMotion
           ? false
@@ -179,7 +183,7 @@ export function ResearchCard({
         x: motionState.x,
         y: motionState.y,
         scale: motionState.scale,
-        rotate: motionState.rotate,
+        rotate: motionState.baseRotate,
         opacity: motionState.opacity,
       }}
       exit={
@@ -190,132 +194,152 @@ export function ResearchCard({
       transition={
         draggingDeck || reduceMotion
           ? { duration: 0 }
-          : {
-              type: "spring",
-              stiffness: 275,
-              damping: 29,
-              mass: 0.86,
-            }
+          : settledTransition
       }
       style={{
         zIndex: motionState.zIndex,
-        transformOrigin: motionState.transformOrigin,
         pointerEvents: active || deckMode ? "auto" : "none",
       }}
-      aria-hidden={!active && !deckMode}
     >
-      {deckMode ? (
-        <button
-          type="button"
-          className="deck-card-picker"
-          aria-label={`打开 Card：${node.shortTitle}`}
-          onClick={() => onDeckSelect(deckIndex)}
-          onFocus={() => onDeckPreview(deckIndex)}
-          onBlur={() => onDeckPreviewEnd(deckIndex)}
-          onPointerEnter={() => onDeckPreview(deckIndex)}
-          onPointerLeave={() => onDeckPreviewEnd(deckIndex)}
-        />
-      ) : null}
-
-      <div
-        ref={scrollRef}
-        className="card-scroll"
-        onMouseUp={handleMouseUp}
+      <motion.div
+        className="research-card-fan research-card-fan-left"
+        animate={{ rotate: motionState.leftFanRotate }}
+        transition={fanTransition}
       >
-        <div className="prompt-block">
-          <span className="prompt-avatar" aria-hidden="true">
-            你
-          </span>
-          <p>{node.userPrompt}</p>
-        </div>
-
-        <div className="research-copy">
-          {node.blocks.map((block, index) => {
-            if (block.kind === "paragraph") {
-              return (
-                <p key={`${node.id}-paragraph-${index}`}>
-                  <InlineContent
-                    content={block.content}
-                    onAnchor={onAnchor}
-                  />
-                </p>
-              );
-            }
-
-            if (block.kind === "quote") {
-              return (
-                <blockquote key={`${node.id}-quote-${index}`}>
-                  <Quotes size={18} weight="fill" aria-hidden="true" />
-                  <p>{block.content}</p>
-                </blockquote>
-              );
-            }
-
-            return (
-              <p
-                className="chat-plain-paragraph"
-                key={`${node.id}-insight-${index}`}
-              >
-                {block.content}
-              </p>
-            );
-          })}
-        </div>
-
-        {followups.length > 0 ? (
-          <div
-            className="followup-thread"
-            aria-label="当前节点的继续追问"
-            data-testid={`followup-thread-${node.id}`}
-          >
-            {followups.map((turn) => (
-              <div className="followup-turn" key={turn.id}>
-                <div className="followup-question">
-                  <span aria-hidden="true">你</span>
-                  <p>{turn.question}</p>
-                </div>
-                <div className="followup-answer">
-                  <span className="assistant-mark" aria-hidden="true">
-                    L
-                  </span>
-                  <p>{turn.answer}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        {thinking ? (
-          <div className="thinking-block" role="status" aria-live="polite">
-            <SpinnerGap size={16} className="thinking-spinner" />
-            <div>
-              <span>正在沿当前节点思考</span>
-              <i />
-              <i />
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <form className="card-composer" onSubmit={handleSubmit}>
-        <label htmlFor={`ask-${node.id}`}>发消息</label>
-        <input
-          id={`ask-${node.id}`}
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          placeholder="继续问..."
-          autoComplete="off"
-          disabled={!active || thinking}
-        />
-        <button
-          type="submit"
-          className="send-button"
-          disabled={!question.trim() || thinking}
-          aria-label="发送追问"
+        <motion.div
+          className="research-card-fan research-card-fan-right"
+          animate={{ rotate: motionState.rightFanRotate }}
+          transition={fanTransition}
         >
-          <PaperPlaneTilt size={17} weight="fill" />
-        </button>
-      </form>
-    </motion.article>
+          <article
+            className={cardClassName}
+            data-testid={`research-card-${node.id}`}
+            data-active={active ? "true" : "false"}
+            data-deck-index={deckIndex}
+            data-left-fan-rotate={motionState.leftFanRotate.toFixed(3)}
+            data-right-fan-rotate={motionState.rightFanRotate.toFixed(3)}
+            inert={!active || deckMode ? true : undefined}
+            aria-hidden={!active || deckMode}
+          >
+            <div
+              ref={scrollRef}
+              className="card-scroll"
+              onMouseUp={handleMouseUp}
+            >
+              <div className="prompt-block">
+                <span className="prompt-avatar" aria-hidden="true">
+                  你
+                </span>
+                <p>{node.userPrompt}</p>
+              </div>
+
+              <div className="research-copy">
+                {node.blocks.map((block, index) => {
+                  if (block.kind === "paragraph") {
+                    return (
+                      <p key={`${node.id}-paragraph-${index}`}>
+                        <InlineContent
+                          content={block.content}
+                          onAnchor={onAnchor}
+                        />
+                      </p>
+                    );
+                  }
+
+                  if (block.kind === "quote") {
+                    return (
+                      <blockquote key={`${node.id}-quote-${index}`}>
+                        <Quotes size={18} weight="fill" aria-hidden="true" />
+                        <p>{block.content}</p>
+                      </blockquote>
+                    );
+                  }
+
+                  return (
+                    <p
+                      className="chat-plain-paragraph"
+                      key={`${node.id}-insight-${index}`}
+                    >
+                      {block.content}
+                    </p>
+                  );
+                })}
+              </div>
+
+              {followups.length > 0 ? (
+                <div
+                  className="followup-thread"
+                  aria-label="当前节点的继续追问"
+                  data-testid={`followup-thread-${node.id}`}
+                >
+                  {followups.map((turn) => (
+                    <div className="followup-turn" key={turn.id}>
+                      <div className="followup-question">
+                        <span aria-hidden="true">你</span>
+                        <p>{turn.question}</p>
+                      </div>
+                      <div className="followup-answer">
+                        <span className="assistant-mark" aria-hidden="true">
+                          L
+                        </span>
+                        <p>{turn.answer}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {thinking ? (
+                <div
+                  className="thinking-block"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <SpinnerGap size={16} className="thinking-spinner" />
+                  <div>
+                    <span>正在沿当前节点思考</span>
+                    <i />
+                    <i />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <form className="card-composer" onSubmit={handleSubmit}>
+              <label htmlFor={`ask-${node.id}`}>发消息</label>
+              <input
+                id={`ask-${node.id}`}
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="继续问..."
+                autoComplete="off"
+                disabled={!active || thinking}
+              />
+              <button
+                type="submit"
+                className="send-button"
+                disabled={!question.trim() || thinking}
+                aria-label="发送追问"
+              >
+                <PaperPlaneTilt size={17} weight="fill" />
+              </button>
+            </form>
+          </article>
+
+          {deckMode ? (
+            <button
+              type="button"
+              className="deck-card-picker"
+              aria-label={`打开 Card：${node.shortTitle}`}
+              onClick={() => onDeckSelect(deckIndex)}
+              onFocus={() => onDeckPreview(deckIndex)}
+              onBlur={() => onDeckPreviewEnd(deckIndex)}
+              onPointerEnter={() => onDeckPreview(deckIndex)}
+              onPointerLeave={() => onDeckPreviewEnd(deckIndex)}
+            />
+          ) : null}
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

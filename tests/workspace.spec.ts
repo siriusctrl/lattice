@@ -160,7 +160,17 @@ test("opens completed cards, closes the active branch, and preserves the full gr
     "data-active",
     "true",
   );
+  await expect(page.getByTestId("research-deck")).toHaveAttribute(
+    "data-deck-size",
+    "1",
+  );
+  await expect(page.getByTestId("research-card-spacex")).toHaveCount(0);
   await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
+  await expect(
+    page
+      .getByTestId("graph-preview")
+      .locator('[data-node-id="spacex"]'),
+  ).toBeVisible();
 
   await page.locator('[data-anchor-target="spacex"]').click();
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
@@ -190,19 +200,30 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   await expect(deck).toHaveAttribute("data-deck-size", "5");
   await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
   await expect(page.locator(".deck-spread-handle")).toHaveCount(0);
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "inert",
+    "",
+  );
+  await expect(page.getByTestId("research-card-zip2")).not.toHaveAttribute(
+    "inert",
+  );
+  const hiddenCardAcceptedFocus = await page
+    .getByTestId("research-card-musk")
+    .locator("button")
+    .first()
+    .evaluate((button) => {
+      (button as HTMLButtonElement).focus();
+      return document.activeElement === button;
+    });
+  expect(hiddenCardAcceptedFocus).toBe(false);
 
   const readDeckGeometry = () =>
     page.locator(".research-card").evaluateAll((cards) => {
       const geometry = cards.map((card) => {
         const rect = card.getBoundingClientRect();
-        const styles = window.getComputedStyle(card);
-        const matrix = new DOMMatrixReadOnly(styles.transform);
-        const [originX = "0"] = styles.transformOrigin.split(" ");
         return {
           center: rect.left + rect.width / 2,
           left: rect.left,
-          angle: Math.atan2(matrix.b, matrix.a) * (180 / Math.PI),
-          originRatio: Number.parseFloat(originX) / card.clientWidth,
         };
       });
       const centers = geometry.map((card) => card.center);
@@ -222,26 +243,30 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   await expect(deck).toHaveClass(/deck-wrap-hinted/);
   await expect(deck).toHaveAttribute("data-deck-hint", "left");
   await expect
-    .poll(async () => (await readDeckGeometry()).geometry[0].angle)
-    .toBeLessThan(-5);
+    .poll(async () => {
+      const cards = (await readDeckGeometry()).geometry;
+      return cards.at(-1)!.left - cards[0].left;
+    })
+    .toBeGreaterThan(70);
   const leftFan = await readDeckGeometry();
-  expect(leftFan.geometry[0].originRatio).toBeGreaterThan(0.9);
   expect(leftFan.geometry[0].left).toBeLessThan(
     leftFan.geometry.at(-1)?.left ?? 0,
   );
-  expect(
-    leftFan.geometry
-      .map((card) => card.angle)
-      .every(
-        (angle, index, angles) =>
-          index === 0 || angle > angles[index - 1],
-      ),
-  ).toBe(true);
 
   await edgeTrigger.click();
   await expect(deck).toHaveAttribute("data-deck-mode", "spread");
   await expect(page.getByTestId("deck-spread-caption")).toHaveCount(0);
   await expect(page.locator(".deck-card-picker")).toHaveCount(5);
+  await expect(page.locator(".research-card[inert]")).toHaveCount(5);
+  const spreadContentAcceptedFocus = await page
+    .getByTestId("research-card-musk")
+    .locator("button")
+    .first()
+    .evaluate((button) => {
+      (button as HTMLButtonElement).focus();
+      return document.activeElement === button;
+    });
+  expect(spreadContentAcceptedFocus).toBe(false);
   await expect.poll(async () => (await readDeckGeometry()).span).toBeGreaterThan(
     300,
   );
@@ -284,19 +309,28 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   });
   await rightTrigger.hover();
   await expect(deck).toHaveAttribute("data-deck-hint", "right");
-  await expect
-    .poll(async () => (await readDeckGeometry()).geometry[4].angle)
-    .toBeGreaterThan(4.5);
-  await expect
-    .poll(async () => (await readDeckGeometry()).geometry[4].originRatio)
-    .toBeLessThan(0.1);
-  const rightFan = await readDeckGeometry();
-  expect(rightFan.geometry[4].left).toBeGreaterThan(
-    rightFan.geometry[1].left,
+  await expect(page.getByTestId("research-card-zip2")).toHaveAttribute(
+    "data-right-fan-rotate",
+    "5.150",
   );
   await page.mouse.move(0, 0);
   await expect(deck).toHaveAttribute("data-deck-hint", "none");
 
+  await page.getByRole("button", { name: "关闭当前分支" }).click();
+  await expect(deck).toHaveAttribute("data-deck-size", "1");
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(page.getByTestId("research-card-origin")).toHaveCount(0);
+  await expect(page.getByTestId("research-card-zip2")).toHaveCount(0);
+  await expect(
+    page
+      .getByTestId("graph-preview")
+      .locator('[data-node-id="zip2"]'),
+  ).toBeVisible();
+
+  await page.locator('[data-anchor-target="origin"]').click();
   await page
     .getByTestId("research-card-origin")
     .locator('[data-anchor-target="blastar"]')

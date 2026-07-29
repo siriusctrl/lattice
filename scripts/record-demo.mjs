@@ -84,6 +84,9 @@ const deckEdge = page.getByRole("button", {
 });
 await deckEdge.hover();
 await page.waitForTimeout(650);
+await page.screenshot({
+  path: new URL("frame-02-left-fan.png", proofRoot).pathname,
+});
 await deckEdge.click();
 await page.waitForTimeout(750);
 await page
@@ -101,8 +104,19 @@ await page.waitForTimeout(700);
 await page.screenshot({
   path: new URL("frame-03-history-focus.png", proofRoot).pathname,
 });
-await page.getByRole("button", { name: "Elon Musk" }).first().click();
-await page.waitForTimeout(450);
+const rightDeckEdge = page.getByRole("button", {
+  name: "从右侧展开 Card 路径",
+});
+await rightDeckEdge.hover();
+await page.waitForTimeout(650);
+await page.screenshot({
+  path: new URL("frame-03-right-fan.png", proofRoot).pathname,
+});
+await page.getByRole("button", { name: "关闭当前分支" }).click();
+await page.waitForTimeout(750);
+await page.screenshot({
+  path: new URL("frame-03-history-unstack.png", proofRoot).pathname,
+});
 
 await page.locator('[data-anchor-target="spacex"]').click();
 await page.getByTestId("research-card-spacex").waitFor();

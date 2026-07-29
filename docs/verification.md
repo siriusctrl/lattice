@@ -22,8 +22,11 @@ ready for GitHub Pages.
 `verify:ui` launches Chromium and checks:
 
 - immediate prepared-card navigation without a hover preview or generation state
-- direct active-card closing without graph deletion
-- mirrored corner-pivot edge fans, desktop Deck Spread, and dwell preview
+- top-Card closing that removes the active Deck suffix, returns focus to the
+  previous Card, and preserves its node in the complete graph
+- historical middle-Card closing after Deck Spread selection, including removal
+  of that Card and every later Card from the Deck while their graph nodes remain
+- mirrored same-side lower-corner fans, desktop Deck Spread, and dwell preview
   partition
 - direct swipe focus with opposite Card peeks at phone widths
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
@@ -60,15 +63,16 @@ This produces:
 The recording follows one deterministic path:
 
 1. open the Musk root card
-2. build a five-Card early-life Deck, trigger its edge fan, and open Deck Spread
-3. return to a historical Card without deleting its later history
-4. fork to SpaceX and then the 2008 crisis
-5. inspect the completed flat article
-6. return through a source Card and reach the same crisis through Tesla
-7. expand the full graph, inspect a node label, and switch to dark mode
-8. inspect the two-path article synthesis
-9. return to Tesla and visibly complete a local follow-up
-10. select source text, create a custom fork, and inspect its place in the article
+2. build a five-Card early-life Deck and inspect the fixed lower-left fan
+3. open Deck Spread, return to a historical Card, and inspect the mirrored fan
+4. close that historical Card to unstack its complete Deck suffix
+5. fork to SpaceX and then the 2008 crisis
+6. inspect the completed flat article
+7. return through a source Card and reach the same crisis through Tesla
+8. expand the full graph, inspect a node label, and switch to dark mode
+9. inspect the two-path article synthesis
+10. return to Tesla and visibly complete a local follow-up
+11. select source text, create a custom fork, and inspect its place in the article
 
 Inspect both themes, graph legibility, card depth, focus movement, composer
 feedback, the final multi-parent crisis node, Article readability, and source

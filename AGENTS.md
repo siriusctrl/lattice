@@ -13,10 +13,11 @@ and context semantics behind the scenes.
 3. `docs/architecture.md`
 4. `docs/source-map.md`
 5. `app/lib/mock-research.ts`
-6. `app/components/ResearchWorkspace.tsx`
-7. `app/components/ResearchCard.tsx`
-8. `app/components/GraphPreview.tsx`
-9. `docs/verification.md`
+6. `app/lib/deck-motion.ts`
+7. `app/components/ResearchWorkspace.tsx`
+8. `app/components/ResearchCard.tsx`
+9. `app/components/GraphPreview.tsx`
+10. `docs/verification.md`
 
 ## Product invariants
 
@@ -25,12 +26,15 @@ and context semantics behind the scenes.
   reveals redundant relations only when their node is active.
 - Clicking an anchor focuses an existing prepared node without changing graph
   geometry or duplicating content.
-- Closing the active Card changes focus but never deletes the persisted graph.
+- Closing the active Card removes it and every later Card from the current Deck
+  suffix, moves focus to the previous Card, and never deletes the persisted
+  graph.
 - A Deck is the current ordered root-to-leaf lineage. Its focus may sit on any
   Card, and Card selection inside a spread does not delete later Cards.
 - Deck Spread is a desktop navigation mode, not a second content view. Hovering
-  an exposed Card edge fans only that side around the opposite lower corner;
-  clicking opens the lineage.
+  an exposed Card edge fans only that side around its matching lower corner;
+  earlier Cards pivot from the lower-left and later Cards from the lower-right.
+  Clicking opens the lineage.
 - A sustained hover previews one Card in the center. Earlier Cards collect on
   its left and later Cards collect on its right.
 - Compact screens do not have a separate spread mode or visible Deck control.
@@ -90,6 +94,7 @@ and context semantics behind the scenes.
   truth or mutate the graph.
 - Article compilation rules and node-to-section mapping belong in
   `article-research.ts`.
+- Pure Deck geometry and fixed-pivot motion math belong in `deck-motion.ts`.
 - Mock biography content, relations, and layout hints belong in
   `mock-research.ts`.
 - Durable model integration should enter through a typed adapter, not component
