@@ -20,14 +20,16 @@ and context semantics behind the scenes.
 
 ## Product invariants
 
-- Clicking an anchor creates or reuses a research node.
-- Following an already discovered relationship must not duplicate node content.
+- The showcase starts with every prepared research node and edge visible.
+- Clicking an anchor focuses an existing prepared node without changing graph
+  geometry or duplicating content.
 - Closing the active Card changes focus but never deletes the persisted graph.
 - Follow-up questions stay inside the active node.
 - User text selection creates a new sourced node.
 - The graph is visible but secondary to reading.
-- The graph reflows from the currently visible DAG. Fixture coordinates are
-  ordering hints only and must not become fixed screen positions.
+- Prepared graph geometry stays fixed while Card focus changes. Only explicit
+  user-created nodes may trigger a reflow.
+- The active graph marker moves between fixed nodes with a smooth transition.
 - Explore preserves the original conversation and spatial card history.
 - Article is one flat document, never a visual copy of the research DAG.
 - Article sections can cite multiple Cards, and each citation can reopen its Card.
@@ -71,6 +73,7 @@ Run before handoff:
 ```bash
 npm run check
 npm run verify:preview
+npm run verify:pages
 npm run verify:ui
 ```
 
@@ -79,7 +82,7 @@ the GIF, MP4, contact sheet, and all key frames in `outputs/proof/`.
 
 ## Deployment
 
-This repository uses the Sites vinext starter and contains
-`.openai/hosting.json`. Preserve the Sites build plugin and Worker-compatible
-output. Do not replace the starter architecture with a different deployment
-stack unless the hosting target changes explicitly.
+This repository supports two validated outputs. The default vinext build keeps
+the Sites Worker target and `.openai/hosting.json`; `npm run build:pages`
+enables vinext static export and the `/lattice/` asset base for GitHub Pages.
+Preserve both paths.

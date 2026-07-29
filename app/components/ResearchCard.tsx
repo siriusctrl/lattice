@@ -7,7 +7,14 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { FormEvent, MouseEvent, useMemo, useState } from "react";
+import {
+  FormEvent,
+  MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   InlineText,
   ResearchNode,
@@ -63,9 +70,6 @@ function InlineContent({
       >
         <span>{part.label}</span>
         <ArrowUpRight size={12} weight="bold" aria-hidden="true" />
-        <span className="anchor-tooltip" role="tooltip">
-          {part.hint}
-        </span>
       </button>
     );
   });
@@ -83,6 +87,8 @@ export function ResearchCard({
   reduceMotion,
 }: ResearchCardProps) {
   const [question, setQuestion] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const previousTurnCount = useRef(followups.length);
 
   const cardTransform = useMemo(() => {
     const distance = Math.min(layerIndex, 5);
@@ -94,6 +100,17 @@ export function ResearchCard({
       opacity: distance > 4 ? 0 : 1,
     };
   }, [layerIndex]);
+
+  useEffect(() => {
+    const receivedAnswer = followups.length > previousTurnCount.current;
+    previousTurnCount.current = followups.length;
+    if (!active || (!thinking && !receivedAnswer)) return;
+
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [active, followups.length, reduceMotion, thinking]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -163,7 +180,11 @@ export function ResearchCard({
       }}
       aria-hidden={!active}
     >
-      <div className="card-scroll" onMouseUp={handleMouseUp}>
+      <div
+        ref={scrollRef}
+        className="card-scroll"
+        onMouseUp={handleMouseUp}
+      >
         <div className="prompt-block">
           <span className="prompt-avatar" aria-hidden="true">
             你
@@ -205,7 +226,11 @@ export function ResearchCard({
         </div>
 
         {followups.length > 0 ? (
-          <div className="followup-thread" aria-label="当前节点的继续追问">
+          <div
+            className="followup-thread"
+            aria-label="当前节点的继续追问"
+            data-testid={`followup-thread-${node.id}`}
+          >
             {followups.map((turn) => (
               <div className="followup-turn" key={turn.id}>
                 <div className="followup-question">

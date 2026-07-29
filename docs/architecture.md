@@ -23,8 +23,8 @@ remain intentionally outside the mock.
 `ResearchWorkspace` owns:
 
 - the active card stack
-- discovered node ids
-- graph edges created by actual exploration
+- visible node ids, initialized with the complete prepared artifact
+- the complete prepared graph plus user-created edges
 - local follow-up turns
 - user-selected custom nodes
 - Explore and Article view state
@@ -32,14 +32,16 @@ remain intentionally outside the mock.
 - theme and graph window state
 
 The static fixture defines every prepared biography node, its anchor targets,
-and fallback ordering hints. The interface only reveals nodes that the user has
-discovered, plus faint potential children of the active node. `GraphPreview`
-recomputes a layered layout from the visible DAG whenever nodes or edges change,
-so fixture coordinates never become fixed screen positions.
+relations, and fallback ordering hints. The showcase reveals the entire
+prepared graph immediately. `GraphPreview` computes one layered layout from
+that completed DAG and keeps the geometry stable while the user changes Card
+focus. A spring-driven marker and connected-edge emphasis communicate movement
+without making the graph jump. Only an explicit user-created selection node
+changes the visible graph and triggers a new layout.
 
-When the user reaches the 2008 crisis from both SpaceX and Tesla, Lattice adds a
-second incoming edge to the existing crisis node. The content is reused, so the
-research structure becomes a DAG rather than two duplicated trees.
+The 2008 crisis already has incoming paths from both SpaceX and Tesla. Opening
+either branch focuses the same crisis Card, so the structure reads as a DAG
+rather than two duplicated trees.
 
 ## Card model
 
@@ -57,7 +59,7 @@ Article compiler, not in the source Card.
 
 The active card owns pointer input. Earlier cards remain visible as inert layers
 to preserve spatial memory. Closing the active card pops only the focus stack;
-the discovered node and graph edge remain available.
+the complete graph remains unchanged.
 
 ## Article model
 
@@ -66,15 +68,14 @@ per Card, and its section hierarchy does not mirror the exploration DAG.
 
 `article-research.ts` currently acts as a deterministic compiler. It reads:
 
-- discovered Card ids
-- actual graph edges
+- the complete prepared Card set
+- prepared and user-created graph edges
 - nodes that contain local follow-up turns
 
 It returns ordered article sections with prose, synthesis status, and source
-Card ids. When only the SpaceX path reaches the 2008 crisis, the section remains
-marked as waiting for cross-checking. When the Tesla path reaches the same node,
-the existing section becomes a two-path synthesis without asking the user to
-merge anything.
+Card ids. The prepared biography opens as a complete multi-path synthesis.
+Local follow-ups and user-created nodes can still add research notes without
+asking the user to merge anything.
 
 Every article section keeps provenance. Opening a source returns to the original
 Card and restores its exploration context.
@@ -121,6 +122,13 @@ TypeScript gives one shared schema for:
 React is appropriate because card focus, selection, local follow-ups, and graph
 projection are stateful product interactions. Motion is isolated to visual
 state changes. It is not used as the state engine.
+
+## Deployment surfaces
+
+The default vinext build remains Cloudflare Worker compatible for Sites.
+`GITHUB_PAGES=true` switches vinext to static export, while Vite prefixes
+browser assets with `/lattice/`. The resulting `dist/client` artifact contains
+the same client-side interactions and is published by GitHub Actions.
 
 ## Future boundaries
 

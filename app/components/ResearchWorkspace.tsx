@@ -21,7 +21,6 @@ import {
 } from "@/app/components/ResearchCard";
 import {
   ALL_POSSIBLE_EDGES,
-  getNodeAnchorTargets,
   GraphEdge,
   MOCK_RESEARCH_NODES,
   ResearchNode,
@@ -121,9 +120,9 @@ export function ResearchWorkspace() {
     useState("overview");
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
-    () => new Set([ROOT_NODE_ID]),
+    () => new Set(Object.keys(MOCK_RESEARCH_NODES)),
   );
-  const [edges, setEdges] = useState<GraphEdge[]>([]);
+  const [edges, setEdges] = useState<GraphEdge[]>(ALL_POSSIBLE_EDGES);
   const [customNodes, setCustomNodes] = useState<
     Record<string, ResearchNode>
   >({});
@@ -131,13 +130,11 @@ export function ResearchWorkspace() {
     Record<string, FollowupTurn[]>
   >({});
   const [thinkingNodeId, setThinkingNodeId] = useState<string | null>(null);
-  const [forkingTargetId, setForkingTargetId] = useState<string | null>(null);
   const [graphVisible, setGraphVisible] = useState(true);
   const [graphExpanded, setGraphExpanded] = useState(false);
   const [selection, setSelection] = useState<SelectionState | null>(null);
   const followupCounter = useRef(0);
   const customNodeCounter = useRef(0);
-  const forkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const askTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const nodes = useMemo(
@@ -146,10 +143,6 @@ export function ResearchWorkspace() {
   );
   const activeId = stack[stack.length - 1] ?? ROOT_NODE_ID;
   const activeNode = nodes[activeId] ?? nodes[ROOT_NODE_ID];
-  const potentialIds = useMemo(() => {
-    const targets = getNodeAnchorTargets(activeNode);
-    return new Set(targets.filter((id) => !discoveredIds.has(id)));
-  }, [activeNode, discoveredIds]);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("lattice-theme");
@@ -188,7 +181,6 @@ export function ResearchWorkspace() {
 
   useEffect(
     () => () => {
-      if (forkTimer.current) clearTimeout(forkTimer.current);
       if (askTimer.current) clearTimeout(askTimer.current);
     },
     [],
@@ -196,51 +188,20 @@ export function ResearchWorkspace() {
 
   const openNode = useCallback(
     (targetId: string) => {
-      if (!nodes[targetId] || targetId === activeId || forkingTargetId) return;
+      if (!nodes[targetId] || targetId === activeId) return;
       setSelection(null);
-      setForkingTargetId(targetId);
-
-      const commitFork = () => {
-        const knownRelation = ALL_POSSIBLE_EDGES.find(
-          (edge) => edge.from === activeId && edge.to === targetId,
-        );
-
-        if (knownRelation || targetId.startsWith("selection-")) {
-          setEdges((current) =>
-            uniqueEdge(current, {
-              from: activeId,
-              to: targetId,
-              kind: knownRelation?.kind ?? "fork",
-            }),
-          );
-        }
-
-        setDiscoveredIds((current) => {
-          const next = new Set(current);
-          next.add(targetId);
-          return next;
-        });
-
-        const existingIndex = stack.lastIndexOf(targetId);
-        setStack(
-          existingIndex >= 0
-            ? stack.slice(0, existingIndex + 1)
-            : [...stack, targetId],
-        );
-        setForkingTargetId(null);
-      };
-
-      if (reduceMotion) {
-        commitFork();
-      } else {
-        forkTimer.current = setTimeout(commitFork, 430);
-      }
+      const existingIndex = stack.lastIndexOf(targetId);
+      setStack(
+        existingIndex >= 0
+          ? stack.slice(0, existingIndex + 1)
+          : [...stack, targetId],
+      );
     },
-    [activeId, forkingTargetId, nodes, reduceMotion, stack],
+    [activeId, nodes, stack],
   );
 
   function closeActiveBranch() {
-    if (stack.length <= 1 || forkingTargetId) return;
+    if (stack.length <= 1) return;
     setStack(stack.slice(0, -1));
     setSelection(null);
   }
@@ -547,7 +508,7 @@ export function ResearchWorkspace() {
           </AnimatePresence>
 
           <AnimatePresence>
-            {stack.length > 1 && !forkingTargetId ? (
+            {stack.length > 1 ? (
               <motion.button
                 type="button"
                 className="branch-close-button"
@@ -566,35 +527,6 @@ export function ResearchWorkspace() {
             ) : null}
           </AnimatePresence>
 
-          <AnimatePresence>
-            {forkingTargetId ? (
-              <motion.div
-                className="forking-card"
-                initial={
-                  reduceMotion
-                    ? false
-                    : { opacity: 0, x: 88, y: 38, scale: 0.96, rotate: 1.4 }
-                }
-                animate={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                }}
-                role="status"
-                aria-live="polite"
-              >
-                <div className="forking-trace">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <p>正在展开新的研究节点</p>
-                <strong>{nodes[forkingTargetId]?.shortTitle}</strong>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
         </div>
 
           </section>
@@ -604,7 +536,6 @@ export function ResearchWorkspace() {
               <GraphPreview
                 nodes={nodes}
                 discoveredIds={discoveredIds}
-                potentialIds={potentialIds}
                 edges={edges}
                 activeId={activeId}
                 expanded={graphExpanded}

@@ -1,9 +1,9 @@
 # Lattice
 
-Lattice is a high-fidelity prototype for graph-native AI research. The user
-explores naturally through stacked conversation cards while the product keeps
-the research graph and continuously compiles useful material into one flat,
-readable article.
+Lattice is a high-fidelity prototype for graph-native AI research. This
+showcase opens on a completed research artifact: the user browses its full DAG
+through stacked conversation cards, can continue asking local questions, and
+can read the same material as one flat article.
 
 The included scenario explores Elon Musk's biography through more than twenty
 prepared nodes spanning early life, internet companies, industrial systems,
@@ -12,25 +12,26 @@ risk. Independent branches can converge on shared events or interpretations.
 
 ## What works
 
-- Click a thin underlined anchor to fork a new card.
+- See the complete prepared research graph before opening any branch.
+- Click a thin underlined anchor to open its existing conversation card.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
 - Close the active branch directly from the Card corner.
-- Reopen explored material from the breadcrumb or research graph.
-- Reopen discovered nodes from the graph preview.
+- Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
-- Watch the graph reflow as discovered branches make the DAG denser.
+- Move through Cards without moving the graph geometry; only the active marker
+  and connected edges transition.
 - Switch between the original Explore workspace and a continuous Article.
-- Watch article sections grow from draft to cross-branch synthesis.
+- Add local follow-ups or selected-text forks without rewriting prepared Cards.
 - Trace any article section back to the Card conversations that produced it.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
 
-This version uses a deterministic mock research model. The interaction contract
-is real, including the distinction between original conversation, exploration
-provenance, and the compiled article. Model calls and persistence are the next
-implementation layer.
+This version uses a deterministic, completed mock research artifact. The
+interaction contract is real, including the distinction between original
+conversation, graph provenance, local follow-ups, and the compiled article.
+Model calls and persistence are the next implementation layer.
 
 ## Quick start
 
@@ -79,12 +80,17 @@ See [docs/architecture.md](docs/architecture.md) for the intended boundary.
 ```bash
 npm run check
 npm run verify:preview
+npm run verify:pages
 npm run verify:ui
 npm run verify:proof
 ```
 
 `verify:proof` records the complete interaction, produces a GIF and MP4, and
 builds a contact sheet from key states.
+
+`verify:pages` creates the static `/lattice/` build used by
+[siriusctrl.github.io/lattice](https://siriusctrl.github.io/lattice/). Pushes
+to `main` publish that build through `.github/workflows/pages.yml`.
 
 See [docs/verification.md](docs/verification.md) for the exact proof contract.
 

@@ -15,7 +15,6 @@ import type {
 type GraphPreviewProps = {
   nodes: Record<string, ResearchNode>;
   discoveredIds: Set<string>;
-  potentialIds: Set<string>;
   edges: GraphEdge[];
   activeId: string;
   expanded: boolean;
@@ -25,10 +24,6 @@ type GraphPreviewProps = {
   onFocusNode: (nodeId: string) => void;
   reduceMotion: boolean;
 };
-
-function edgeKey(edge: GraphEdge) {
-  return `${edge.from}:${edge.to}:${edge.kind}`;
-}
 
 type LayoutPoint = {
   x: number;
@@ -140,7 +135,6 @@ function buildDynamicLayout(
 export function GraphPreview({
   nodes,
   discoveredIds,
-  potentialIds,
   edges,
   activeId,
   expanded,
@@ -152,47 +146,20 @@ export function GraphPreview({
 }: GraphPreviewProps) {
   if (!visible) return null;
 
-  const visibleIds = new Set(
-    expanded
-      ? [...discoveredIds, ...potentialIds]
-      : [...discoveredIds],
-  );
+  const visibleIds = new Set(discoveredIds);
   const visibleNodes = [...visibleIds]
     .map((id) => nodes[id])
     .filter((node): node is ResearchNode => Boolean(node));
-  const edgeMap = new Map(edges.map((edge) => [edgeKey(edge), edge]));
+  const visibleEdges = edges.filter(
+    (edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to),
+  );
   const incomingCounts = new Map<string, number>();
-  for (const edge of edges) {
+  for (const edge of visibleEdges) {
     incomingCounts.set(edge.to, (incomingCounts.get(edge.to) ?? 0) + 1);
   }
 
-  const candidateEdges: GraphEdge[] = [];
-  for (const edge of edges) {
-    if (visibleIds.has(edge.from) && visibleIds.has(edge.to)) {
-      candidateEdges.push(edge);
-    }
-  }
-
-  if (expanded) {
-    for (const to of potentialIds) {
-      const possible = {
-        from: activeId,
-        to,
-        kind: "fork" as const,
-      };
-      if (
-        nodes[activeId] &&
-        nodes[to] &&
-        !candidateEdges.some(
-          (edge) => edge.from === activeId && edge.to === to,
-        )
-      ) {
-        candidateEdges.push(possible);
-      }
-    }
-  }
-
-  const layout = buildDynamicLayout(visibleNodes, candidateEdges);
+  const layout = buildDynamicLayout(visibleNodes, visibleEdges);
+  const activePoint = layout.get(activeId);
   const crowdedLabels = visibleNodes.length > 7;
 
   return (
@@ -210,7 +177,9 @@ export function GraphPreview({
         <div className="graph-preview-title">
           <Graph size={16} weight="bold" aria-hidden="true" />
           <span>研究图</span>
-          <span className="graph-count">{discoveredIds.size} 个节点</span>
+          <span className="graph-count">
+            完整图谱 · {discoveredIds.size} 个节点
+          </span>
         </div>
         <div className="graph-preview-actions">
           <button
@@ -243,21 +212,22 @@ export function GraphPreview({
           viewBox="0 0 100 100"
           preserveAspectRatio="xMidYMid meet"
           role="img"
-          aria-label={`已发现 ${discoveredIds.size} 个研究节点`}
+          aria-label={`完整研究图，共 ${discoveredIds.size} 个节点`}
         >
           <g className="graph-edges">
-            {candidateEdges.map((edge) => {
+            {visibleEdges.map((edge) => {
               const from = nodes[edge.from];
               const to = nodes[edge.to];
               const fromPoint = layout.get(edge.from);
               const toPoint = layout.get(edge.to);
               if (!from || !to || !fromPoint || !toPoint) return null;
-              const actual = edgeMap.has(edgeKey(edge));
               const converging =
-                actual && (incomingCounts.get(edge.to) ?? 0) > 1;
+                (incomingCounts.get(edge.to) ?? 0) > 1;
+              const activeConnection =
+                edge.from === activeId || edge.to === activeId;
               return (
                 <motion.line
-                  key={`${edge.from}-${edge.to}-${actual ? "actual" : "hint"}`}
+                  key={`${edge.from}-${edge.to}-${edge.kind}`}
                   data-edge-from={edge.from}
                   data-edge-to={edge.to}
                   x1={fromPoint.x}
@@ -266,23 +236,42 @@ export function GraphPreview({
                   y2={toPoint.y}
                   className={[
                     "graph-edge",
-                    actual ? "graph-edge-discovered" : "graph-edge-potential",
+                    "graph-edge-discovered",
                     edge.kind === "synthesis" ? "graph-edge-synthesis" : "",
                     converging ? "graph-edge-convergence" : "",
+                    activeConnection ? "graph-edge-active" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   initial={reduceMotion ? false : { opacity: 0 }}
-                  animate={{ opacity: actual ? 0.92 : 0.25 }}
-                  transition={{ duration: 0.24 }}
+                  animate={{ opacity: activeConnection ? 0.96 : 0.56 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.28 }}
                 />
               );
             })}
           </g>
 
+          {activePoint ? (
+            <motion.circle
+              className="graph-active-orbit"
+              r={6.1}
+              initial={false}
+              animate={{ cx: activePoint.x, cy: activePoint.y }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : {
+                      type: "spring",
+                      stiffness: 190,
+                      damping: 24,
+                      mass: 0.75,
+                    }
+              }
+            />
+          ) : null}
+
           <g className="graph-nodes">
             {visibleNodes.map((node) => {
-              const isDiscovered = discoveredIds.has(node.id);
               const isActive = node.id === activeId;
               const point = layout.get(node.id);
               if (!point) return null;
@@ -294,25 +283,18 @@ export function GraphPreview({
                   data-layout-depth={point.depth}
                   className={[
                     "graph-node",
-                    isDiscovered
-                      ? "graph-node-discovered"
-                      : "graph-node-potential",
+                    "graph-node-discovered",
                     isActive ? "graph-node-active" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   transform={`translate(${point.x} ${point.y})`}
-                  role={isDiscovered ? "button" : undefined}
-                  tabIndex={isDiscovered ? 0 : undefined}
-                  aria-label={
-                    isDiscovered ? `打开节点：${node.shortTitle}` : undefined
-                  }
-                  onClick={() => {
-                    if (isDiscovered) onFocusNode(node.id);
-                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`打开节点：${node.shortTitle}`}
+                  onClick={() => onFocusNode(node.id)}
                   onKeyDown={(event) => {
                     if (
-                      isDiscovered &&
                       (event.key === "Enter" || event.key === " ")
                     ) {
                       event.preventDefault();
@@ -322,7 +304,7 @@ export function GraphPreview({
                 >
                   <title>{node.shortTitle}</title>
                   <motion.circle
-                    r={isActive ? 4.2 : isDiscovered ? 2.8 : 2.5}
+                    r={isActive ? 4.2 : 2.8}
                     initial={reduceMotion ? false : { scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{
@@ -331,7 +313,7 @@ export function GraphPreview({
                       damping: 24,
                     }}
                   />
-                  {expanded && isDiscovered ? (
+                  {expanded ? (
                     <text
                       className={
                         crowdedLabels && !isActive
@@ -367,11 +349,7 @@ export function GraphPreview({
           </span>
           <span>
             <i className="legend-mark legend-mark-discovered" />
-            已探索
-          </span>
-          <span>
-            <i className="legend-mark legend-mark-potential" />
-            可分支
+            研究节点
           </span>
         </div>
       ) : null}

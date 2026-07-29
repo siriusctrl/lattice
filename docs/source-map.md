@@ -11,8 +11,8 @@
 - `app/components/ResearchWorkspace.tsx`
   - focus stack
   - direct active-branch closing
-  - fork creation
-  - converging DAG edges
+  - prepared graph state
+  - custom fork creation
   - graph focus
   - custom selection nodes
   - local mock follow-ups
@@ -25,14 +25,15 @@
   - anchor rendering
   - source prompt
   - follow-up composer
+  - automatic follow-up reveal
   - text selection capture
-  - loading treatment
+  - follow-up thinking treatment
 
 - `app/components/GraphPreview.tsx`
   - compact and expanded graph projections
-  - layered layout recomputed from the visible DAG
+  - stable layered layout for the completed prepared DAG
+  - spring-driven active marker and connected-edge emphasis
   - crowded-label suppression and hover reveal
-  - potential and discovered node styling
   - graph node navigation
 
 - `app/components/ArticleView.tsx`
@@ -47,7 +48,7 @@
   - biography node types
   - visible mock copy
   - prepared anchors
-  - possible graph edges
+  - complete prepared graph edges
   - graph ordering hints
 
 - `app/lib/article-research.ts`
@@ -68,3 +69,5 @@
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording
 - `scripts/render-proof.sh`: GIF, MP4, and contact sheet production
+- `tests/static-pages.test.mjs`: GitHub Pages static-export contract
+- `.github/workflows/pages.yml`: project Pages build and deployment

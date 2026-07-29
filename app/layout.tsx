@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,50 +12,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host") ??
-    "lattice-research.sirius-ctrl.chatgpt.site";
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ??
-    (host.startsWith("localhost") || host.startsWith("127.0.0.1")
-      ? "http"
-      : "https");
-  const metadataBase = new URL(`${protocol}://${host}`);
-  const title = "Lattice - Explore naturally, leave with an article";
-  const description =
-    "Explore ideas in stacked AI conversations while Lattice compiles the research into one living article.";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  "https://lattice-research.sirius-ctrl.chatgpt.site";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const title = "Lattice - Explore naturally, leave with an article";
+const description =
+  "Explore ideas in stacked AI conversations while Lattice compiles the research into one living article.";
 
-  return {
-    metadataBase,
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  icons: {
+    icon: `${basePath}/favicon.svg`,
+    shortcut: `${basePath}/favicon.svg`,
+  },
+  openGraph: {
     title,
     description,
-    icons: {
-      icon: "/favicon.svg",
-      shortcut: "/favicon.svg",
-    },
-    openGraph: {
-      title,
-      description,
-      images: [
-        {
-          url: "/og.png",
-          width: 1536,
-          height: 1024,
-          alt: "Lattice turns stacked research cards into a living article",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["/og.png"],
-    },
-  };
-}
+    images: [
+      {
+        url: `${basePath}/og.png`,
+        width: 1536,
+        height: 1024,
+        alt: "Lattice turns stacked research cards into a living article",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [`${basePath}/og.png`],
+  },
+};
 
 export default function RootLayout({
   children,

@@ -5,6 +5,7 @@
 ```bash
 npm run check
 npm run verify:preview
+npm run verify:pages
 npm run verify:ui
 ```
 
@@ -14,18 +15,22 @@ npm run verify:ui
 Worker against an HTML request. It proves that product metadata, the Musk
 scenario, and the graph shell render without the disposable starter preview.
 
+`verify:pages` builds vinext in static-export mode and confirms that the
+interactive entrypoint, metadata, `.nojekyll`, and `/lattice/` asset URLs are
+ready for GitHub Pages.
+
 `verify:ui` launches Chromium and checks:
 
-- anchor fork creation
+- immediate prepared-card navigation without a hover preview or generation state
 - direct active-card closing without graph deletion
-- graph node counts
+- the complete 21-node, 46-edge graph at first render
 - graph edges reaching both endpoint centers without path clipping
-- dynamic graph reflow with minimum node spacing under a nine-node load
-- a converging SpaceX and Tesla DAG
-- local follow-up loading and completion
+- stable graph geometry and smooth active-focus movement during Card navigation
+- the prepared converging SpaceX and Tesla DAG
+- local follow-up loading, completion, and automatic reveal
 - user text selection forks
 - Explore and Article view switching
-- incomplete and converged article section states
+- complete article synthesis and user-added research-note states
 - article source links returning to original Cards
 - light and dark theme persistence
 - Explore and Article mobile viewport containment
@@ -51,12 +56,12 @@ The recording follows one deterministic path:
 1. open the Musk root card
 2. fork to SpaceX
 3. fork to the 2008 crisis
-4. inspect the first flat article draft
-5. return through a source Card and reach the crisis through Tesla
-6. expand the converged graph and switch to dark mode
-7. inspect the updated two-path article synthesis
-8. return to Tesla, ask a local follow-up, and select source text
-9. create a custom fork and inspect its place in the final article
+4. inspect the completed flat article
+5. return through a source Card and reach the same crisis through Tesla
+6. expand the full graph and switch to dark mode
+7. inspect the two-path article synthesis
+8. return to Tesla and visibly complete a local follow-up
+9. select source text, create a custom fork, and inspect its place in the article
 
 Inspect both themes, graph legibility, card depth, focus movement, composer
 feedback, the final multi-parent crisis node, Article readability, and source

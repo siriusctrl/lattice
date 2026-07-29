@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId("research-card-musk")).toBeVisible();
 });
 
-test("forks cards, closes the active branch, and preserves the graph", async ({
+test("opens completed cards, closes the active branch, and preserves the full graph", async ({
   page,
 }) => {
   await expect(page.getByText("读法", { exact: true })).toHaveCount(0);
@@ -28,6 +28,17 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
     page.getByTestId("graph-preview").locator(".graph-node-potential"),
   ).toHaveCount(0);
   await expect(
+    page.getByTestId("graph-preview").locator(".graph-node-discovered"),
+  ).toHaveCount(21);
+  await expect(
+    page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
+  ).toHaveCount(46);
+  await expect(page.getByTestId("graph-preview")).toContainText(
+    "完整图谱 · 21 个节点",
+  );
+  await expect(page.locator(".anchor-tooltip")).toHaveCount(0);
+  await expect(page.locator(".forking-card")).toHaveCount(0);
+  await expect(
     page.getByRole("button", { name: "关闭当前分支" }),
   ).toHaveCount(0);
   const underlineOffset = await rootCard
@@ -40,13 +51,14 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
     "data-active",
     "true",
   );
-  await expect(page.getByTestId("graph-preview")).toContainText("2 个节点");
+  await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
   await expect(
     page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
-  ).toHaveCount(1);
+  ).toHaveCount(46);
   const edgeGeometry = await page
     .getByTestId("graph-preview")
     .locator(".graph-edge-discovered")
+    .first()
     .evaluate((line) => {
       const svgLine = line as SVGLineElement;
       const svg = svgLine.ownerSVGElement;
@@ -103,7 +115,7 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
     "data-active",
     "true",
   );
-  await expect(page.getByTestId("graph-preview")).toContainText("2 个节点");
+  await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
 
   await page.locator('[data-anchor-target="spacex"]').click();
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
@@ -112,58 +124,58 @@ test("forks cards, closes the active branch, and preserves the graph", async ({
   );
 });
 
-test("reflows a crowded graph as new branches are discovered", async ({
+test("keeps the completed graph fixed while active focus moves smoothly", async ({
   page,
 }) => {
-  const openFromCard = async (
-    sourceId: string,
-    targetId: string,
-    nodeId: string,
-  ) => {
-    await page
-      .getByTestId(`research-card-${sourceId}`)
-      .locator(`[data-anchor-target="${targetId}"]`)
-      .first()
-      .click();
-    await expect(page.getByTestId(`research-card-${nodeId}`)).toHaveAttribute(
-      "data-active",
-      "true",
-    );
-  };
-  const returnToRoot = async () => {
-    await page.getByRole("button", { name: "Elon Musk" }).first().click();
-    await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
-      "data-active",
-      "true",
-    );
-  };
-
-  await openFromCard("musk", "origin", "origin");
-  const originBefore = await page
-    .getByTestId("graph-preview")
-    .locator('[data-node-id="origin"]')
-    .getAttribute("transform");
-
-  await returnToRoot();
-  await openFromCard("musk", "education", "education");
-  await returnToRoot();
-  await openFromCard("musk", "zip2", "zip2");
-  await openFromCard("zip2", "paypal", "paypal");
-  await openFromCard("paypal", "x", "x");
-  await openFromCard("x", "xai", "xai");
-  await returnToRoot();
-  await openFromCard("musk", "spacex", "spacex");
-  await returnToRoot();
-  await openFromCard("musk", "tesla", "tesla");
-
-  await expect(page.getByTestId("graph-preview")).toContainText("9 个节点");
-  await page.getByRole("button", { name: "展开研究图" }).click();
-
   const graph = page.getByTestId("graph-preview");
-  const originAfter = await graph
-    .locator('[data-node-id="origin"]')
-    .getAttribute("transform");
-  expect(originAfter).not.toBe(originBefore);
+  const positionsBefore = await graph.locator(".graph-node").evaluateAll(
+    (groups) =>
+      Object.fromEntries(
+        groups.map((group) => [
+          group.getAttribute("data-node-id"),
+          group.getAttribute("transform"),
+        ]),
+      ),
+  );
+  const orbitBefore = await graph.locator(".graph-active-orbit").evaluate(
+    (circle) => ({
+      cx: circle.getAttribute("cx"),
+      cy: circle.getAttribute("cy"),
+    }),
+  );
+
+  await page.locator('[data-anchor-target="spacex"]').click();
+  await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(graph.locator(".graph-node-active")).toHaveAttribute(
+    "data-node-id",
+    "spacex",
+  );
+  await page.waitForTimeout(700);
+
+  const positionsAfter = await graph.locator(".graph-node").evaluateAll(
+    (groups) =>
+      Object.fromEntries(
+        groups.map((group) => [
+          group.getAttribute("data-node-id"),
+          group.getAttribute("transform"),
+        ]),
+      ),
+  );
+  const orbitAfter = await graph.locator(".graph-active-orbit").evaluate(
+    (circle) => ({
+      cx: circle.getAttribute("cx"),
+      cy: circle.getAttribute("cy"),
+    }),
+  );
+  expect(positionsAfter).toEqual(positionsBefore);
+  expect(orbitAfter).not.toEqual(orbitBefore);
+
+  await page.getByRole("button", { name: "展开研究图" }).click();
+  await expect(graph).toHaveClass(/graph-preview-expanded/);
+  await page.waitForTimeout(700);
 
   const layoutMetrics = await graph
     .locator(".graph-node-discovered")
@@ -189,14 +201,22 @@ test("reflows a crowded graph as new branches are discovered", async ({
       return { minimumDistance, nodeCount: centers.length };
     });
 
-  expect(layoutMetrics.nodeCount).toBe(9);
-  expect(layoutMetrics.minimumDistance).toBeGreaterThan(24);
-  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(8);
+  expect(layoutMetrics.nodeCount).toBe(21);
+  expect(layoutMetrics.minimumDistance).toBeGreaterThan(18);
+  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(20);
 });
 
-test("builds a converging DAG when two branches reach the 2008 crisis", async ({
+test("shows the completed converging DAG before cards are opened", async ({
   page,
 }) => {
+  const graph = page.getByTestId("graph-preview");
+  await expect(
+    graph.locator('.graph-edge-discovered[data-edge-to="crisis"]'),
+  ).toHaveCount(4);
+  await expect(
+    graph.locator('.graph-edge-convergence[data-edge-to="crisis"]'),
+  ).toHaveCount(4);
+
   await page.locator('[data-anchor-target="spacex"]').click();
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
     "data-active",
@@ -229,13 +249,8 @@ test("builds a converging DAG when two branches reach the 2008 crisis", async ({
     "data-active",
     "true",
   );
-  await expect(
-    page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
-  ).toHaveCount(4);
-  await expect(
-    page.getByTestId("graph-preview").locator(".graph-edge-convergence"),
-  ).toHaveCount(2);
-  await expect(page.getByTestId("graph-preview")).toContainText("4 个节点");
+  await expect(graph.locator(".graph-edge-discovered")).toHaveCount(46);
+  await expect(graph).toContainText("21 个节点");
 });
 
 test("compiles a flat article and traces sections back to source cards", async ({
@@ -258,10 +273,13 @@ test("compiles a flat article and traces sections back to source cards", async (
 
   await expect(page.getByTestId("article-view")).toBeVisible();
   await expect(page.getByTestId("article-section-crisis")).toContainText(
-    "等待交叉验证",
+    "双路径综合",
   );
   await expect(
     page.getByTestId("article-sources").locator('[data-source-node="spacex"]'),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("article-sources").locator('[data-source-node="tesla"]'),
   ).toBeVisible();
 
   await page
@@ -313,8 +331,26 @@ test("supports local followups and user-selected text forks", async ({
   await expect(
     page.getByText("SpaceX 把一个遥远使命拆成了连续工程验证。"),
   ).toBeVisible();
+  const followupThread = page.getByTestId("followup-thread-spacex");
+  await expect(followupThread).toBeVisible();
+  await expect(followupThread).toContainText(
+    "这和他的管理方式有什么关系？",
+  );
+  const threadVisibility = await followupThread.evaluate((thread) => {
+    const card = thread.closest(".card-scroll");
+    if (!card) throw new Error("Missing card scroll container");
+    const threadRect = thread.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    return {
+      bottomInside: threadRect.bottom <= cardRect.bottom + 1,
+      topInside: threadRect.top >= cardRect.top - 1,
+    };
+  });
+  expect(threadVisibility.bottomInside).toBe(true);
+  expect(threadVisibility.topInside).toBe(true);
 
   await activeCard.locator(".research-copy > p").first().evaluate((paragraph) => {
+    paragraph.scrollIntoView({ block: "center" });
     const text = paragraph.firstChild;
     if (!text) throw new Error("Expected a text node");
     const range = document.createRange();

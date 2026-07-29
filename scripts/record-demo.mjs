@@ -64,8 +64,6 @@ await page
 await page.waitForTimeout(1_100);
 await page.screenshot({ path: new URL("frame-01-root.png", proofRoot).pathname });
 
-await page.locator('[data-anchor-target="spacex"]').hover();
-await page.waitForTimeout(450);
 await page.locator('[data-anchor-target="spacex"]').click();
 await page.getByTestId("research-card-spacex").waitFor();
 await page.waitForTimeout(850);
@@ -73,11 +71,6 @@ await page.screenshot({
   path: new URL("frame-02-spacex.png", proofRoot).pathname,
 });
 
-await page
-  .getByTestId("research-card-spacex")
-  .locator('[data-anchor-target="crisis"]')
-  .hover();
-await page.waitForTimeout(350);
 await page
   .getByTestId("research-card-spacex")
   .locator('[data-anchor-target="crisis"]')
@@ -108,11 +101,6 @@ await page.waitForTimeout(500);
 await page
   .getByTestId("research-card-musk")
   .locator('[data-anchor-target="tesla"]')
-  .hover();
-await page.waitForTimeout(300);
-await page
-  .getByTestId("research-card-musk")
-  .locator('[data-anchor-target="tesla"]')
   .click();
 await page.getByTestId("research-card-tesla").waitFor();
 await page.waitForTimeout(700);
@@ -125,32 +113,6 @@ await page.waitForTimeout(800);
 await page.screenshot({
   path: new URL("frame-05-converged-dag.png", proofRoot).pathname,
 });
-
-const focusRoot = async () => {
-  await page.getByRole("button", { name: "Elon Musk" }).first().click();
-  await page
-    .locator('[data-testid="research-card-musk"][data-active="true"]')
-    .waitFor();
-};
-const openPreparedNode = async (sourceId, targetId, nodeId) => {
-  await page
-    .getByTestId(`research-card-${sourceId}`)
-    .locator(`[data-anchor-target="${targetId}"]`)
-    .first()
-    .click();
-  await page
-    .locator(`[data-testid="research-card-${nodeId}"][data-active="true"]`)
-    .waitFor();
-  await page.waitForTimeout(420);
-};
-
-await focusRoot();
-await openPreparedNode("musk", "education", "education");
-await focusRoot();
-await openPreparedNode("musk", "zip2", "zip2");
-await openPreparedNode("zip2", "paypal", "paypal");
-await openPreparedNode("paypal", "x", "x");
-await openPreparedNode("x", "xai", "xai");
 
 await page
   .getByTestId("graph-preview")
@@ -191,9 +153,16 @@ const activeCard = page.locator('[data-active="true"]');
 const composer = activeCard.getByPlaceholder("继续问...");
 await composer.fill("这更像莽撞，还是一种可复制的风险方法？");
 await activeCard.getByRole("button", { name: "发送追问" }).click();
-await page.waitForTimeout(1_300);
+await page.getByTestId("followup-thread-tesla").waitFor();
+await page.getByTestId("followup-thread-tesla").scrollIntoViewIfNeeded();
+await page.waitForTimeout(1_500);
+await page.screenshot({
+  path: new URL("frame-08-followup.png", proofRoot).pathname,
+});
+await page.waitForTimeout(1_000);
 
 await activeCard.locator(".research-copy > p").nth(2).evaluate((paragraph) => {
+  paragraph.scrollIntoView({ block: "center" });
   const range = document.createRange();
   range.selectNodeContents(paragraph);
   const selection = window.getSelection();
@@ -205,7 +174,7 @@ await activeCard.locator(".research-copy > p").nth(2).evaluate((paragraph) => {
 });
 await page.waitForTimeout(650);
 await page.screenshot({
-  path: new URL("frame-08-selection.png", proofRoot).pathname,
+  path: new URL("frame-09-selection.png", proofRoot).pathname,
 });
 await page.getByRole("button", { name: "从选区分叉" }).click();
 await page.waitForTimeout(800);
@@ -215,7 +184,7 @@ await page.getByTestId("article-section-research-notes").waitFor();
 await page.mouse.move(1400, 30);
 await page.waitForTimeout(1_200);
 await page.screenshot({
-  path: new URL("frame-09-final-article.png", proofRoot).pathname,
+  path: new URL("frame-10-final-article.png", proofRoot).pathname,
 });
 
 await page.close();
