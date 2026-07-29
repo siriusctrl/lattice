@@ -252,9 +252,6 @@ export function GraphPreview({
         <div className="graph-preview-title">
           <Graph size={16} weight="bold" aria-hidden="true" />
           <span>研究图</span>
-          <span className="graph-count">
-            完整图谱 · {discoveredIds.size} 个节点
-          </span>
         </div>
         <div className="graph-preview-actions">
           <button
@@ -440,6 +437,9 @@ export function GraphPreview({
           >
             {nodes[activeId]?.shortTitle}
           </motion.strong>
+          <span className="graph-node-total">
+            {discoveredIds.size} 个节点
+          </span>
         </div>
       ) : (
         <div className="graph-legend" aria-hidden="true">
@@ -450,6 +450,9 @@ export function GraphPreview({
           <span>
             <i className="legend-mark legend-mark-discovered" />
             研究节点
+          </span>
+          <span className="graph-node-total">
+            {discoveredIds.size} 个节点
           </span>
         </div>
       )}

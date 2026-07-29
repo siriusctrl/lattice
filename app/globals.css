@@ -879,13 +879,6 @@ input:focus-visible,
   color: var(--accent-strong);
 }
 
-.graph-count {
-  padding-left: 3px;
-  color: var(--muted);
-  font-size: 9px;
-  font-weight: 500;
-}
-
 .graph-preview-actions {
   display: flex;
   gap: 2px;
@@ -1030,11 +1023,23 @@ input:focus-visible,
 
 .graph-focus-bar strong {
   min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   color: var(--ink);
   font-size: 10px;
   font-weight: 640;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-node-total {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--faint);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 520;
   white-space: nowrap;
 }
 

@@ -85,6 +85,18 @@ npm run verify:ui
 Run `npm run verify:proof` after a material interaction or visual change. Inspect
 the GIF, MP4, contact sheet, and all key frames in `outputs/proof/`.
 
+## Commit conventions
+
+- Use Conventional Commits for every commit:
+  `type(scope): concise summary`.
+- Prefer the narrowest useful scope, such as `graph`, `cards`, `article`,
+  `docs`, or `deploy`.
+- Add a short commit body for every non-mechanical change. In one to three
+  sentences, state what changed and why it changed.
+- Keep commit subjects imperative, specific, and under 72 characters.
+- Preserve the repository owner's configured Git author. Do not mention Codex,
+  agents, assistants, or generated-by tooling in authorship or commit messages.
+
 ## Deployment
 
 This repository supports two validated outputs. The default vinext build keeps

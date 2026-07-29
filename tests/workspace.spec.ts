@@ -28,6 +28,19 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   await expect(
     page.getByTestId("graph-preview").locator(".graph-focus-bar"),
   ).toContainText("Elon Musk");
+  await expect(
+    page
+      .getByTestId("graph-preview")
+      .locator(".graph-focus-bar .graph-node-total"),
+  ).toHaveText("21 个节点");
+  await expect(
+    page
+      .getByTestId("graph-preview")
+      .locator(".graph-preview-header"),
+  ).not.toContainText("完整图谱");
+  await expect(
+    page.getByTestId("graph-preview").locator(".graph-count"),
+  ).toHaveCount(0);
   await expect(page.locator(".graph-active-label")).toHaveCount(0);
   await expect(
     page.getByTestId("graph-preview").locator(".graph-node-potential"),
@@ -46,9 +59,7 @@ test("opens completed cards, closes the active branch, and preserves the full gr
     "data-primary-edge-count",
     "25",
   );
-  await expect(page.getByTestId("graph-preview")).toContainText(
-    "完整图谱 · 21 个节点",
-  );
+  await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
   await expect(page.locator(".anchor-tooltip")).toHaveCount(0);
   await expect(page.locator(".forking-card")).toHaveCount(0);
   await expect(
@@ -209,6 +220,9 @@ test("keeps the completed graph fixed while active focus moves smoothly", async 
 
   await page.getByRole("button", { name: "展开研究图" }).click();
   await expect(graph).toHaveClass(/graph-preview-expanded/);
+  await expect(
+    graph.locator(".graph-legend .graph-node-total"),
+  ).toHaveText("21 个节点");
   await page.waitForTimeout(700);
 
   const layoutMetrics = await graph
