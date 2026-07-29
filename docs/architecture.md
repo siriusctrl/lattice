@@ -39,6 +39,11 @@ relations only when their node is active. A spring-driven marker and
 contextual-edge emphasis communicate movement without making the graph jump.
 Only an explicit user-created selection node changes the visible graph.
 
+A node title is fork-time metadata: a model may generate it once from the
+anchor, selected text, or user question, and the product persists it with the
+node. The graph does not generate a second layer of region names or taxonomy.
+Expanded mode is only a larger interactive projection of the same graph.
+
 The 2008 crisis already has incoming paths from both SpaceX and Tesla. Opening
 either branch focuses the same crisis Card, so the structure reads as a DAG
 rather than two duplicated trees.

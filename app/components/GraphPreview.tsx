@@ -467,15 +467,6 @@ export function GraphPreview({
             })}
           </g>
 
-          {expanded ? (
-            <g className="graph-regions" aria-hidden="true">
-              <text x="19" y="5.5">早期与互联网</text>
-              <text x="22" y="31">航天系统</text>
-              <text x="22" y="75">汽车与能源</text>
-              <text x="77" y="93">综合判断</text>
-            </g>
-          ) : null}
-
           <AnimatePresence>
             {expanded && hoverLabel ? (
               <motion.g

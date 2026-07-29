@@ -253,7 +253,7 @@ test("keeps the completed graph fixed while active focus moves smoothly", async 
   expect(layoutMetrics.nodeCount).toBe(21);
   expect(layoutMetrics.minimumDistance).toBeGreaterThan(18);
   await expect(graph.locator(".graph-nodes text")).toHaveCount(0);
-  await expect(graph.locator(".graph-regions text")).toHaveCount(4);
+  await expect(graph.locator(".graph-canvas text")).toHaveCount(0);
 
   await graph.locator('[data-node-id="origin"]').hover();
   await expect(graph.locator(".graph-hover-label")).toContainText(

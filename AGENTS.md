@@ -34,8 +34,11 @@ and context semantics behind the scenes.
 - Prepared node positions are semantic layout hints, not an automatic
   topological layout. Keep the early web, space, mobility, platform, and
   synthesis strands visually distinct.
-- Region labels may remain visible in the expanded graph. Node titles appear
-  only on pointer hover or keyboard focus, in a label layer above every edge.
+- Expanded graph mode is semantic zoom over the same graph. Do not add region
+  labels, generated taxonomies, summaries, or a second information structure.
+- Node titles are generated once when a fork is created, then persisted as node
+  metadata. They appear only on pointer hover or keyboard focus, in a label
+  layer above every edge.
 - Hovering a node emphasizes its connected paths and quiets unrelated edges.
   Do not reintroduce a mixed set of permanently labeled nodes.
 - The active graph marker moves between fixed nodes with a smooth transition.

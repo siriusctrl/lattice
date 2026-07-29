@@ -897,19 +897,6 @@ input:focus-visible,
   overflow: visible;
 }
 
-.graph-regions text {
-  fill: color-mix(in srgb, var(--ink) 32%, transparent);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 2.15px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  paint-order: stroke fill;
-  stroke: var(--surface-raised);
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-  pointer-events: none;
-}
-
 .graph-edge {
   fill: none;
   stroke: var(--line-strong);
