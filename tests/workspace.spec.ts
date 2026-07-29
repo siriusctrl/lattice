@@ -487,6 +487,38 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
     "none",
   );
 
+  await page.setViewportSize({ width: 1512, height: 822 });
+  await expect
+    .poll(async () =>
+      cards.evaluateAll((elements) => {
+        const topbarBottom =
+          document.querySelector(".topbar")?.getBoundingClientRect()
+            .bottom ?? 0;
+        return (
+          Math.min(
+            ...elements.map(
+              (element) => element.getBoundingClientRect().top,
+            ),
+          ) - topbarBottom
+        );
+      }),
+    )
+    .toBeGreaterThanOrEqual(12);
+  await expect
+    .poll(async () =>
+      cards.evaluateAll(
+        (elements) =>
+          window.innerHeight -
+          Math.max(
+            ...elements.map(
+              (element) => element.getBoundingClientRect().bottom,
+            ),
+          ),
+      ),
+    )
+    .toBeGreaterThanOrEqual(32);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
   const readStackSurface = async () =>
     cards.evaluateAll((elements) => {
       const geometry = elements.map((element) => {
@@ -1018,6 +1050,12 @@ test("compiles a flat article and traces sections back to source cards", async (
   await page.getByRole("button", { name: "Article", exact: true }).click();
 
   await expect(page.getByTestId("article-view")).toBeVisible();
+  await expect(page.getByText("随研究实时重写").first()).toBeVisible();
+  await expect(page.locator(".wiki-open-questions")).toHaveCount(0);
+  await expect(
+    page.getByText("文章不会假装已经完成", { exact: true }),
+  ).toHaveCount(0);
+  expect(await page.locator(".wiki-section > p").count()).toBeGreaterThan(20);
   await expect(page.getByTestId("article-section-crisis")).toContainText(
     "双路径综合",
   );

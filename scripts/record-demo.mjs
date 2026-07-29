@@ -198,7 +198,7 @@ await page.screenshot({
 
 await page
   .locator(".article-outline")
-  .getByRole("button", { name: "把退出所得投入工业系统" })
+  .getByRole("button", { name: "从软件产品进入工业系统" })
   .click();
 await page.waitForTimeout(400);
 await page

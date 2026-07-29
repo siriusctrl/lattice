@@ -396,8 +396,13 @@ input:focus-visible,
   top: 50%;
   left: 50%;
   width: min(760px, calc(100vw - 420px));
-  height: min(772px, calc(100dvh - 100px));
-  min-height: 590px;
+  /*
+   * A desktop fan rotates around the lower corners, so its outer sheets rise
+   * above the active Card. Reserve a fixed block-axis safety band instead of
+   * letting a deep Deck slide underneath the topbar.
+   */
+  height: min(772px, calc(100dvh - 176px));
+  min-height: min(590px, calc(100dvh - 176px));
   isolation: isolate;
   touch-action: pan-y;
   transform: translate(-50%, -50%);
@@ -1284,7 +1289,7 @@ input:focus-visible,
   font-weight: 620;
 }
 
-.outline-compile-state {
+.outline-sync-state {
   display: grid;
   grid-template-columns: 8px minmax(0, 1fr);
   gap: 9px;
@@ -1293,7 +1298,7 @@ input:focus-visible,
   border-top: 1px solid var(--line);
 }
 
-.compile-pulse {
+.sync-pulse {
   width: 6px;
   height: 6px;
   margin-top: 4px;
@@ -1303,20 +1308,20 @@ input:focus-visible,
   animation: tracePulse 2s ease-in-out infinite;
 }
 
-.outline-compile-state div {
+.outline-sync-state div {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 3px;
 }
 
-.outline-compile-state strong {
+.outline-sync-state strong {
   color: var(--ink-soft);
   font-size: 10px;
   font-weight: 650;
 }
 
-.outline-compile-state div > span {
+.outline-sync-state div > span {
   color: var(--faint);
   font-size: 8px;
   line-height: 1.45;
@@ -1460,12 +1465,6 @@ input:focus-visible,
   content: "";
 }
 
-.wiki-section-converged::before {
-  border-color: var(--accent-ink);
-  background: var(--accent);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 15%, transparent);
-}
-
 .wiki-section-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1485,8 +1484,7 @@ input:focus-visible,
   text-transform: uppercase;
 }
 
-.wiki-section h2,
-.wiki-open-questions h2 {
+.wiki-section h2 {
   max-width: 18ch;
   margin: 0;
   color: var(--ink);
@@ -1497,36 +1495,11 @@ input:focus-visible,
   text-wrap: balance;
 }
 
-.wiki-section-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.section-status,
-.wiki-section-meta button {
+.wiki-source-count {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  white-space: nowrap;
-}
-
-.section-status {
-  color: var(--muted);
-  font-size: 8px;
-  font-weight: 630;
-}
-
-.section-status-converged {
-  color: var(--accent-strong);
-}
-
-.section-status-developing {
-  color: var(--faint);
-}
-
-.wiki-section-meta button {
+  align-self: start;
   padding: 3px 0;
   border: 0;
   background: transparent;
@@ -1534,9 +1507,10 @@ input:focus-visible,
   cursor: pointer;
   font-size: 8px;
   transition: color 160ms ease;
+  white-space: nowrap;
 }
 
-.wiki-section-meta button:hover {
+.wiki-source-count:hover {
   color: var(--ink);
 }
 
@@ -1565,54 +1539,6 @@ input:focus-visible,
 
 .wiki-citation:hover {
   color: var(--ink);
-}
-
-.wiki-open-questions {
-  margin-top: 58px;
-  padding: 32px;
-  border: 1px solid
-    color-mix(in srgb, var(--accent-strong) 25%, var(--line));
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent) 11%, var(--surface-soft)),
-      var(--surface-soft)
-    );
-}
-
-.wiki-open-questions > span {
-  color: var(--accent-strong);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 9px;
-  font-weight: 720;
-  letter-spacing: 0.08em;
-}
-
-.wiki-open-questions ul {
-  display: grid;
-  gap: 10px;
-  margin: 25px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wiki-open-questions li {
-  position: relative;
-  padding-left: 16px;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.wiki-open-questions li::before {
-  position: absolute;
-  top: 0.62em;
-  left: 0;
-  width: 5px;
-  height: 5px;
-  border: 1px solid var(--accent-strong);
-  border-radius: 50%;
-  content: "";
 }
 
 .article-sources {
@@ -2114,23 +2040,16 @@ input:focus-visible,
     display: block;
   }
 
-  .wiki-section-meta {
-    flex-direction: row;
-    align-items: center;
+  .wiki-source-count {
     margin-top: 14px;
   }
 
-  .wiki-section h2,
-  .wiki-open-questions h2 {
+  .wiki-section h2 {
     font-size: 30px;
   }
 
   .wiki-section > p {
     font-size: 15px;
-  }
-
-  .wiki-open-questions {
-    padding: 24px;
   }
 
   .article-sources {

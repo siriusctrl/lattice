@@ -23,6 +23,11 @@
   - Card-to-article and article-to-Card navigation
   - theme state
 
+- `app/components/WorkspaceTopbar.tsx`
+  - Explore and Article controls
+  - compact research breadcrumb
+  - graph restore and theme controls
+
 - `app/components/ResearchCard.tsx`
   - metadata-free chat answer surface and content
   - accessible Deck navigation hit area
@@ -35,18 +40,19 @@
 
 - `app/components/GraphPreview.tsx`
   - compact and expanded graph projections
-  - transitive-reduced primary-path projection
-  - curved routes over stable semantic positions
   - spring-driven active marker and contextual-edge emphasis
   - one-at-a-time hover and keyboard-focus labels above the edge layer
   - connected-path emphasis while inspecting a node
   - graph node navigation
 
 - `app/components/ArticleView.tsx`
-  - continuous article surface
-  - ordered section navigation
-  - synthesis and developing states
-  - source Card rail
+  - current Article section selection
+  - Card-to-section focus synchronization
+
+- `app/components/article/`
+  - `ArticleOutline.tsx`: ordered navigation and source synchronization state
+  - `ArticlePaper.tsx`: complete current edition and citation controls
+  - `ArticleSources.tsx`: source Card rail and return navigation
 
 ## Data
 
@@ -59,8 +65,19 @@
 
 - `app/lib/article-research.ts`
   - node-to-section mapping
-  - incremental section compilation
+  - complete current-edition compilation
   - multi-path crisis synthesis
+
+- `app/lib/graph-layout.ts`
+  - stable semantic positions and graph depth
+  - transitive-reduced primary-path projection
+  - curved edge routes and collision-aware hover labels
+
+- `app/lib/research-workspace.ts`
+  - root-to-node path lookup
+  - unique edge insertion
+  - mock follow-up responses
+  - selection-node construction
 
 - `app/lib/deck-motion.ts`
   - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
@@ -79,7 +96,8 @@
 
 - `playwright.config.ts`: desktop browser verification environment
 - `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
-  tests, including top-Card and historical middle-Card unstack regressions
+  tests, including top-Card and historical middle-Card unstack regressions,
+  short-desktop topbar clearance, and current-edition Article coverage
 - `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
   hinted-fan to Spread transition coverage
 - `tests/rendered-html.test.mjs`: production Worker HTML checks

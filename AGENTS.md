@@ -14,11 +14,13 @@ and context semantics behind the scenes.
 4. `docs/source-map.md`
 5. `app/lib/mock-research.ts`
 6. `app/lib/deck-motion.ts`
-7. `app/hooks/use-mobile-deck.ts`
-8. `app/components/ResearchWorkspace.tsx`
-9. `app/components/ResearchCard.tsx`
-10. `app/components/GraphPreview.tsx`
-11. `docs/verification.md`
+7. `app/lib/graph-layout.ts`
+8. `app/lib/article-research.ts`
+9. `app/hooks/use-mobile-deck.ts`
+10. `app/components/ResearchWorkspace.tsx`
+11. `app/components/ResearchCard.tsx`
+12. `app/components/GraphPreview.tsx`
+13. `docs/verification.md`
 
 ## Product invariants
 
@@ -62,6 +64,8 @@ and context semantics behind the scenes.
 - The active graph marker moves between fixed nodes with a smooth transition.
 - Explore preserves the original conversation and spatial card history.
 - Article is one flat document, never a visual copy of the research DAG.
+- Article is a complete current edition after every compilation. Do not expose
+  internal draft, unfinished, waiting, or developing states in the reader UI.
 - Article sections can cite multiple Cards, and each citation can reopen its Card.
 - Users never perform a manual merge operation.
 - Past answer content is not rewritten when graph context changes.
@@ -80,6 +84,9 @@ and context semantics behind the scenes.
 - A collapsed desktop Deck must keep its real Card edges visibly fanned at large
   viewport sizes. Only the active reading Card owns a compact contact shadow;
   dormant layers must not create moving shadow clouds or broad elevation haze.
+- The desktop fan must reserve enough vertical safety space for its outer sheet.
+  At short desktop heights, no Card may rise into the fixed topbar or lose its
+  lower corner outside the viewport.
 - Keep the workspace background optically flat. Do not reintroduce ambient
   radial gradients that can read as detached Card shadows.
 - Mobile folded-preview movement must interpolate the centered Card and its
@@ -95,6 +102,8 @@ and context semantics behind the scenes.
 
 - `ResearchWorkspace` owns Deck lineage, historical focus, spread gestures,
   graph events, and card navigation.
+- `WorkspaceTopbar` is presentational. Keep breadcrumb, view, graph-restore, and
+  theme control markup out of the workspace state component.
 - `ResearchCard` owns local rendering, its navigation hit area, selection
   capture, and its composer. It does not own Deck state.
 - `GraphPreview` is a projection. It must not become the source of graph state.
@@ -102,6 +111,12 @@ and context semantics behind the scenes.
   truth or mutate the graph.
 - Article compilation rules and node-to-section mapping belong in
   `article-research.ts`.
+- Article outline, paper, and source rail rendering belong in
+  `components/article/`.
+- Pure graph projection, edge routing, and hover-label geometry belong in
+  `graph-layout.ts`.
+- Graph path, unique-edge, mock follow-up, and selection-node helpers belong in
+  `research-workspace.ts`.
 - Pure Deck geometry and fixed-pivot motion math belong in `deck-motion.ts`.
 - Compact preview gesture state, cancellation, and pointer capture belong in
   `use-mobile-deck.ts`.

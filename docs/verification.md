@@ -31,6 +31,8 @@ ready for GitHub Pages.
 - legible dormant Card edges at large desktop widths, stable active-Card
   contact shadow on a flat workspace without broad haze, and intact suffix
   history after returning to the root Card
+- a deep five-Card fan staying below the topbar at a 1512 by 822 desktop
+  viewport while preserving lower-corner clearance
 - vertical-only mobile reading, edge-triggered folded preview, preview-only
   swipes, and tap-to-commit with opposite Card peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
@@ -43,7 +45,9 @@ ready for GitHub Pages.
 - local follow-up loading, completion, and automatic reveal
 - user text selection forks
 - Explore and Article view switching
-- complete article synthesis and user-added research-note states
+- a complete, richly populated current Article edition with no internal
+  unfinished-state copy
+- user-selected research notes compiling into a new current Article edition
 - article source links returning to original Cards
 - light and dark theme persistence
 - Explore and Article mobile viewport containment

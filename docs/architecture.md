@@ -32,6 +32,12 @@ remain intentionally outside the mock.
 - the current Article focus section
 - theme and graph window state
 
+The workspace component remains the state boundary, while presentational and
+pure logic are kept outside it. `WorkspaceTopbar` renders navigation only.
+`research-workspace.ts` owns path lookup, mock follow-up answers, unique-edge
+insertion, and selection-node construction. `graph-layout.ts` owns graph depth,
+transitive reduction, curved routes, and hover-label placement.
+
 The static fixture defines every prepared biography node, its anchor targets,
 relations, and semantic map position. The showcase reveals the entire prepared
 node map immediately. `GraphPreview` keeps those positions stable, projects the
@@ -83,6 +89,11 @@ on its left and later Cards collect on its right. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses
 the Deck around that historical focus.
 
+The desktop Deck reserves a block-axis safety band around its centered Card.
+This is part of the fan geometry, not a clipping workaround: outer sheets may
+rotate far enough to double their exposed edge, but their raised top edges must
+stay below the fixed topbar and their lower corners must remain visible.
+
 Compact screens keep full-size reading and Deck browsing physically distinct.
 The reading Card uses native vertical scrolling; exposed Stack sheets are the
 only entry points into a folded preview. In that preview, pointer capture and
@@ -108,10 +119,17 @@ per Card, and its section hierarchy does not mirror the exploration DAG.
 - prepared and user-created graph edges
 - nodes that contain local follow-up turns
 
-It returns ordered article sections with prose, synthesis status, and source
-Card ids. The prepared biography opens as a complete multi-path synthesis.
-Local follow-ups and user-created nodes can still add research notes without
-asking the user to merge anything.
+It returns ordered article sections with finished prose and source Card ids.
+Every compilation is a complete current edition, even when the available
+research set is small. The interface never exposes internal labels such as
+draft, incomplete, waiting, or developing. New Cards, local follow-ups, and
+user-created nodes trigger a richer edition without asking the user to merge
+anything.
+
+`ArticleView` owns section focus only. The outline, article paper, and source
+rail are separate presentational components under `components/article/`.
+Article hierarchy is editorial and chronological rather than a visual copy of
+the DAG.
 
 Every article section keeps provenance. Opening a source returns to the original
 Card and restores its exploration context.

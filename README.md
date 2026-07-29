@@ -33,6 +33,8 @@ risk. Independent branches can converge on shared events or interpretations.
   transition.
 - Switch between the original Explore workspace and a continuous Article.
 - Add local follow-ups or selected-text forks without rewriting prepared Cards.
+- Read Article as a complete current edition at every point. New research
+  recompiles and expands the prose instead of exposing internal draft states.
 - Trace any article section back to the Card conversations that produced it.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
@@ -111,11 +113,17 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - [docs/INDEX.md](docs/INDEX.md): documentation entry point
 - [docs/source-map.md](docs/source-map.md): file ownership and reading path
 - `app/components/ResearchWorkspace.tsx`: interaction state and navigation
+- `app/components/WorkspaceTopbar.tsx`: Explore, Article, breadcrumb, graph, and
+  theme controls
 - `app/components/ResearchCard.tsx`: plain chat content, Deck hit area, anchors, selection, follow-ups
-- `app/components/ArticleView.tsx`: flat article and source-card traceability
+- `app/components/ArticleView.tsx`: Article selection and focus orchestration
+- `app/components/article/`: flat article outline, paper, and source rail
 - `app/components/GraphPreview.tsx`: compact and expanded graph
 - `app/hooks/use-mobile-deck.ts`: mobile folded-preview gesture state
-- `app/lib/article-research.ts`: incremental article compiler fixture
+- `app/lib/article-research.ts`: current-edition article compiler fixture
+- `app/lib/graph-layout.ts`: pure graph projection and label geometry
+- `app/lib/research-workspace.ts`: graph path, follow-up, and selection-fork
+  helpers
 - `app/lib/mock-research.ts`: Musk research fixture, relations, and layout hints
 - `scripts/record-demo.mjs`: deterministic browser recording
 - `scripts/record-mobile-demo.mjs`: deterministic mobile touch recording
