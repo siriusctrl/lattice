@@ -78,8 +78,10 @@ and context semantics behind the scenes.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
 - A collapsed desktop Deck must keep its real Card edges visibly fanned at large
-  viewport sizes. Only the active reading Card owns the full elevation shadow;
-  dormant layers must not create moving shadow clouds.
+  viewport sizes. Only the active reading Card owns a compact contact shadow;
+  dormant layers must not create moving shadow clouds or broad elevation haze.
+- Keep the workspace background optically flat. Do not reintroduce ambient
+  radial gradients that can read as detached Card shadows.
 - Mobile folded-preview movement must interpolate the centered Card and its
   target, settle with spring weight, and keep earlier and later Cards on
   opposite sides. Desktop edge hints must rotate around a corner rather than

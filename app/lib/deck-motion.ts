@@ -79,7 +79,7 @@ export function getCardMotionState(
     7.2,
     1.65 + Math.max(0, distanceFromActive - 1) * 1.75,
   );
-  const dormantFanAngle = Math.min(1.9, distanceFromActive * 0.42);
+  const dormantFanAngle = Math.min(3.8, distanceFromActive * 0.84);
   const leftFanRotate =
     !compact && index < activeIndex
       ? hintSide === "left"

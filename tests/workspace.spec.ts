@@ -104,6 +104,14 @@ function expectSharedFanPivot(pivots: { x: number; y: number }[]) {
   expect(Math.max(...yValues) - Math.min(...yValues)).toBeLessThan(1);
 }
 
+function getMaxShadowPixel(shadow: string) {
+  return Math.max(
+    ...Array.from(shadow.matchAll(/(-?\d+(?:\.\d+)?)px/g)).map((match) =>
+      Math.abs(Number(match[1])),
+    ),
+  );
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem("lattice-theme", "light");
@@ -474,6 +482,10 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
   const rootCard = page.getByTestId("research-card-musk");
   const lastCard = page.getByTestId("research-card-zip2");
   const cardIds = ["musk", "origin", "migration", "education", "zip2"];
+  await expect(page.locator(".workspace-shell")).toHaveCSS(
+    "background-image",
+    "none",
+  );
 
   const readStackSurface = async () =>
     cards.evaluateAll((elements) => {
@@ -504,7 +516,7 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
   await expect(lastCard).toHaveAttribute("data-active", "true");
   await expect
     .poll(async () => (await readStackSurface()).leftExposure)
-    .toBeGreaterThan(20);
+    .toBeGreaterThan(44);
   await expect
     .poll(async () =>
       (await readStackSurface()).inactiveShadows.every(
@@ -515,6 +527,7 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
 
   const lastSurface = await readStackSurface();
   expect(lastSurface.activeShadow).not.toBe("none");
+  expect(getMaxShadowPixel(lastSurface.activeShadow)).toBeLessThanOrEqual(22);
   expect(lastSurface.inactiveShadows).toEqual(["none", "none", "none", "none"]);
   expectSharedFanPivot(await readCollapsedFanPivots(page, "left"));
 
@@ -531,7 +544,7 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
   }
   await expect
     .poll(async () => (await readStackSurface()).rightExposure)
-    .toBeGreaterThan(20);
+    .toBeGreaterThan(44);
   await expect
     .poll(async () =>
       (await readStackSurface()).inactiveShadows.every(
@@ -554,7 +567,9 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
       ),
     )
     .toBe(true);
-  expect((await readStackSurface()).activeShadow).not.toBe("none");
+  const darkSurface = await readStackSurface();
+  expect(darkSurface.activeShadow).not.toBe("none");
+  expect(getMaxShadowPixel(darkSurface.activeShadow)).toBeLessThanOrEqual(22);
 
   // An anchor that already exists to the right only changes focus. It must not
   // discard the remainder of the path.
@@ -586,6 +601,17 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
   await expect(deck).toHaveAttribute("data-deck-mode", "spread");
   await expect(page.locator(".deck-card-picker")).toHaveCount(5);
   await expect(deck).toHaveAttribute("data-deck-size", "5");
+  const darkPreviewPicker = page.getByRole("button", {
+    name: "打开 Card：比勒陀利亚",
+  });
+  await darkPreviewPicker.hover({ position: { x: 12, y: 220 } });
+  await expect(page.getByTestId("research-card-origin")).toHaveClass(
+    /research-card-deck-previewed/,
+  );
+  const darkPreviewShadow = await page
+    .getByTestId("research-card-origin")
+    .evaluate((card) => window.getComputedStyle(card).boxShadow);
+  expect(getMaxShadowPixel(darkPreviewShadow)).toBeLessThanOrEqual(22);
 });
 
 test("opens a folded mobile Deck before swiping and commits on tap", async ({
@@ -671,6 +697,14 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
       (element) => window.getComputedStyle(element).touchAction,
     ),
   ).toBe("none");
+  const mobilePreviewShadows = await page.locator(".research-card").evaluateAll(
+    (cards) => cards.map((card) => window.getComputedStyle(card).boxShadow),
+  );
+  expect(
+    mobilePreviewShadows.every(
+      (shadow) => getMaxShadowPixel(shadow) <= 22,
+    ),
+  ).toBe(true);
 
   // Preview owns the gesture, so modest vertical thumb drift still navigates.
   const swipeStartX = deckBounds.x + deckBounds.width * 0.48;

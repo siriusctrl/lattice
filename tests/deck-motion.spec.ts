@@ -154,8 +154,8 @@ test("fans and retracts around fixed same-side lower corners", async ({
   expectMonotonic(retracting, "increasing");
   expectStationaryPivot(retracting);
   const dormantAngle = retracting.at(-1)?.angle ?? -10;
-  expect(dormantAngle).toBeGreaterThan(-1.9);
-  expect(dormantAngle).toBeLessThan(-1.5);
+  expect(dormantAngle).toBeGreaterThan(-3.6);
+  expect(dormantAngle).toBeLessThan(-3.1);
 
   await leftTrigger.hover();
   await leftTrigger.click();
