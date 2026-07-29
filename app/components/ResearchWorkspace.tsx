@@ -88,6 +88,14 @@ export function ResearchWorkspace() {
   const deckPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const deckHoverLeaveTimer = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const deckPointerPosition = useRef<{
+    x: number;
+    y: number;
+    index: number;
+  } | null>(null);
   const deckLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -220,6 +228,9 @@ export function ResearchWorkspace() {
       if (deckPreviewTimer.current) {
         clearTimeout(deckPreviewTimer.current);
       }
+      if (deckHoverLeaveTimer.current) {
+        clearTimeout(deckHoverLeaveTimer.current);
+      }
       if (deckLeaveTimer.current) clearTimeout(deckLeaveTimer.current);
       if (themeTransitionTimer.current) {
         clearTimeout(themeTransitionTimer.current);
@@ -234,6 +245,10 @@ export function ResearchWorkspace() {
       clearTimeout(deckPreviewTimer.current);
       deckPreviewTimer.current = null;
     }
+    if (deckHoverLeaveTimer.current) {
+      clearTimeout(deckHoverLeaveTimer.current);
+      deckHoverLeaveTimer.current = null;
+    }
     if (deckLeaveTimer.current) {
       clearTimeout(deckLeaveTimer.current);
       deckLeaveTimer.current = null;
@@ -244,6 +259,7 @@ export function ResearchWorkspace() {
     setDeckPreviewFocused(false);
     setDeckHintSide(null);
     setDeckProgress(0);
+    deckPointerPosition.current = null;
     resetMobileDeck();
     setSelection(null);
   }, [resetMobileDeck]);
@@ -459,8 +475,25 @@ export function ResearchWorkspace() {
     collapseDeckTo(index);
   }
 
-  function previewDeckCard(index: number) {
+  function previewDeckCard(
+    index: number,
+    pointer?: { x: number; y: number },
+  ) {
     if (!deckMode) return;
+    if (pointer) {
+      const previous = deckPointerPosition.current;
+      const moved =
+        !previous ||
+        Math.hypot(pointer.x - previous.x, pointer.y - previous.y) > 1.5;
+      if (!moved) return;
+      deckPointerPosition.current = { ...pointer, index };
+    } else {
+      deckPointerPosition.current = null;
+    }
+    if (deckHoverLeaveTimer.current) {
+      clearTimeout(deckHoverLeaveTimer.current);
+      deckHoverLeaveTimer.current = null;
+    }
     if (deckLeaveTimer.current) {
       clearTimeout(deckLeaveTimer.current);
       deckLeaveTimer.current = null;
@@ -482,7 +515,13 @@ export function ResearchWorkspace() {
       clearTimeout(deckPreviewTimer.current);
       deckPreviewTimer.current = null;
     }
-    setDeckHoverIndex(null);
+    if (deckHoverLeaveTimer.current) {
+      clearTimeout(deckHoverLeaveTimer.current);
+    }
+    deckHoverLeaveTimer.current = setTimeout(() => {
+      setDeckHoverIndex((current) => (current === index ? null : current));
+      deckHoverLeaveTimer.current = null;
+    }, reduceMotion ? 0 : 120);
   }
 
   function leaveDeckSpread() {
@@ -659,10 +698,6 @@ export function ResearchWorkspace() {
                             )
                           : 0
                       }
-                      leavingDistance={Math.max(
-                        520,
-                        viewportWidth * 0.62,
-                      )}
                       motionState={getCardMotionState(index, {
                         activeIndex,
                         stackLength: stack.length,

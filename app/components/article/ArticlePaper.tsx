@@ -37,7 +37,6 @@ export function ArticlePaper({
           <div className="wiki-kicker">
             <ArticleIcon size={15} weight="fill" aria-hidden="true" />
             <span>人物研究</span>
-            <i>随探索实时重写</i>
           </div>
           <h1>埃隆·马斯克</h1>
           <p className="wiki-dek">
@@ -55,10 +54,6 @@ export function ArticlePaper({
             <div>
               <dt>当前篇幅</dt>
               <dd>约 {roundedCharacterCount} 字</dd>
-            </div>
-            <div>
-              <dt>更新方式</dt>
-              <dd>随研究实时重写</dd>
             </div>
           </dl>
         </header>

@@ -26,11 +26,12 @@ ready for GitHub Pages.
   previous Card, and preserves its node in the complete graph
 - historical middle-Card closing after Deck Spread selection, including removal
   of that Card and every later Card from the Deck while their graph nodes remain
-- frame-level middle-Card closing behavior: the outgoing suffix travels clear
-  while still opaque, the retained Card never drops opacity, and its DOM
-  identity survives the state commit
+- frame-level middle-Card closing behavior: the primary sheet begins a bounded
+  settle-back motion while still opaque, later suffix sheets stop painting, the
+  retained Card never drops opacity, and its DOM identity survives the state
+  commit
 - mirrored same-side lower-corner fans, desktop Deck Spread, and dwell preview
-  partition
+  partition without stationary-pointer preview chaining
 - legible dormant Card edges at large desktop widths, stable active-Card
   contact shadow on a flat workspace without broad haze, and intact suffix
   history after returning to the root Card
@@ -51,6 +52,8 @@ ready for GitHub Pages.
   unsent composer draft
 - a complete, richly populated current Article edition with no internal
   unfinished-state copy
+- self-hosted Noto Serif SC Article typography within the restrained desktop
+  scale, with no redundant live-rewrite status field
 - user-selected research notes compiling into a new current Article edition
 - article source links returning to original Cards
 - light and dark theme persistence
@@ -82,7 +85,8 @@ The mobile proof additionally produces:
 - key PNG frames under `outputs/mobile-proof/`
 
 It records real touch input at 390 by 844, including native vertical reading,
-edge entry, folded browsing, diagonal swipes, and tap-to-commit.
+edge entry, folded browsing, diagonal swipes, tap-to-commit, and the final
+mobile Article typography.
 
 The recording follows one deterministic path:
 

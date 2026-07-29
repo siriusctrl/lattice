@@ -182,6 +182,11 @@ await page
 await page.waitForTimeout(750);
 await capture("frame-05-reading-restored");
 
+await page.getByRole("button", { name: "Article", exact: true }).tap();
+await page.getByTestId("article-view").waitFor();
+await page.waitForTimeout(850);
+await capture("frame-06-article");
+
 await session.detach();
 await page.close();
 if (!video) throw new Error("Playwright video capture was unavailable");

@@ -86,11 +86,21 @@ and context semantics behind the scenes.
 - Use one cold-neutral palette and one yellow-green accent.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
+- Keep product chrome and Explore in Geist. Article prose and editorial
+  headings use the bundled Noto Serif SC variable font so Chinese typography
+  stays consistent across platforms; keep metadata and controls sans or mono.
+- Article typography should remain restrained: body copy at 15px or below,
+  section headings near 32px or below, and the desktop hero near 68px or below.
 - Motion must communicate fork, focus, depth, or feedback.
+- Deck dwell preview follows deliberate pointer movement. Cards passing under a
+  stationary pointer during semantic reflow must not chain-trigger a different
+  preview.
 - Surface handoffs must not pass through a blank frame or crossfade two text
-  layers in the same position. Move an outgoing Card clear of the reading
-  surface before fading it, and preserve stable DOM identity across view
-  switches and compact graph suppression.
+  layers in the same position. A removed primary Card settles a short distance
+  back into the Deck, then passes behind the retained Card without making two
+  text layers translucent; do not throw it toward a viewport edge. Stop
+  painting every later suffix sheet during that gesture, and preserve stable
+  DOM identity across view switches and compact graph suppression.
 - A collapsed desktop Deck must keep its real Card edges visibly fanned at large
   viewport sizes. Only the active reading Card owns a compact contact shadow;
   dormant layers must not create moving shadow clouds or broad elevation haze.

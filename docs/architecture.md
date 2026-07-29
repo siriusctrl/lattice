@@ -79,10 +79,13 @@ remains available in the complete research graph.
 
 Suffix replacement is deliberately two phase. First, `ResearchWorkspace`
 reveals the retained Card and marks the outgoing suffix as non-interactive.
-`ResearchCard` moves those opaque surfaces fully clear of the reading area
-before fading them. Only after that shared transition does the workspace commit
-the shorter or replacement lineage. The retained Card keeps the same DOM
-identity throughout, so its content cannot flash, remount, or reset.
+`ResearchCard` lets the primary outgoing sheet settle slightly down and back
+into the Deck, then lowers it behind the retained Card while both surfaces stay
+opaque. Later suffix sheets stop painting and disappear immediately behind that
+single gesture, avoiding translucent text overlap, visual noise, and unnecessary
+compositing work. Only after the motion settles does the workspace commit the
+shorter or replacement lineage. The retained Card keeps the same DOM identity
+throughout, so its content cannot flash, remount, or reset.
 `useDeckTransition` owns the shared exit state, timer cleanup, and final commit.
 
 Deck Spread turns that same lineage into a temporary desktop navigation
@@ -94,7 +97,9 @@ two nested fan layers keep those pivots stable through hover, retraction, and
 the transition into Spread. Clicking an edge spreads the Cards across the
 available horizontal space with adaptive overlap.
 A sustained hover promotes one Card into preview while earlier Cards collect
-on its left and later Cards collect on its right. The persisted fork-time title
+on its left and later Cards collect on its right. Preview selection follows
+actual pointer movement, so Cards passing under a stationary cursor during
+that reflow cannot chain-trigger a new preview. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses
 the Deck around that historical focus.
 

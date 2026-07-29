@@ -3,7 +3,8 @@
 ## Entry points
 
 - `app/page.tsx`: renders the workspace
-- `app/layout.tsx`: fonts, language, favicon, and product metadata
+- `app/layout.tsx`: Geist UI fonts, bundled Noto Serif SC Article font,
+  language, favicon, and product metadata
 - `app/globals.css`: complete light and dark visual system
 
 ## Interaction

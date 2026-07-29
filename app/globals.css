@@ -25,6 +25,8 @@
     0 24px 56px rgba(64, 73, 60, 0.17),
     inset 0 1px 0 rgba(251, 252, 249, 0.78);
   --selection: rgba(185, 220, 105, 0.44);
+  --font-article-serif:
+    "Noto Serif SC Variable", "Source Han Serif SC", "Songti SC", serif;
 }
 
 :root[data-theme="dark"] {
@@ -435,8 +437,8 @@ input:focus-visible,
    * above the active Card. Reserve a fixed block-axis safety band instead of
    * letting a deep Deck slide underneath the topbar.
    */
-  height: min(772px, calc(100dvh - 176px));
-  min-height: min(590px, calc(100dvh - 176px));
+  height: min(772px, calc(100dvh - 184px));
+  min-height: min(590px, calc(100dvh - 184px));
   isolation: isolate;
   touch-action: pan-y;
   transform: translate(-50%, -50%);
@@ -579,6 +581,10 @@ input:focus-visible,
 
 .research-card:not(.research-card-active) {
   filter: saturate(0.72);
+}
+
+.research-card[data-deck-leaving="true"][data-deck-leaving-primary="false"] {
+  visibility: hidden;
 }
 
 @media (min-width: 721px) {
@@ -1403,10 +1409,13 @@ input:focus-visible,
     )
     42px 0 / 1px 100% no-repeat,
     var(--surface);
+  font-family: var(--font-article-serif);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 .wiki-hero {
-  padding: 70px 76px 50px;
+  padding: 60px 76px 44px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1421,37 +1430,30 @@ input:focus-visible,
   letter-spacing: 0.05em;
 }
 
-.wiki-kicker i {
-  margin-left: 4px;
-  color: var(--faint);
-  font-style: normal;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
 .wiki-hero h1 {
-  margin: 24px 0 0;
+  margin: 22px 0 0;
   color: var(--ink);
-  font-size: clamp(58px, 7vw, 88px);
-  font-weight: 610;
-  letter-spacing: -0.068em;
-  line-height: 0.9;
+  font-size: clamp(48px, 5.6vw, 68px);
+  font-weight: 620;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
   text-wrap: balance;
 }
 
 .wiki-dek {
-  max-width: 42ch;
-  margin: 26px 0 0;
+  max-width: 46ch;
+  margin: 22px 0 0;
   color: var(--ink-soft);
-  font-size: 17px;
-  letter-spacing: -0.015em;
-  line-height: 1.75;
+  font-size: 15px;
+  font-weight: 420;
+  letter-spacing: 0.01em;
+  line-height: 1.85;
 }
 
 .wiki-stats {
   display: grid;
-  grid-template-columns: 0.7fr 1fr 1fr 1.45fr;
-  margin: 46px 0 0;
+  grid-template-columns: 0.72fr 1fr 1fr;
+  margin: 38px 0 0;
   padding: 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -1469,6 +1471,7 @@ input:focus-visible,
 
 .wiki-stats dt {
   color: var(--faint);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-size: 8px;
   font-weight: 620;
   letter-spacing: 0.06em;
@@ -1491,14 +1494,14 @@ input:focus-visible,
 
 .wiki-section {
   position: relative;
-  padding: 54px 0 47px;
+  padding: 46px 0 40px;
   border-bottom: 1px solid var(--line);
   scroll-margin-top: 20px;
 }
 
 .wiki-section::before {
   position: absolute;
-  top: 54px;
+  top: 47px;
   left: -34px;
   width: 8px;
   height: 8px;
@@ -1513,7 +1516,7 @@ input:focus-visible,
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 24px;
-  margin-bottom: 28px;
+  margin-bottom: 23px;
 }
 
 .wiki-section-eyebrow {
@@ -1528,13 +1531,13 @@ input:focus-visible,
 }
 
 .wiki-section h2 {
-  max-width: 18ch;
+  max-width: 21ch;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(29px, 3vw, 39px);
-  font-weight: 610;
-  letter-spacing: -0.048em;
-  line-height: 1.08;
+  font-size: clamp(25px, 2.4vw, 32px);
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
   text-wrap: balance;
 }
 
@@ -1548,6 +1551,7 @@ input:focus-visible,
   background: transparent;
   color: var(--faint);
   cursor: pointer;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-size: 8px;
   transition: color 160ms ease;
   white-space: nowrap;
@@ -1558,12 +1562,14 @@ input:focus-visible,
 }
 
 .wiki-section > p {
-  max-width: 62ch;
-  margin: 0 0 21px;
+  max-width: 60ch;
+  margin: 0 0 18px;
   color: var(--ink-soft);
-  font-size: 16px;
-  letter-spacing: -0.01em;
-  line-height: 1.9;
+  font-size: 15px;
+  font-weight: 410;
+  letter-spacing: 0.012em;
+  line-height: 1.95;
+  text-wrap: pretty;
 }
 
 .wiki-citation {
@@ -2037,18 +2043,14 @@ input:focus-visible,
     padding: 43px 28px 35px;
   }
 
-  .wiki-kicker i {
-    display: none;
-  }
-
   .wiki-hero h1 {
     margin-top: 20px;
-    font-size: clamp(52px, 17vw, 76px);
+    font-size: clamp(42px, 13.5vw, 58px);
   }
 
   .wiki-dek {
     margin-top: 20px;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .wiki-stats {
@@ -2057,13 +2059,10 @@ input:focus-visible,
   }
 
   .wiki-stats div:nth-child(3) {
+    grid-column: 1 / -1;
     padding-left: 0;
     border-top: 1px solid var(--line);
     border-left: 0;
-  }
-
-  .wiki-stats div:nth-child(4) {
-    border-top: 1px solid var(--line);
   }
 
   .wiki-body {
@@ -2088,11 +2087,12 @@ input:focus-visible,
   }
 
   .wiki-section h2 {
-    font-size: 30px;
+    font-size: 25px;
   }
 
   .wiki-section > p {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.9;
   }
 
   .article-sources {

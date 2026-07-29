@@ -63,8 +63,9 @@ Open `http://localhost:3000`.
 ## Technology choice
 
 The frontend is TypeScript, React 19, Next-compatible app routes through vinext,
-Tailwind CSS 4 tokens, Motion, and Phosphor icons. The production build targets
-Cloudflare Workers through Sites.
+Tailwind CSS 4 tokens, Motion, Phosphor icons, and a self-hosted Noto Serif SC
+variable font for Article typography. The production build targets Cloudflare
+Workers through Sites.
 
 A web product is not limited to viewing content. The browser should own
 interaction, animation, selection, and streamed rendering. A Worker, server

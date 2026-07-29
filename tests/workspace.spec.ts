@@ -62,6 +62,42 @@ async function touchCenter(page: Page, target: Locator) {
   ]);
 }
 
+async function hoverExposedSurface(page: Page, target: Locator) {
+  const point = await target.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    let best:
+      | {
+          x: number;
+          y: number;
+          clearance: number;
+        }
+      | undefined;
+
+    for (let y = 12; y < bounds.height - 12; y += 12) {
+      for (let x = 12; x < bounds.width - 12; x += 12) {
+        const viewportX = bounds.left + x;
+        const viewportY = bounds.top + y;
+        if (document.elementFromPoint(viewportX, viewportY) !== element) {
+          continue;
+        }
+        const clearance = Math.min(
+          x,
+          y,
+          bounds.width - x,
+          bounds.height - y,
+        );
+        if (!best || clearance > best.clearance) {
+          best = { x: viewportX, y: viewportY, clearance };
+        }
+      }
+    }
+
+    if (!best) throw new Error("Card has no exposed pointer surface");
+    return { x: best.x, y: best.y };
+  });
+  await page.mouse.move(point.x, point.y);
+}
+
 async function readCollapsedFanPivots(
   page: Page,
   side: "left" | "right",
@@ -425,6 +461,7 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     const bounds = motionLayer.getBoundingClientRect();
     return {
       left: bounds.left,
+      top: bounds.top,
     };
   });
 
@@ -450,6 +487,14 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     "true",
   );
   await expect(leavingOrigin).toHaveAttribute("data-deck-leaving", "true");
+  await expect(leavingOrigin).toHaveAttribute(
+    "data-deck-leaving-primary",
+    "true",
+  );
+  await expect(page.getByTestId("research-card-migration")).toHaveAttribute(
+    "data-deck-leaving-primary",
+    "false",
+  );
   await page.waitForTimeout(110);
   const leavingInMotion = await leavingOrigin.evaluate((card) => {
     const motionLayer = card.closest(".research-card-motion");
@@ -457,11 +502,18 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     const bounds = motionLayer.getBoundingClientRect();
     return {
       left: bounds.left,
+      top: bounds.top,
       opacity: Number(getComputedStyle(motionLayer).opacity),
     };
   });
-  expect(leavingInMotion.left - leavingStart.left).toBeGreaterThan(100);
+  expect(Math.abs(leavingInMotion.left - leavingStart.left)).toBeLessThan(28);
+  expect(leavingInMotion.top - leavingStart.top).toBeGreaterThan(5);
+  expect(leavingInMotion.top - leavingStart.top).toBeLessThan(32);
   expect(leavingInMotion.opacity).toBeGreaterThan(0.98);
+  await expect(page.getByTestId("research-card-migration")).toHaveCSS(
+    "visibility",
+    "hidden",
+  );
   await expect(page.getByTestId("research-deck")).toHaveAttribute(
     "data-deck-size",
     "5",
@@ -675,10 +727,11 @@ test("keeps a deep desktop Stack legible when focusing the root and existing suf
   await expect(deck).toHaveAttribute("data-deck-mode", "spread");
   await expect(page.locator(".deck-card-picker")).toHaveCount(5);
   await expect(deck).toHaveAttribute("data-deck-size", "5");
+  await page.waitForTimeout(700);
   const darkPreviewPicker = page.getByRole("button", {
     name: "打开 Card：比勒陀利亚",
   });
-  await darkPreviewPicker.hover({ position: { x: 12, y: 220 } });
+  await hoverExposedSurface(page, darkPreviewPicker);
   await expect(page.getByTestId("research-card-origin")).toHaveClass(
     /research-card-deck-previewed/,
   );
@@ -1127,7 +1180,26 @@ test("compiles a flat article and traces sections back to source cards", async (
   await expect(crisisComposer).toHaveValue(preservedDraft);
   await page.getByRole("button", { name: "Article", exact: true }).click();
   await expect(page.getByTestId("article-view")).toBeVisible();
-  await expect(page.getByText("随研究实时重写").first()).toBeVisible();
+  await expect(page.getByText("更新方式", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("随研究实时重写", { exact: true }),
+  ).toHaveCount(0);
+  const articleTypography = await page
+    .locator(".wiki-section > p")
+    .first()
+    .evaluate((paragraph) => {
+      const paper = paragraph.closest(".wiki-paper");
+      const title = paper?.querySelector("h1");
+      if (!paper || !title) throw new Error("Missing Article typography");
+      return {
+        bodyFamily: getComputedStyle(paragraph).fontFamily,
+        bodySize: Number.parseFloat(getComputedStyle(paragraph).fontSize),
+        titleSize: Number.parseFloat(getComputedStyle(title).fontSize),
+      };
+    });
+  expect(articleTypography.bodyFamily).toContain("Noto Serif SC Variable");
+  expect(articleTypography.bodySize).toBeLessThanOrEqual(15);
+  expect(articleTypography.titleSize).toBeLessThanOrEqual(68);
   await expect(page.locator(".wiki-open-questions")).toHaveCount(0);
   await expect(
     page.getByText("文章不会假装已经完成", { exact: true }),
