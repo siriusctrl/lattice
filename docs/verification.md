@@ -26,6 +26,9 @@ ready for GitHub Pages.
   previous Card, and preserves its node in the complete graph
 - historical middle-Card closing after Deck Spread selection, including removal
   of that Card and every later Card from the Deck while their graph nodes remain
+- frame-level middle-Card closing behavior: the outgoing suffix travels clear
+  while still opaque, the retained Card never drops opacity, and its DOM
+  identity survives the state commit
 - mirrored same-side lower-corner fans, desktop Deck Spread, and dwell preview
   partition
 - legible dormant Card edges at large desktop widths, stable active-Card
@@ -44,7 +47,8 @@ ready for GitHub Pages.
 - the prepared converging SpaceX and Tesla DAG
 - local follow-up loading, completion, and automatic reveal
 - user text selection forks
-- Explore and Article view switching
+- Explore and Article view switching without remounting Cards or clearing an
+  unsent composer draft
 - a complete, richly populated current Article edition with no internal
   unfinished-state copy
 - user-selected research notes compiling into a new current Article edition
@@ -85,7 +89,8 @@ The recording follows one deterministic path:
 1. open the Musk root card
 2. build a five-Card early-life Deck and inspect the fixed lower-left fan
 3. open Deck Spread, return to a historical Card, and inspect the mirrored fan
-4. close that historical Card to unstack its complete Deck suffix
+4. close that historical Card through a captured in-motion frame, then verify
+   the settled Deck suffix
 5. fork to SpaceX and then the 2008 crisis
 6. inspect the completed flat article
 7. return through a source Card and reach the same crisis through Tesla

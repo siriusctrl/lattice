@@ -125,6 +125,40 @@ input:focus-visible,
   background: var(--page);
 }
 
+.workspace-view-layer {
+  position: relative;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-view-explore {
+  z-index: 10;
+}
+
+.workspace-view-article {
+  z-index: 20;
+}
+
+.workspace-view-layer[data-view-active="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+:root[data-theme-transition="true"] .workspace-shell,
+:root[data-theme-transition="true"] .topbar,
+:root[data-theme-transition="true"] .graph-focus-bar,
+:root[data-theme-transition="true"] .article-workspace,
+:root[data-theme-transition="true"] .wiki-paper,
+:root[data-theme-transition="true"] .article-sources,
+:root[data-theme-transition="true"] .view-switch {
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease,
+    box-shadow 260ms ease;
+}
+
 .topbar {
   position: fixed;
   inset: 0 0 auto;
@@ -412,6 +446,10 @@ input:focus-visible,
   cursor: default;
 }
 
+.deck-wrap-transitioning {
+  pointer-events: none;
+}
+
 .deck-wrap-swiping,
 .deck-wrap-swiping * {
   user-select: none;
@@ -520,7 +558,9 @@ input:focus-visible,
   box-shadow: var(--card-shadow);
   transition:
     bottom 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 260ms ease,
     border-color 180ms ease,
+    color 260ms ease,
     box-shadow 180ms ease,
     filter 180ms ease;
 }
@@ -980,6 +1020,9 @@ input:focus-visible,
   -webkit-backdrop-filter: blur(22px) saturate(120%);
   transform-origin: 100% 0;
   transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    box-shadow 260ms ease,
     opacity 220ms ease,
     filter 220ms ease,
     scale 220ms ease;

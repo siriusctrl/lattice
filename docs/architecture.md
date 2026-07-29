@@ -29,6 +29,7 @@ remain intentionally outside the mock.
 - local follow-up turns
 - user-selected custom nodes
 - Explore and Article view state
+- the two-phase Deck suffix transition
 - the current Article focus section
 - theme and graph window state
 
@@ -75,6 +76,14 @@ earlier and later cards remain inert layers. Closing a Card removes the current
 Card and every later Card from the Deck suffix, then moves focus to the previous
 Card. This changes only the active lineage: every removed Deck node and relation
 remains available in the complete research graph.
+
+Suffix replacement is deliberately two phase. First, `ResearchWorkspace`
+reveals the retained Card and marks the outgoing suffix as non-interactive.
+`ResearchCard` moves those opaque surfaces fully clear of the reading area
+before fading them. Only after that shared transition does the workspace commit
+the shorter or replacement lineage. The retained Card keeps the same DOM
+identity throughout, so its content cannot flash, remount, or reset.
+`useDeckTransition` owns the shared exit state, timer cleanup, and final commit.
 
 Deck Spread turns that same lineage into a temporary desktop navigation
 surface. The collapsed Deck has no count badge or visible mode control.
@@ -133,6 +142,12 @@ the DAG.
 
 Every article section keeps provenance. Opening a source returns to the original
 Card and restores its exploration context.
+
+Explore and Article are persistent sibling layers rather than mutually
+exclusive component trees. Their opacity handoff keeps both surfaces mounted,
+preserving Card scroll positions, unsent composer text, graph identity, and
+Article reading position. Inactive layers are inert and ignored by assistive
+technology.
 
 ## Model and harness connection
 

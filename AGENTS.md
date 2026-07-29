@@ -16,11 +16,12 @@ and context semantics behind the scenes.
 6. `app/lib/deck-motion.ts`
 7. `app/lib/graph-layout.ts`
 8. `app/lib/article-research.ts`
-9. `app/hooks/use-mobile-deck.ts`
-10. `app/components/ResearchWorkspace.tsx`
-11. `app/components/ResearchCard.tsx`
-12. `app/components/GraphPreview.tsx`
-13. `docs/verification.md`
+9. `app/hooks/use-deck-transition.ts`
+10. `app/hooks/use-mobile-deck.ts`
+11. `app/components/ResearchWorkspace.tsx`
+12. `app/components/ResearchCard.tsx`
+13. `app/components/GraphPreview.tsx`
+14. `docs/verification.md`
 
 ## Product invariants
 
@@ -31,7 +32,9 @@ and context semantics behind the scenes.
   geometry or duplicating content.
 - Closing the active Card removes it and every later Card from the current Deck
   suffix, moves focus to the previous Card, and never deletes the persisted
-  graph.
+  graph. The removed suffix must finish one managed spatial exit before its
+  state is committed; never unmount it in the same render that reveals the
+  previous Card.
 - A Deck is the current ordered root-to-leaf lineage. Its focus may sit on any
   Card, and Card selection inside a spread does not delete later Cards.
 - Deck Spread is a desktop navigation mode, not a second content view. Hovering
@@ -63,6 +66,9 @@ and context semantics behind the scenes.
   Do not reintroduce a mixed set of permanently labeled nodes.
 - The active graph marker moves between fixed nodes with a smooth transition.
 - Explore preserves the original conversation and spatial card history.
+- Explore and Article stay mounted while their view layer crossfades. Switching
+  views must preserve Card scroll position, composer drafts, graph identity,
+  and Article position instead of replaying mount animations.
 - Article is one flat document, never a visual copy of the research DAG.
 - Article is a complete current edition after every compilation. Do not expose
   internal draft, unfinished, waiting, or developing states in the reader UI.
@@ -81,6 +87,10 @@ and context semantics behind the scenes.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
+- Surface handoffs must not pass through a blank frame or crossfade two text
+  layers in the same position. Move an outgoing Card clear of the reading
+  surface before fading it, and preserve stable DOM identity across view
+  switches and compact graph suppression.
 - A collapsed desktop Deck must keep its real Card edges visibly fanned at large
   viewport sizes. Only the active reading Card owns a compact contact shadow;
   dormant layers must not create moving shadow clouds or broad elevation haze.
@@ -118,6 +128,8 @@ and context semantics behind the scenes.
 - Graph path, unique-edge, mock follow-up, and selection-node helpers belong in
   `research-workspace.ts`.
 - Pure Deck geometry and fixed-pivot motion math belong in `deck-motion.ts`.
+- Managed suffix-exit state and commit timing belong in
+  `use-deck-transition.ts`.
 - Compact preview gesture state, cancellation, and pointer capture belong in
   `use-mobile-deck.ts`.
 - Mock biography content, relations, and layout hints belong in

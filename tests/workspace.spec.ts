@@ -415,6 +415,18 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     "true",
   );
   await expect(page.getByTestId("research-card-zip2")).toBeAttached();
+  await page.getByTestId("research-card-musk").evaluate((card) => {
+    card.setAttribute("data-mount-token", "preserved-through-close");
+  });
+  const leavingOrigin = page.getByTestId("research-card-origin");
+  const leavingStart = await leavingOrigin.evaluate((card) => {
+    const motionLayer = card.closest(".research-card-motion");
+    if (!motionLayer) throw new Error("Missing Card motion layer");
+    const bounds = motionLayer.getBoundingClientRect();
+    return {
+      left: bounds.left,
+    };
+  });
 
   const rightTrigger = page.getByRole("button", {
     name: "从右侧展开 Card 路径",
@@ -429,10 +441,40 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   await expect(deck).toHaveAttribute("data-deck-hint", "none");
 
   await page.getByRole("button", { name: "关闭当前分支" }).click();
-  await expect(deck).toHaveAttribute("data-deck-size", "1");
+  await expect(deck).toHaveAttribute(
+    "data-deck-transition",
+    "removing-suffix",
+  );
   await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
     "data-active",
     "true",
+  );
+  await expect(leavingOrigin).toHaveAttribute("data-deck-leaving", "true");
+  await page.waitForTimeout(110);
+  const leavingInMotion = await leavingOrigin.evaluate((card) => {
+    const motionLayer = card.closest(".research-card-motion");
+    if (!motionLayer) throw new Error("Missing Card motion layer");
+    const bounds = motionLayer.getBoundingClientRect();
+    return {
+      left: bounds.left,
+      opacity: Number(getComputedStyle(motionLayer).opacity),
+    };
+  });
+  expect(leavingInMotion.left - leavingStart.left).toBeGreaterThan(100);
+  expect(leavingInMotion.opacity).toBeGreaterThan(0.98);
+  await expect(page.getByTestId("research-deck")).toHaveAttribute(
+    "data-deck-size",
+    "5",
+  );
+  await expect(deck).toHaveAttribute("data-deck-size", "1");
+  await expect(deck).toHaveAttribute("data-deck-transition", "idle");
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "data-mount-token",
+    "preserved-through-close",
   );
   await expect(page.getByTestId("research-card-origin")).toHaveCount(0);
   await expect(page.getByTestId("research-card-zip2")).toHaveCount(0);
@@ -720,10 +762,20 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
   const rightEdge = page.getByRole("button", {
     name: "从右侧查看 Card 路径",
   });
+  const graph = page.getByTestId("graph-preview");
+  await graph.evaluate((element) => {
+    element.setAttribute("data-mount-token", "preserved-through-preview");
+  });
   await touchCenter(page, rightEdge);
   await expect(deck).toHaveAttribute("data-deck-mode", "preview");
   await expect(deck).toHaveAttribute("data-deck-preview", "0");
   await expect(rootCard).toHaveAttribute("data-active", "true");
+  await expect(graph).toBeAttached();
+  await expect(graph).toHaveAttribute(
+    "data-mount-token",
+    "preserved-through-preview",
+  );
+  await expect(graph).toHaveCSS("opacity", "0");
   expect(
     await deck.evaluate(
       (element) => window.getComputedStyle(element).touchAction,
@@ -1047,8 +1099,33 @@ test("compiles a flat article and traces sections back to source cards", async (
     "data-active",
     "true",
   );
+  const preservedDraft = "这条未发送的问题应当保留";
+  const crisisComposer = page
+    .getByTestId("research-card-crisis")
+    .getByPlaceholder("继续问...");
+  await crisisComposer.fill(preservedDraft);
+  await page.getByTestId("research-card-musk").evaluate((card) => {
+    card.setAttribute("data-mount-token", "preserved-through-view-switch");
+  });
   await page.getByRole("button", { name: "Article", exact: true }).click();
 
+  await expect(page.getByTestId("article-view")).toBeVisible();
+  await expect(page.getByTestId("workspace-view-explore")).toHaveAttribute(
+    "data-view-active",
+    "false",
+  );
+  await expect(page.getByTestId("research-card-musk")).toBeAttached();
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "data-mount-token",
+    "preserved-through-view-switch",
+  );
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
+  await expect(page.getByTestId("workspace-view-explore")).toHaveAttribute(
+    "data-view-active",
+    "true",
+  );
+  await expect(crisisComposer).toHaveValue(preservedDraft);
+  await page.getByRole("button", { name: "Article", exact: true }).click();
   await expect(page.getByTestId("article-view")).toBeVisible();
   await expect(page.getByText("随研究实时重写").first()).toBeVisible();
   await expect(page.locator(".wiki-open-questions")).toHaveCount(0);

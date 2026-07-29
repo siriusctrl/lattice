@@ -114,7 +114,14 @@ await page.screenshot({
   path: new URL("frame-03-right-fan.png", proofRoot).pathname,
 });
 await page.getByRole("button", { name: "关闭当前分支" }).click();
-await page.waitForTimeout(750);
+await page.waitForTimeout(180);
+await page.screenshot({
+  path: new URL(
+    "frame-03-history-unstack-motion.png",
+    proofRoot,
+  ).pathname,
+});
+await page.waitForTimeout(570);
 await page.screenshot({
   path: new URL("frame-03-history-unstack.png", proofRoot).pathname,
 });

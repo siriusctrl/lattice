@@ -18,7 +18,10 @@ import type {
   InlineText,
   ResearchNode,
 } from "@/app/lib/mock-research";
-import type { CardMotionState } from "@/app/lib/deck-motion";
+import {
+  DECK_SUFFIX_EXIT_DURATION_SECONDS,
+  type CardMotionState,
+} from "@/app/lib/deck-motion";
 
 export type FollowupTurn = {
   id: string;
@@ -43,6 +46,9 @@ type ResearchCardProps = {
   mobilePreview: boolean;
   deckPickable: boolean;
   deckPreviewed: boolean;
+  leavingDeck: boolean;
+  leavingOrder: number;
+  leavingDistance: number;
   motionState: CardMotionState;
   draggingDeck: boolean;
   followups: FollowupTurn[];
@@ -92,6 +98,9 @@ export function ResearchCard({
   mobilePreview,
   deckPickable,
   deckPreviewed,
+  leavingDeck,
+  leavingOrder,
+  leavingDistance,
   motionState,
   draggingDeck,
   followups,
@@ -168,6 +177,50 @@ export function ResearchCard({
     duration: reduceMotion ? 0 : 0.54,
     ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
   };
+  const leavingEase = [0.22, 1, 0.36, 1] as [
+    number,
+    number,
+    number,
+    number,
+  ];
+  const leavingTarget = {
+    x:
+      motionState.x +
+      leavingDistance +
+      Math.min(leavingOrder, 4) * 10,
+    y: motionState.y + 14 + Math.min(leavingOrder, 4) * 3,
+    scale: Math.max(0.968, 0.986 - leavingOrder * 0.003),
+    rotate:
+      motionState.baseRotate +
+      1.05 +
+      Math.min(leavingOrder, 4) * 0.16,
+    opacity: 0,
+  };
+  const leavingTransition = reduceMotion
+    ? { duration: 0 }
+    : {
+        x: {
+          duration: DECK_SUFFIX_EXIT_DURATION_SECONDS,
+          ease: leavingEase,
+        },
+        y: {
+          duration: DECK_SUFFIX_EXIT_DURATION_SECONDS,
+          ease: leavingEase,
+        },
+        scale: {
+          duration: DECK_SUFFIX_EXIT_DURATION_SECONDS,
+          ease: leavingEase,
+        },
+        rotate: {
+          duration: DECK_SUFFIX_EXIT_DURATION_SECONDS,
+          ease: leavingEase,
+        },
+        opacity: {
+          duration: 0.1,
+          delay: 0.32,
+          ease: [0.4, 0, 1, 1] as [number, number, number, number],
+        },
+      };
 
   return (
     <motion.div
@@ -183,26 +236,37 @@ export function ResearchCard({
               rotate: 1.2,
             }
       }
-      animate={{
-        x: motionState.x,
-        y: motionState.y,
-        scale: motionState.scale,
-        rotate: motionState.baseRotate,
-        opacity: motionState.opacity,
-      }}
+      animate={
+        leavingDeck
+          ? leavingTarget
+          : {
+              x: motionState.x,
+              y: motionState.y,
+              scale: motionState.scale,
+              rotate: motionState.baseRotate,
+              opacity: motionState.opacity,
+            }
+      }
       exit={
         reduceMotion
           ? { opacity: 0 }
-          : { opacity: 0, x: 92, y: 38, scale: 0.96, rotate: 1.5 }
+          : leavingDeck
+            ? leavingTarget
+            : { opacity: 0, x: 92, y: 38, scale: 0.96, rotate: 1.5 }
       }
       transition={
-        draggingDeck || reduceMotion
+        leavingDeck
+          ? leavingTransition
+          : draggingDeck || reduceMotion
           ? { duration: 0 }
           : settledTransition
       }
       style={{
-        zIndex: motionState.zIndex,
-        pointerEvents: active || deckMode ? "auto" : "none",
+        zIndex: leavingDeck
+          ? 130 - Math.min(leavingOrder, 20)
+          : motionState.zIndex,
+        pointerEvents:
+          !leavingDeck && (active || deckMode) ? "auto" : "none",
       }}
     >
       <motion.div
@@ -220,6 +284,7 @@ export function ResearchCard({
             data-testid={`research-card-${node.id}`}
             data-active={active ? "true" : "false"}
             data-deck-index={deckIndex}
+            data-deck-leaving={leavingDeck ? "true" : "false"}
             data-left-fan-rotate={motionState.leftFanRotate.toFixed(3)}
             data-right-fan-rotate={motionState.rightFanRotate.toFixed(3)}
             inert={!active || deckMode ? true : undefined}

@@ -25,6 +25,7 @@ import {
   ResearchCard,
   TextSelection,
 } from "@/app/components/ResearchCard";
+import { useDeckTransition } from "@/app/hooks/use-deck-transition";
 import { useMobileDeck } from "@/app/hooks/use-mobile-deck";
 import { getArticleSectionForNode } from "@/app/lib/article-research";
 import {
@@ -90,6 +91,9 @@ export function ResearchWorkspace() {
   const deckLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const themeTransitionTimer = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const clearDeckSelection = useCallback(() => setSelection(null), []);
 
   const nodes = useMemo(
@@ -217,6 +221,10 @@ export function ResearchWorkspace() {
         clearTimeout(deckPreviewTimer.current);
       }
       if (deckLeaveTimer.current) clearTimeout(deckLeaveTimer.current);
+      if (themeTransitionTimer.current) {
+        clearTimeout(themeTransitionTimer.current);
+      }
+      delete document.documentElement.dataset.themeTransition;
     },
     [],
   );
@@ -240,42 +248,69 @@ export function ResearchWorkspace() {
     setSelection(null);
   }, [resetMobileDeck]);
 
+  const { beginDeckTransition, deckTransition } = useDeckTransition({
+    collapseDeckTo,
+    reduceMotion,
+    setStack,
+    stackLength: stack.length,
+  });
+
   const openNode = useCallback(
     (targetId: string) => {
-      if (!nodes[targetId] || targetId === activeId) return;
+      if (
+        deckTransition ||
+        !nodes[targetId] ||
+        targetId === activeId
+      ) {
+        return;
+      }
       setSelection(null);
       const activePath = stack.slice(0, activeIndex + 1);
       const existingIndex = stack.lastIndexOf(targetId);
-      const nextStack =
-        existingIndex >= 0
-          ? stack
-          : [...activePath, targetId];
-      const nextIndex =
-        existingIndex >= 0 ? existingIndex : nextStack.length - 1;
-      setStack(nextStack);
-      collapseDeckTo(nextIndex);
+      if (existingIndex >= 0) {
+        collapseDeckTo(existingIndex);
+        return;
+      }
+
+      const nextStack = [...activePath, targetId];
+      beginDeckTransition({
+        removingFromIndex: activeIndex + 1,
+        nextStack,
+        nextActiveIndex: nextStack.length - 1,
+        activeIndexDuringExit: activeIndex,
+      });
     },
-    [activeId, activeIndex, collapseDeckTo, nodes, stack],
+    [
+      activeId,
+      activeIndex,
+      beginDeckTransition,
+      collapseDeckTo,
+      deckTransition,
+      nodes,
+      stack,
+    ],
   );
 
   function closeActiveBranch(event: ReactMouseEvent<HTMLButtonElement>) {
-    if (activeIndex <= 0) return;
+    if (activeIndex <= 0 || deckTransition) return;
     const nextIndex = activeIndex - 1;
-    setStack((current) => current.slice(0, activeIndex));
-    collapseDeckTo(nextIndex);
-    if (event.detail === 0) {
-      window.requestAnimationFrame(() => {
-        document
-          .querySelector<HTMLInputElement>(
-            `[data-deck-index="${nextIndex}"] .card-composer input`,
-          )
-          ?.focus();
-      });
-    }
+    beginDeckTransition({
+      removingFromIndex: activeIndex,
+      nextStack: stack.slice(0, activeIndex),
+      nextActiveIndex: nextIndex,
+      activeIndexDuringExit: nextIndex,
+      focusComposerAfter: event.detail === 0,
+    });
   }
 
   function focusFromGraph(nodeId: string) {
-    if (!discoveredIds.has(nodeId) || nodeId === activeId) return;
+    if (
+      deckTransition ||
+      !discoveredIds.has(nodeId) ||
+      nodeId === activeId
+    ) {
+      return;
+    }
     const existingIndex = stack.lastIndexOf(nodeId);
     if (existingIndex >= 0) {
       collapseDeckTo(existingIndex);
@@ -284,17 +319,31 @@ export function ResearchWorkspace() {
 
     const path = getPathToNode(nodeId, edges);
     const nextStack = path ?? [ROOT_NODE_ID, nodeId];
-    setStack(nextStack);
-    collapseDeckTo(nextStack.length - 1);
+    let sharedPrefixLength = 0;
+    while (
+      sharedPrefixLength < stack.length &&
+      sharedPrefixLength < nextStack.length &&
+      stack[sharedPrefixLength] === nextStack[sharedPrefixLength]
+    ) {
+      sharedPrefixLength += 1;
+    }
+    const removingFromIndex = Math.max(1, sharedPrefixLength);
+    beginDeckTransition({
+      removingFromIndex,
+      nextStack,
+      nextActiveIndex: nextStack.length - 1,
+      activeIndexDuringExit: Math.max(0, removingFromIndex - 1),
+    });
     if (window.innerWidth < 760) setGraphExpanded(false);
   }
 
   function focusBreadcrumb(index: number) {
-    if (index === activeIndex) return;
+    if (deckTransition || index === activeIndex) return;
     collapseDeckTo(index);
   }
 
   function openArticleForNode(nodeId: string) {
+    if (deckTransition) return;
     setArticleFocusSectionId(getArticleSectionForNode(nodeId));
     setGraphExpanded(false);
     resetMobileDeck();
@@ -304,6 +353,7 @@ export function ResearchWorkspace() {
   }
 
   function openSourceCard(nodeId: string) {
+    if (deckTransition) return;
     setWorkspaceView("explore");
     setGraphExpanded(false);
     setSelection(null);
@@ -343,7 +393,7 @@ export function ResearchWorkspace() {
   }
 
   function forkSelection() {
-    if (!selection) return;
+    if (!selection || deckTransition) return;
     customNodeCounter.current += 1;
     const nodeIndex = customNodeCounter.current;
     const nodeId = `selection-${nodeIndex}`;
@@ -365,13 +415,17 @@ export function ResearchWorkspace() {
       }),
     );
     const nextStack = [...stack.slice(0, activeIndex + 1), nodeId];
-    setStack(nextStack);
-    collapseDeckTo(nextStack.length - 1);
+    beginDeckTransition({
+      removingFromIndex: activeIndex + 1,
+      nextStack,
+      nextActiveIndex: nextStack.length - 1,
+      activeIndexDuringExit: activeIndex,
+    });
     window.getSelection()?.removeAllRanges();
   }
 
   function openDeckSpread() {
-    if (compactDeck || stack.length <= 1) return;
+    if (deckTransition || compactDeck || stack.length <= 1) return;
     setDeckPreviewIndex(activeIndex);
     setDeckHoverIndex(null);
     setDeckPreviewFocused(false);
@@ -381,7 +435,14 @@ export function ResearchWorkspace() {
   }
 
   function hintDeck(side: DeckHintSide) {
-    if (compactDeck || deckMode || stack.length <= 1) return;
+    if (
+      deckTransition ||
+      compactDeck ||
+      deckMode ||
+      stack.length <= 1
+    ) {
+      return;
+    }
     if (side === "left" && activeIndex <= 0) return;
     if (side === "right" && activeIndex >= stack.length - 1) return;
     setDeckHintSide(side);
@@ -393,6 +454,7 @@ export function ResearchWorkspace() {
   }
 
   function selectDeckCard(index: number) {
+    if (deckTransition) return;
     if (handleMobileDeckSelection(index)) return;
     collapseDeckTo(index);
   }
@@ -444,6 +506,18 @@ export function ResearchWorkspace() {
     deckLeaveTimer.current = null;
   }
 
+  function toggleTheme() {
+    document.documentElement.dataset.themeTransition = "true";
+    if (themeTransitionTimer.current) {
+      clearTimeout(themeTransitionTimer.current);
+    }
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+    themeTransitionTimer.current = setTimeout(() => {
+      delete document.documentElement.dataset.themeTransition;
+      themeTransitionTimer.current = null;
+    }, 320);
+  }
+
   const selectionLeft = selection
     ? Math.max(
         104,
@@ -453,17 +527,22 @@ export function ResearchWorkspace() {
         ),
       )
     : 0;
+  const topbarStack = deckTransition
+    ? stack.slice(0, deckTransition.removingFromIndex)
+    : stack;
 
   return (
     <main
       className={`workspace-shell ${
         deckMode ? "workspace-deck-open" : ""
-      } ${mobileDeckPreview ? "workspace-mobile-deck-preview" : ""}`}
+      } ${mobileDeckPreview ? "workspace-mobile-deck-preview" : ""} ${
+        deckTransition ? "workspace-deck-transitioning" : ""
+      }`}
     >
       <WorkspaceTopbar
         view={workspaceView}
         theme={theme}
-        stack={stack}
+        stack={topbarStack}
         nodes={nodes}
         activeIndex={activeIndex}
         activeId={activeId}
@@ -474,15 +553,16 @@ export function ResearchWorkspace() {
         onOpenArticle={openArticleForNode}
         onFocusBreadcrumb={focusBreadcrumb}
         onShowGraph={() => setGraphVisible(true)}
-        onToggleTheme={() =>
-          setTheme((current) =>
-            current === "light" ? "dark" : "light",
-          )
-        }
+        onToggleTheme={toggleTheme}
       />
 
-      {workspaceView === "explore" ? (
-        <>
+      <div
+        className="workspace-view-layer workspace-view-explore"
+        data-testid="workspace-view-explore"
+        data-view-active={workspaceView === "explore" ? "true" : "false"}
+        aria-hidden={workspaceView !== "explore"}
+        inert={workspaceView !== "explore" ? true : undefined}
+      >
           <section className="workspace-stage" aria-label="卡片研究空间">
             <div
               className={`deck-wrap ${
@@ -491,6 +571,8 @@ export function ResearchWorkspace() {
                 mobileSwiping ? "deck-wrap-swiping" : ""
               } ${
                 mobileDeckPreview ? "deck-wrap-mobile-preview" : ""
+              } ${
+                deckTransition ? "deck-wrap-transitioning" : ""
               }`}
               data-testid="research-deck"
               data-deck-mode={
@@ -501,6 +583,9 @@ export function ResearchWorkspace() {
                     : "stacked"
               }
               data-deck-size={stack.length}
+              data-deck-transition={
+                deckTransition ? "removing-suffix" : "idle"
+              }
               data-deck-hint={deckHintSide ?? "none"}
               data-deck-preview={
                 mobileDeckPreview || deckPreviewFocused
@@ -553,14 +638,31 @@ export function ResearchWorkspace() {
                       deckMode={deckNavigationMode}
                       mobilePreview={mobileDeckPreview}
                       deckPickable={
-                        deckMode ||
-                        (mobileDeckPreview &&
-                          Math.abs(index - previewIndex) <= 1)
+                        !deckTransition &&
+                        (deckMode ||
+                          (mobileDeckPreview &&
+                            Math.abs(index - previewIndex) <= 1))
                       }
                       deckPreviewed={
                         (deckMode && index === captionIndex) ||
                         (mobileDeckPreview && index === previewIndex)
                       }
+                      leavingDeck={
+                        deckTransition !== null &&
+                        index >= deckTransition.removingFromIndex
+                      }
+                      leavingOrder={
+                        deckTransition
+                          ? Math.max(
+                              0,
+                              index - deckTransition.removingFromIndex,
+                            )
+                          : 0
+                      }
+                      leavingDistance={Math.max(
+                        520,
+                        viewportWidth * 0.62,
+                      )}
                       motionState={getCardMotionState(index, {
                         activeIndex,
                         stackLength: stack.length,
@@ -603,7 +705,10 @@ export function ResearchWorkspace() {
               ) : null}
 
               <AnimatePresence>
-                {stack.length > 1 && !compactDeck && !deckMode ? (
+                {stack.length > 1 &&
+                !deckTransition &&
+                !compactDeck &&
+                !deckMode ? (
                   <>
                     {activeIndex > 0 ? (
                       <motion.button
@@ -647,6 +752,7 @@ export function ResearchWorkspace() {
 
               <AnimatePresence>
                 {stack.length > 1 &&
+                !deckTransition &&
                 compactDeck &&
                 !mobileDeckPreview ? (
                   <>
@@ -697,7 +803,9 @@ export function ResearchWorkspace() {
               </AnimatePresence>
 
               <AnimatePresence>
-                {activeIndex > 0 && !deckNavigationMode ? (
+                {activeIndex > 0 &&
+                !deckTransition &&
+                !deckNavigationMode ? (
                   <motion.button
                     type="button"
                     className="branch-close-button"
@@ -719,7 +827,7 @@ export function ResearchWorkspace() {
           </section>
 
           <AnimatePresence>
-            {graphVisible && !mobileDeckPreview ? (
+            {graphVisible ? (
               <GraphPreview
                 nodes={nodes}
                 discoveredIds={discoveredIds}
@@ -757,8 +865,15 @@ export function ResearchWorkspace() {
               </motion.div>
             ) : null}
           </AnimatePresence>
-        </>
-      ) : (
+      </div>
+
+      <div
+        className="workspace-view-layer workspace-view-article"
+        data-testid="workspace-view-article"
+        data-view-active={workspaceView === "article" ? "true" : "false"}
+        aria-hidden={workspaceView !== "article"}
+        inert={workspaceView !== "article" ? true : undefined}
+      >
         <ArticleView
           nodes={nodes}
           discoveredIds={discoveredIds}
@@ -768,7 +883,7 @@ export function ResearchWorkspace() {
           onOpenSource={openSourceCard}
           reduceMotion={reduceMotion}
         />
-      )}
+      </div>
     </main>
   );
 }

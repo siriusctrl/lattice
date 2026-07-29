@@ -307,14 +307,7 @@ export function GraphPreview({
         aria-live="polite"
       >
         <i aria-hidden="true" />
-        <motion.strong
-          key={activeId}
-          initial={reduceMotion ? false : { opacity: 0, y: 3 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.2 }}
-        >
-          {nodes[activeId]?.shortTitle}
-        </motion.strong>
+        <strong>{nodes[activeId]?.shortTitle}</strong>
         <span className="graph-node-total">
           {discoveredIds.size} 个节点
         </span>

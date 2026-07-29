@@ -14,6 +14,7 @@
   - compact edge entry, folded preview, and commit-on-tap navigation
   - active-branch closing that removes the current Deck suffix, returns focus
     to the previous Card, and preserves the complete graph
+  - two-phase suffix exit and persistent Explore and Article view layers
   - prepared graph state
   - custom fork creation
   - graph focus
@@ -87,6 +88,10 @@
   - touch pointer capture, boundary resistance, and click suppression
   - Escape, viewport, and selection cleanup
 
+- `app/hooks/use-deck-transition.ts`
+  - managed outgoing-suffix state
+  - delayed lineage commit and retained-Card focus restoration
+
 ## Assets
 
 - `public/og.png`: social preview of Explore becoming Article
@@ -97,6 +102,7 @@
 - `playwright.config.ts`: desktop browser verification environment
 - `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
   tests, including top-Card and historical middle-Card unstack regressions,
+  retained-Card DOM identity, view-state preservation, compact graph identity,
   short-desktop topbar clearance, and current-edition Article coverage
 - `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
   hinted-fan to Spread transition coverage

@@ -1,5 +1,8 @@
 export type DeckHintSide = "left" | "right";
 
+export const DECK_SUFFIX_EXIT_DURATION_SECONDS = 0.42;
+export const DECK_SUFFIX_COMMIT_DELAY_MS = 440;
+
 export type DeckMotionContext = {
   activeIndex: number;
   stackLength: number;

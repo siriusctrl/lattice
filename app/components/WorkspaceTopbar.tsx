@@ -80,65 +80,111 @@ export function WorkspaceTopbar({
       </nav>
 
       <div className="topbar-context">
-        {view === "explore" ? (
-          <div className="breadcrumb" aria-label="当前研究路径">
-            {stack.map((nodeId, index) => {
-              const node = nodes[nodeId];
-              if (!node) return null;
-              const hidden =
-                stack.length > 4 &&
-                index > 0 &&
-                index < stack.length - 3;
-              if (hidden) {
-                return index === 1 ? (
-                  <span className="breadcrumb-ellipsis" key="ellipsis">
-                    …
-                  </span>
-                ) : null;
-              }
-              return (
-                <span
-                  className="breadcrumb-segment"
-                  key={`${nodeId}-${index}`}
-                >
-                  {index > 0 &&
-                  !(stack.length > 4 && index === stack.length - 3) ? (
-                    <i aria-hidden="true">/</i>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => onFocusBreadcrumb(index)}
-                    aria-current={
-                      index === activeIndex ? "page" : undefined
-                    }
+        <AnimatePresence initial={false} mode="popLayout">
+          {view === "explore" ? (
+            <motion.div
+              key="explore-context"
+              className="breadcrumb"
+              aria-label="当前研究路径"
+              initial={reduceMotion ? false : { opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {stack.map((nodeId, index) => {
+                const node = nodes[nodeId];
+                if (!node) return null;
+                const hidden =
+                  stack.length > 4 &&
+                  index > 0 &&
+                  index < stack.length - 3;
+                if (hidden) {
+                  return index === 1 ? (
+                    <span className="breadcrumb-ellipsis" key="ellipsis">
+                      …
+                    </span>
+                  ) : null;
+                }
+                return (
+                  <span
+                    className="breadcrumb-segment"
+                    key={`${nodeId}-${index}`}
                   >
-                    {node.shortTitle}
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="article-context" aria-label="当前成稿">
-            <span>动态成稿</span>
-            <i aria-hidden="true">/</i>
-            <strong>埃隆·马斯克</strong>
-            <small>{sourceCount} 张来源 Card</small>
-          </div>
-        )}
+                    {index > 0 &&
+                    !(stack.length > 4 && index === stack.length - 3) ? (
+                      <i aria-hidden="true">/</i>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onFocusBreadcrumb(index)}
+                      aria-current={
+                        index === activeIndex ? "page" : undefined
+                      }
+                    >
+                      {node.shortTitle}
+                    </button>
+                  </span>
+                );
+              })}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="article-context"
+              className="article-context"
+              aria-label="当前成稿"
+              initial={reduceMotion ? false : { opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -3 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <span>动态成稿</span>
+              <i aria-hidden="true">/</i>
+              <strong>埃隆·马斯克</strong>
+              <small>{sourceCount} 张来源 Card</small>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="topbar-actions">
-        {view === "explore" && !graphVisible ? (
-          <button
-            type="button"
-            className="toolbar-button"
-            onClick={onShowGraph}
-          >
-            <Graph size={16} weight="bold" />
-            <span>研究图</span>
-          </button>
-        ) : null}
+      <motion.div
+        className="topbar-actions"
+        layout
+        transition={{
+          layout: {
+            type: "spring",
+            stiffness: 360,
+            damping: 32,
+          },
+        }}
+      >
+        <AnimatePresence initial={false} mode="popLayout">
+          {view === "explore" && !graphVisible ? (
+            <motion.button
+              key="show-graph"
+              type="button"
+              className="toolbar-button"
+              onClick={onShowGraph}
+              initial={
+                reduceMotion ? false : { opacity: 0, scale: 0.94, x: 6 }
+              }
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.94, x: 6 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              <Graph size={16} weight="bold" />
+              <span>研究图</span>
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
         <button
           type="button"
           className="icon-button"
@@ -149,7 +195,7 @@ export function WorkspaceTopbar({
           title={theme === "light" ? "深色模式" : "浅色模式"}
           data-testid="theme-toggle"
         >
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={theme}
               initial={
@@ -163,7 +209,7 @@ export function WorkspaceTopbar({
             </motion.span>
           </AnimatePresence>
         </button>
-      </div>
+      </motion.div>
     </header>
   );
 }

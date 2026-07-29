@@ -18,7 +18,8 @@ risk. Independent branches can converge on shared events or interpretations.
 - Select ordinary answer text and create a user-defined fork.
 - Close the active branch directly from the Card corner. Closing removes that
   Card and every later Card from the current Deck, returns focus to the previous
-  Card, and leaves the complete research graph intact.
+  Card through one continuous unstack motion, and leaves the complete research
+  graph intact.
 - Approach an exposed Card edge to open that side around its matching lower
   corner, then click it to spread the current path across the desktop workspace.
 - Rest on a Card to preview it between earlier Cards on the left and later
@@ -31,7 +32,8 @@ risk. Independent branches can converge on shared events or interpretations.
 - Move through Cards without moving the graph geometry; the map keeps a curated
   semantic composition while the active marker and contextual relations
   transition.
-- Switch between the original Explore workspace and a continuous Article.
+- Switch between the original Explore workspace and a continuous Article
+  without resetting Card drafts, scroll position, or spatial history.
 - Add local follow-ups or selected-text forks without rewriting prepared Cards.
 - Read Article as a complete current edition at every point. New research
   recompiles and expands the prose instead of exposing internal draft states.
@@ -119,6 +121,7 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/components/ArticleView.tsx`: Article selection and focus orchestration
 - `app/components/article/`: flat article outline, paper, and source rail
 - `app/components/GraphPreview.tsx`: compact and expanded graph
+- `app/hooks/use-deck-transition.ts`: two-phase Deck suffix exit and commit
 - `app/hooks/use-mobile-deck.ts`: mobile folded-preview gesture state
 - `app/lib/article-research.ts`: current-edition article compiler fixture
 - `app/lib/graph-layout.ts`: pure graph projection and label geometry
