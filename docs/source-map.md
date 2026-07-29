@@ -10,8 +10,8 @@
 
 - `app/components/ResearchWorkspace.tsx`
   - Deck lineage and independent historical focus
-  - continuous desktop spread gesture
-  - compact swipeable coverflow
+  - desktop edge hint, spread, and dwell preview
+  - direct compact swipe navigation
   - direct active-branch closing
   - prepared graph state
   - custom fork creation

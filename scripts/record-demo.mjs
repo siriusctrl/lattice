@@ -79,31 +79,24 @@ await page
   .click();
 await page.waitForTimeout(700);
 
-const deckHandle = page.getByRole("button", { name: "摊开 5 张 Card" });
-const deckHandleBounds = await deckHandle.boundingBox();
-if (!deckHandleBounds) throw new Error("Deck handle is unavailable");
-await page.mouse.move(
-  deckHandleBounds.x + deckHandleBounds.width / 2,
-  deckHandleBounds.y + deckHandleBounds.height / 2,
-);
-await page.mouse.down();
-await page.mouse.move(
-  deckHandleBounds.x + deckHandleBounds.width / 2 + 300,
-  deckHandleBounds.y + deckHandleBounds.height / 2,
-  { steps: 18 },
-);
-await page.mouse.up();
+const deckEdge = page.getByRole("button", {
+  name: "从左侧展开 Card 路径",
+});
+await deckEdge.hover();
+await page.waitForTimeout(650);
+await deckEdge.click();
+await page.waitForTimeout(750);
 await page
-  .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
+  .getByRole("button", { name: "打开 Card：比勒陀利亚" })
   .hover({ position: { x: 12, y: 220 } });
-await page.waitForTimeout(900);
+await page.waitForTimeout(1_050);
 await page.screenshot({
   path: new URL("frame-02-deck-spread.png", proofRoot).pathname,
 });
 
 await page
-  .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
-  .click({ position: { x: 12, y: 220 } });
+  .getByRole("button", { name: "打开 Card：比勒陀利亚" })
+  .click();
 await page.waitForTimeout(700);
 await page.screenshot({
   path: new URL("frame-03-history-focus.png", proofRoot).pathname,

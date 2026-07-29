@@ -28,9 +28,13 @@ and context semantics behind the scenes.
 - Closing the active Card changes focus but never deletes the persisted graph.
 - A Deck is the current ordered root-to-leaf lineage. Its focus may sit on any
   Card, and Card selection inside a spread does not delete later Cards.
-- Deck Spread is a navigation mode, not a second content view. On desktop it
-  fans the lineage across available width; on compact screens it becomes a
-  swipeable coverflow.
+- Deck Spread is a desktop navigation mode, not a second content view. Hovering
+  the exposed Card edge gives a small fan hint; clicking opens the lineage.
+- A sustained hover previews one Card in the center. Earlier Cards collect on
+  its left and later Cards collect on its right.
+- Compact screens do not have a separate spread mode or visible Deck control.
+  Horizontal swipes directly change focus, with earlier and later Cards peeking
+  from opposite sides.
 - Starting a new fork from a historical Card replaces only the current
   lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
@@ -66,8 +70,9 @@ and context semantics behind the scenes.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
-- Deck movement must stay continuous with the drag distance and settle with
-  spring weight. Avoid binary layout jumps or equal-width thumbnail grids.
+- Mobile Deck movement must follow the swipe distance and settle with spring
+  weight. Desktop hover, fan, and dwell transitions must preserve card
+  materiality. Avoid equal-width thumbnail grids.
 - Respect reduced-motion and reduced-transparency preferences.
 - Keep all visible copy free of long dash punctuation.
 - Use Phosphor for icons. Do not add hand-authored icon paths.

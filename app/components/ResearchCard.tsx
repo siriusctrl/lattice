@@ -38,7 +38,6 @@ type ResearchCardProps = {
   node: ResearchNode;
   active: boolean;
   deckIndex: number;
-  deckSize: number;
   deckMode: boolean;
   deckPreviewed: boolean;
   motionState: {
@@ -55,6 +54,7 @@ type ResearchCardProps = {
   onAnchor: (targetId: string) => void;
   onAsk: (nodeId: string, question: string) => void;
   onDeckPreview: (index: number) => void;
+  onDeckPreviewEnd: (index: number) => void;
   onDeckSelect: (index: number) => void;
   onTextSelection: (selection: TextSelection | null) => void;
   reduceMotion: boolean;
@@ -92,7 +92,6 @@ export function ResearchCard({
   node,
   active,
   deckIndex,
-  deckSize,
   deckMode,
   deckPreviewed,
   motionState,
@@ -102,6 +101,7 @@ export function ResearchCard({
   onAnchor,
   onAsk,
   onDeckPreview,
+  onDeckPreviewEnd,
   onDeckSelect,
   onTextSelection,
   reduceMotion,
@@ -206,17 +206,13 @@ export function ResearchCard({
         <button
           type="button"
           className="deck-card-picker"
-          aria-label={`打开 Card ${deckIndex + 1}：${node.shortTitle}`}
+          aria-label={`打开 Card：${node.shortTitle}`}
           onClick={() => onDeckSelect(deckIndex)}
           onFocus={() => onDeckPreview(deckIndex)}
+          onBlur={() => onDeckPreviewEnd(deckIndex)}
           onPointerEnter={() => onDeckPreview(deckIndex)}
-        >
-          <span>
-            {String(deckIndex + 1).padStart(2, "0")} /{" "}
-            {String(deckSize).padStart(2, "0")}
-          </span>
-          <strong>{node.shortTitle}</strong>
-        </button>
+          onPointerLeave={() => onDeckPreviewEnd(deckIndex)}
+        />
       ) : null}
 
       <div

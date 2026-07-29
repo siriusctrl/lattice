@@ -17,9 +17,11 @@ risk. Independent branches can converge on shared events or interpretations.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
 - Close the active branch directly from the Card corner.
-- Drag or click the exposed Deck handle to fan the current path across the
-  workspace, then select any earlier Card without deleting later history.
-- Swipe through the same Deck as a compact coverflow on phone widths.
+- Hover the exposed Card edge for a small fan hint, then click it to spread the
+  current path across the desktop workspace.
+- Rest on a Card to preview it between earlier Cards on the left and later
+  Cards on the right.
+- Swipe directly between Cards on phone widths without opening another mode.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.

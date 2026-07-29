@@ -189,15 +189,9 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   const deck = page.getByTestId("research-deck");
   await expect(deck).toHaveAttribute("data-deck-size", "5");
   await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(page.locator(".deck-spread-handle")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "摊开 5 张 Card" }).click();
-  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
-  await expect(page.getByTestId("deck-spread-caption")).toContainText(
-    "Zip2",
-  );
-  await expect(page.locator(".deck-card-picker")).toHaveCount(5);
-
-  const readSpreadGeometry = () =>
+  const readDeckGeometry = () =>
     page.locator(".research-card").evaluateAll((cards) => {
       const centers = cards.map((card) => {
         const rect = card.getBoundingClientRect();
@@ -210,20 +204,49 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
         span: Math.max(...centers) - Math.min(...centers),
       };
     });
-  await expect.poll(async () => (await readSpreadGeometry()).span).toBeGreaterThan(
+
+  const edgeTrigger = page.getByRole("button", {
+    name: "从左侧展开 Card 路径",
+  });
+  await edgeTrigger.hover();
+  await expect(deck).toHaveClass(/deck-wrap-hinted/);
+  await expect.poll(async () => (await readDeckGeometry()).span).toBeGreaterThan(
+    80,
+  );
+  expect((await readDeckGeometry()).span).toBeLessThan(140);
+
+  await edgeTrigger.click();
+  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
+  await expect(page.getByTestId("deck-spread-caption")).toHaveCount(0);
+  await expect(page.locator(".deck-card-picker")).toHaveCount(5);
+  await expect.poll(async () => (await readDeckGeometry()).span).toBeGreaterThan(
     300,
   );
-  const spreadGeometry = await readSpreadGeometry();
+  const spreadGeometry = await readDeckGeometry();
   expect(spreadGeometry.ordered).toBe(true);
 
   const originPicker = page.getByRole("button", {
-    name: "打开 Card 2：比勒陀利亚",
+    name: "打开 Card：比勒陀利亚",
   });
   await originPicker.hover({ position: { x: 12, y: 220 } });
   await expect(page.getByTestId("deck-spread-caption")).toContainText(
     "比勒陀利亚",
   );
-  await originPicker.click({ position: { x: 12, y: 220 } });
+  await expect(deck).toHaveAttribute("data-deck-preview", "1");
+
+  const previewCenters = await page
+    .locator(".research-card")
+    .evaluateAll((cards) =>
+      cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left + rect.width / 2;
+      }),
+    );
+  expect(previewCenters[0]).toBeLessThan(previewCenters[1]);
+  expect(previewCenters.slice(2).every((center) => center > previewCenters[1]))
+    .toBe(true);
+
+  await originPicker.click();
 
   await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
   await expect(deck).toHaveAttribute("data-deck-size", "5");
@@ -249,7 +272,7 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   ).toBeVisible();
 });
 
-test("uses a swipeable coverflow for the deck on a phone viewport", async ({
+test("swipes directly between opposite Deck sides on a phone viewport", async ({
   page,
 }) => {
   await page.locator('[data-anchor-target="origin"]').click();
@@ -260,11 +283,10 @@ test("uses a swipeable coverflow for the deck on a phone viewport", async ({
   await page.setViewportSize({ width: 390, height: 844 });
 
   const deck = page.getByTestId("research-deck");
-  await page.getByRole("button", { name: "摊开 3 张 Card" }).click();
-  await expect(deck).toHaveAttribute("data-deck-mode", "spread");
-  await expect(page.getByTestId("deck-spread-caption")).toContainText(
-    "迁往加拿大",
-  );
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(page.getByRole("button", {
+    name: "从左侧展开 Card 路径",
+  })).toHaveCount(0);
 
   const deckBounds = await deck.boundingBox();
   if (!deckBounds) throw new Error("Missing mobile deck bounds");
@@ -278,16 +300,22 @@ test("uses a swipeable coverflow for the deck on a phone viewport", async ({
   );
   await page.mouse.up();
 
-  await expect(page.getByTestId("deck-spread-caption")).toContainText(
-    "比勒陀利亚",
-  );
-  await page
-    .getByRole("button", { name: "打开 Card 2：比勒陀利亚" })
-    .click();
   await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
     "data-active",
     "true",
   );
+  const cardCenters = await page.locator(".research-card").evaluateAll(
+    (cards) =>
+      cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left + rect.width / 2;
+      }),
+  );
+  expect(cardCenters[0]).toBeLessThan(cardCenters[1]);
+  expect(cardCenters[2]).toBeGreaterThan(cardCenters[1]);
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString() ?? ""))
+    .toBe("");
   const documentWidth = await page.evaluate(
     () => document.documentElement.scrollWidth,
   );

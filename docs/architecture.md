@@ -68,12 +68,19 @@ index. In its default stacked state, the active card owns content input while
 earlier and later cards remain inert layers. Closing a card moves focus backward
 without deleting the rest of the Deck or the graph.
 
-Deck Spread turns that same lineage into a temporary navigation surface. On
-desktop, cards fan across the available horizontal space with adaptive overlap.
-On compact screens, they form a centered coverflow that moves with horizontal
-swipes. Hover, keyboard focus, or touch selection exposes the persisted
-fork-time title outside the chat content. Choosing a card collapses the Deck
-around that historical focus.
+Deck Spread turns that same lineage into a temporary desktop navigation
+surface. The collapsed Deck has no count badge or visible mode control.
+Approaching its exposed edge opens a small physical fan; clicking that edge
+spreads the Cards across the available horizontal space with adaptive overlap.
+A sustained hover promotes one Card into preview while earlier Cards collect
+on its left and later Cards collect on its right. The persisted fork-time title
+appears outside the chat only during inspection. Choosing the Card collapses
+the Deck around that historical focus.
+
+Compact screens do not enter Deck Spread. A horizontal drag moves the active
+Card with the finger and changes the active index after crossing the swipe
+threshold. Earlier and later Cards use opposite offsets and rotations, so a
+middle Card always has a visible sheet on both sides.
 
 If the user only reads, every later card remains available. If they open an
 anchor or create a selection fork from the historical card, the current Deck

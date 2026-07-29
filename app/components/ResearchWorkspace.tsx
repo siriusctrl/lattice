@@ -4,7 +4,6 @@ import {
   Article as ArticleIcon,
   ChatsCircle,
   CursorClick,
-  DotsSixVertical,
   Graph,
   Moon,
   Stack,
@@ -13,7 +12,6 @@ import {
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  CSSProperties,
   PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -44,11 +42,11 @@ type SelectionState = TextSelection & {
   nodeId: string;
 };
 
-type DeckDragState = {
+type MobileSwipeState = {
   pointerId: number;
   startX: number;
-  startProgress: number;
-  moved: boolean;
+  startY: number;
+  horizontal: boolean;
 };
 
 const clamp = (value: number, minimum = 0, maximum = 1) =>
@@ -143,9 +141,14 @@ export function ResearchWorkspace() {
   const [stack, setStack] = useState<string[]>([ROOT_NODE_ID]);
   const [activeDeckIndex, setActiveDeckIndex] = useState(0);
   const [deckProgress, setDeckProgress] = useState(0);
-  const [deckDragging, setDeckDragging] = useState(false);
-  const [deckDragOriginOpen, setDeckDragOriginOpen] = useState(false);
+  const [deckHinted, setDeckHinted] = useState(false);
   const [deckPreviewIndex, setDeckPreviewIndex] = useState(0);
+  const [deckHoverIndex, setDeckHoverIndex] = useState<number | null>(
+    null,
+  );
+  const [deckPreviewFocused, setDeckPreviewFocused] = useState(false);
+  const [mobileSwipeDelta, setMobileSwipeDelta] = useState(0);
+  const [mobileSwiping, setMobileSwiping] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
     () => new Set(Object.keys(MOCK_RESEARCH_NODES)),
@@ -164,11 +167,13 @@ export function ResearchWorkspace() {
   const followupCounter = useRef(0);
   const customNodeCounter = useRef(0);
   const askTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const deckDrag = useRef<DeckDragState | null>(null);
-  const deckSwipe = useRef<{ pointerId: number; startX: number } | null>(
+  const deckPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const suppressDeckClick = useRef(false);
+  const deckLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const mobileSwipe = useRef<MobileSwipeState | null>(null);
 
   const nodes = useMemo(
     () => ({ ...MOCK_RESEARCH_NODES, ...customNodes }),
@@ -177,11 +182,12 @@ export function ResearchWorkspace() {
   const activeIndex = Math.min(activeDeckIndex, stack.length - 1);
   const activeId = stack[activeIndex] ?? ROOT_NODE_ID;
   const activeNode = nodes[activeId] ?? nodes[ROOT_NODE_ID];
-  const deckMode = stack.length > 1 && deckProgress > 0.035;
-  const deckOpen = deckProgress > 0.5;
   const compactDeck = viewportWidth <= 720;
+  const deckMode =
+    !compactDeck && stack.length > 1 && deckProgress > 0.035;
   const previewIndex = Math.min(deckPreviewIndex, stack.length - 1);
-  const previewNode = nodes[stack[previewIndex]] ?? activeNode;
+  const captionIndex = deckHoverIndex ?? previewIndex;
+  const captionNode = nodes[stack[captionIndex]] ?? activeNode;
   const estimatedDeckWidth =
     viewportWidth > 1120
       ? Math.min(760, viewportWidth - 420)
@@ -199,14 +205,6 @@ export function ResearchWorkspace() {
           156,
           Math.max(54, desktopSpreadRoom / (stack.length - 1)),
         );
-  const desktopDeckSpan = desktopDeckGap * Math.max(0, stack.length - 1);
-  const dockHandleToSpreadEdge = deckDragging
-    ? deckDragOriginOpen
-    : deckOpen;
-  const deckHandleOffset =
-    !compactDeck && dockHandleToSpreadEdge
-      ? -desktopDeckSpan / 2 + 58
-      : 0;
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("lattice-theme");
@@ -232,7 +230,16 @@ export function ResearchWorkspace() {
   }, []);
 
   useEffect(() => {
-    const updateViewport = () => setViewportWidth(window.innerWidth);
+    const updateViewport = () => {
+      const width = window.innerWidth;
+      setViewportWidth(width);
+      if (width <= 720) {
+        setDeckProgress(0);
+        setDeckHinted(false);
+        setDeckHoverIndex(null);
+        setDeckPreviewFocused(false);
+      }
+    };
     updateViewport();
     window.addEventListener("resize", updateViewport);
     return () => window.removeEventListener("resize", updateViewport);
@@ -244,6 +251,8 @@ export function ResearchWorkspace() {
       if (event.key !== "Escape") return;
       setDeckProgress(0);
       setDeckPreviewIndex(activeIndex);
+      setDeckHoverIndex(null);
+      setDeckPreviewFocused(false);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
@@ -264,9 +273,33 @@ export function ResearchWorkspace() {
   useEffect(
     () => () => {
       if (askTimer.current) clearTimeout(askTimer.current);
+      if (deckPreviewTimer.current) {
+        clearTimeout(deckPreviewTimer.current);
+      }
+      if (deckLeaveTimer.current) clearTimeout(deckLeaveTimer.current);
     },
     [],
   );
+
+  const collapseDeckTo = useCallback((index: number) => {
+    if (deckPreviewTimer.current) {
+      clearTimeout(deckPreviewTimer.current);
+      deckPreviewTimer.current = null;
+    }
+    if (deckLeaveTimer.current) {
+      clearTimeout(deckLeaveTimer.current);
+      deckLeaveTimer.current = null;
+    }
+    setActiveDeckIndex(index);
+    setDeckPreviewIndex(index);
+    setDeckHoverIndex(null);
+    setDeckPreviewFocused(false);
+    setDeckHinted(false);
+    setDeckProgress(0);
+    setMobileSwipeDelta(0);
+    setMobileSwiping(false);
+    setSelection(null);
+  }, []);
 
   const openNode = useCallback(
     (targetId: string) => {
@@ -281,48 +314,34 @@ export function ResearchWorkspace() {
       const nextIndex =
         existingIndex >= 0 ? existingIndex : nextStack.length - 1;
       setStack(nextStack);
-      setActiveDeckIndex(nextIndex);
-      setDeckPreviewIndex(nextIndex);
-      setDeckProgress(0);
+      collapseDeckTo(nextIndex);
     },
-    [activeId, activeIndex, nodes, stack],
+    [activeId, activeIndex, collapseDeckTo, nodes, stack],
   );
 
   function closeActiveBranch() {
     if (activeIndex <= 0) return;
-    const nextIndex = activeIndex - 1;
-    setActiveDeckIndex(nextIndex);
-    setDeckPreviewIndex(nextIndex);
-    setDeckProgress(0);
-    setSelection(null);
+    collapseDeckTo(activeIndex - 1);
   }
 
   function focusFromGraph(nodeId: string) {
     if (!discoveredIds.has(nodeId) || nodeId === activeId) return;
     const existingIndex = stack.lastIndexOf(nodeId);
     if (existingIndex >= 0) {
-      setActiveDeckIndex(existingIndex);
-      setDeckPreviewIndex(existingIndex);
-      setDeckProgress(0);
+      collapseDeckTo(existingIndex);
       return;
     }
 
     const path = getPathToNode(nodeId, edges);
     const nextStack = path ?? [ROOT_NODE_ID, nodeId];
     setStack(nextStack);
-    setActiveDeckIndex(nextStack.length - 1);
-    setDeckPreviewIndex(nextStack.length - 1);
-    setDeckProgress(0);
-    setSelection(null);
+    collapseDeckTo(nextStack.length - 1);
     if (window.innerWidth < 760) setGraphExpanded(false);
   }
 
   function focusBreadcrumb(index: number) {
     if (index === activeIndex) return;
-    setActiveDeckIndex(index);
-    setDeckPreviewIndex(index);
-    setDeckProgress(0);
-    setSelection(null);
+    collapseDeckTo(index);
   }
 
   function openArticleForNode(nodeId: string) {
@@ -445,156 +464,234 @@ export function ResearchWorkspace() {
     );
     const nextStack = [...stack.slice(0, activeIndex + 1), nodeId];
     setStack(nextStack);
-    setActiveDeckIndex(nextStack.length - 1);
-    setDeckPreviewIndex(nextStack.length - 1);
-    setDeckProgress(0);
-    setSelection(null);
+    collapseDeckTo(nextStack.length - 1);
     window.getSelection()?.removeAllRanges();
   }
 
-  function setDeckExpanded(expanded: boolean) {
+  function openDeckSpread() {
+    if (compactDeck || stack.length <= 1) return;
     setDeckPreviewIndex(activeIndex);
-    setDeckProgress(expanded ? 1 : 0);
+    setDeckHoverIndex(null);
+    setDeckPreviewFocused(false);
+    setDeckHinted(false);
+    setDeckProgress(1);
     setSelection(null);
   }
 
-  function beginDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (stack.length <= 1) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    deckDrag.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startProgress: deckProgress,
-      moved: false,
-    };
-    setDeckDragOriginOpen(deckProgress > 0.5);
-    setDeckDragging(true);
+  function hintDeck() {
+    if (compactDeck || deckMode || stack.length <= 1) return;
+    setDeckHinted(true);
   }
 
-  function updateDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-    const drag = deckDrag.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const travel = Math.min(340, Math.max(180, viewportWidth * 0.42));
-    const delta = event.clientX - drag.startX;
-    if (Math.abs(delta) > 3) drag.moved = true;
-    setDeckProgress(clamp(drag.startProgress + delta / travel));
-  }
-
-  function finishDeckDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-    const drag = deckDrag.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const travel = Math.min(340, Math.max(180, viewportWidth * 0.42));
-    const progress = clamp(
-      drag.startProgress + (event.clientX - drag.startX) / travel,
-    );
-    suppressDeckClick.current = drag.moved;
-    if (drag.moved) {
-      window.setTimeout(() => {
-        suppressDeckClick.current = false;
-      }, 0);
-    }
-    setDeckProgress(progress >= 0.45 ? 1 : 0);
-    setDeckPreviewIndex(activeIndex);
-    setDeckDragging(false);
-    deckDrag.current = null;
-  }
-
-  function toggleDeck() {
-    if (suppressDeckClick.current) {
-      suppressDeckClick.current = false;
-      return;
-    }
-    setDeckExpanded(!deckOpen);
+  function unhintDeck() {
+    if (deckMode) return;
+    setDeckHinted(false);
   }
 
   function selectDeckCard(index: number) {
-    if (suppressDeckClick.current) {
-      suppressDeckClick.current = false;
-      return;
-    }
-    setActiveDeckIndex(index);
-    setDeckPreviewIndex(index);
-    setDeckProgress(0);
-    setSelection(null);
+    collapseDeckTo(index);
   }
 
   function previewDeckCard(index: number) {
-    setDeckPreviewIndex(index);
+    if (!deckMode) return;
+    if (deckLeaveTimer.current) {
+      clearTimeout(deckLeaveTimer.current);
+      deckLeaveTimer.current = null;
+    }
+    setDeckHoverIndex(index);
+    if (deckPreviewTimer.current) {
+      clearTimeout(deckPreviewTimer.current);
+    }
+    deckPreviewTimer.current = setTimeout(() => {
+      setDeckPreviewIndex(index);
+      setDeckPreviewFocused(true);
+      deckPreviewTimer.current = null;
+    }, reduceMotion ? 0 : 520);
+  }
+
+  function endDeckCardPreview(index: number) {
+    if (deckHoverIndex !== index) return;
+    if (deckPreviewTimer.current) {
+      clearTimeout(deckPreviewTimer.current);
+      deckPreviewTimer.current = null;
+    }
+    setDeckHoverIndex(null);
+  }
+
+  function leaveDeckSpread() {
+    if (!deckMode) return;
+    if (deckPreviewTimer.current) {
+      clearTimeout(deckPreviewTimer.current);
+      deckPreviewTimer.current = null;
+    }
+    if (deckLeaveTimer.current) clearTimeout(deckLeaveTimer.current);
+    deckLeaveTimer.current = setTimeout(() => {
+      setDeckHoverIndex(null);
+      setDeckPreviewFocused(false);
+      setDeckPreviewIndex(activeIndex);
+      deckLeaveTimer.current = null;
+    }, reduceMotion ? 0 : 240);
+  }
+
+  function reenterDeckSpread() {
+    if (!deckMode || !deckLeaveTimer.current) return;
+    clearTimeout(deckLeaveTimer.current);
+    deckLeaveTimer.current = null;
   }
 
   function beginDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!deckMode || !compactDeck) return;
+    if (!compactDeck || stack.length <= 1) return;
     const target = event.target as HTMLElement;
-    if (target.closest(".deck-spread-handle")) return;
-    deckSwipe.current = {
+    if (target.closest("button, input, a")) return;
+    mobileSwipe.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
+      startY: event.clientY,
+      horizontal: false,
     };
   }
 
+  function updateDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
+    const swipe = mobileSwipe.current;
+    if (!swipe || swipe.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - swipe.startX;
+    const deltaY = event.clientY - swipe.startY;
+    if (!swipe.horizontal) {
+      if (Math.abs(deltaX) < 6) return;
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        mobileSwipe.current = null;
+        return;
+      }
+      swipe.horizontal = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setMobileSwiping(true);
+      setSelection(null);
+      window.getSelection()?.removeAllRanges();
+    }
+    event.preventDefault();
+    setMobileSwipeDelta(
+      clamp(deltaX, -viewportWidth * 0.72, viewportWidth * 0.72),
+    );
+  }
+
   function finishDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
-    const swipe = deckSwipe.current;
+    const swipe = mobileSwipe.current;
     if (
       !swipe ||
       swipe.pointerId !== event.pointerId ||
-      !deckMode ||
       !compactDeck
     ) {
       return;
     }
     const delta = event.clientX - swipe.startX;
-    deckSwipe.current = null;
-    if (Math.abs(delta) < 42) return;
+    mobileSwipe.current = null;
+    setMobileSwipeDelta(0);
+    setMobileSwiping(false);
+    if (!swipe.horizontal || Math.abs(delta) < 52) return;
     const nextIndex = clamp(
-      previewIndex + (delta < 0 ? 1 : -1),
+      activeIndex + (delta < 0 ? 1 : -1),
       0,
       stack.length - 1,
     );
-    suppressDeckClick.current = true;
-    setDeckPreviewIndex(nextIndex);
-    window.setTimeout(() => {
-      suppressDeckClick.current = false;
-    }, 0);
+    if (nextIndex !== activeIndex) collapseDeckTo(nextIndex);
+  }
+
+  function cancelDeckSwipe() {
+    mobileSwipe.current = null;
+    setMobileSwipeDelta(0);
+    setMobileSwiping(false);
   }
 
   function getCardMotionState(index: number) {
     const distanceFromActive = Math.abs(index - activeIndex);
     const directionFromActive = Math.sign(index - activeIndex);
-    const collapsedDistance = Math.min(distanceFromActive, 5);
-    const collapsed = {
-      x: directionFromActive * collapsedDistance * 16,
-      y: collapsedDistance * 9,
-      scale: 1 - collapsedDistance * 0.014,
-      rotate:
-        directionFromActive * collapsedDistance * 0.46,
-      opacity: distanceFromActive > 4 ? 0 : 1,
-      zIndex: 60 - distanceFromActive,
-    };
+    const visibleDistance = Math.min(distanceFromActive, 7);
+    const hintGap =
+      stack.length <= 1
+        ? 0
+        : Math.min(22, Math.max(10, 92 / (stack.length - 1)));
+    const collapsed = deckHinted && !compactDeck
+      ? {
+          x: directionFromActive * distanceFromActive * hintGap,
+          y: visibleDistance * 4.5,
+          scale: 1 - visibleDistance * 0.007,
+          rotate: directionFromActive * visibleDistance * 0.32,
+          opacity: 1,
+          zIndex: 60 - distanceFromActive,
+        }
+      : {
+          x:
+            directionFromActive *
+            Math.min(distanceFromActive, 5) *
+            (compactDeck ? 18 : 16),
+          y: Math.min(distanceFromActive, 5) * (compactDeck ? 7 : 9),
+          scale: 1 - Math.min(distanceFromActive, 5) * 0.014,
+          rotate:
+            directionFromActive *
+            Math.min(distanceFromActive, 5) *
+            (compactDeck ? 0.7 : 0.46),
+          opacity: distanceFromActive > 4 ? 0 : 1,
+          zIndex: 60 - distanceFromActive,
+        };
 
-    let spread;
-    if (compactDeck) {
-      const previewDistance = index - previewIndex;
-      const absolutePreviewDistance = Math.abs(previewDistance);
-      spread = {
-        x: previewDistance * 64,
-        y: 25 + absolutePreviewDistance * 9,
-        scale: Math.max(0.68, 0.82 - absolutePreviewDistance * 0.045),
-        rotate: previewDistance * 0.8,
-        opacity: absolutePreviewDistance > 4 ? 0 : 1,
-        zIndex: 100 - absolutePreviewDistance,
-      };
-    } else {
-      const center = (stack.length - 1) / 2;
-      const centerDistance = index - center;
-      spread = {
-        x: centerDistance * desktopDeckGap,
-        y: 13 + Math.abs(centerDistance) * 2.4,
-        scale: index === previewIndex ? 0.965 : 0.945,
-        rotate: centerDistance * 0.52,
-        opacity: 1,
-        zIndex: 40 + index,
-      };
+    if (compactDeck && mobileSwiping) {
+      const swipeProgress = clamp(
+        Math.abs(mobileSwipeDelta) / (viewportWidth * 0.55),
+      );
+      const targetIndex =
+        activeIndex + (mobileSwipeDelta < 0 ? 1 : -1);
+      if (index === activeIndex) {
+        collapsed.x = mobileSwipeDelta * 0.88;
+        collapsed.y = 0;
+        collapsed.scale = 1 - swipeProgress * 0.045;
+        collapsed.rotate = mobileSwipeDelta / 92;
+        collapsed.opacity = 1 - swipeProgress * 0.18;
+      } else if (index === targetIndex) {
+        collapsed.x = mix(collapsed.x, 0, swipeProgress);
+        collapsed.y = mix(collapsed.y, 0, swipeProgress);
+        collapsed.scale = mix(collapsed.scale, 1, swipeProgress);
+        collapsed.rotate = mix(collapsed.rotate, 0, swipeProgress);
+        collapsed.opacity = 1;
+      }
     }
+
+    const center = (stack.length - 1) / 2;
+    const centerDistance = index - center;
+    const focusDistance = index - previewIndex;
+    const absoluteFocusDistance = Math.abs(focusDistance);
+    const spread = deckPreviewFocused
+      ? {
+          x:
+            focusDistance === 0
+              ? 0
+              : Math.sign(focusDistance) *
+                (94 + (absoluteFocusDistance - 1) * 54),
+          y:
+            focusDistance === 0
+              ? 7
+              : 25 + absoluteFocusDistance * 6,
+          scale:
+            focusDistance === 0
+              ? 0.978
+              : Math.max(0.86, 0.925 - absoluteFocusDistance * 0.012),
+          rotate:
+            focusDistance === 0
+              ? 0
+              : Math.sign(focusDistance) *
+                (0.85 + absoluteFocusDistance * 0.34),
+          opacity: absoluteFocusDistance > 6 ? 0 : 1,
+          zIndex:
+            focusDistance === 0 ? 110 : 88 - absoluteFocusDistance,
+        }
+      : {
+          x: centerDistance * desktopDeckGap,
+          y: 13 + Math.abs(centerDistance) * 2.4,
+          scale:
+            index === (deckHoverIndex ?? previewIndex) ? 0.965 : 0.945,
+          rotate: centerDistance * 0.52,
+          opacity: 1,
+          zIndex: 40 + index,
+        };
 
     return {
       x: mix(collapsed.x, spread.x, deckProgress),
@@ -746,18 +843,21 @@ export function ResearchWorkspace() {
             <div
               className={`deck-wrap ${
                 deckMode ? "deck-wrap-spread" : ""
+              } ${deckHinted ? "deck-wrap-hinted" : ""} ${
+                mobileSwiping ? "deck-wrap-swiping" : ""
               }`}
               data-testid="research-deck"
               data-deck-mode={deckMode ? "spread" : "stacked"}
               data-deck-size={stack.length}
-              style={
-                { "--deck-progress": deckProgress } as CSSProperties
+              data-deck-preview={
+                deckPreviewFocused ? String(previewIndex) : "none"
               }
               onPointerDown={beginDeckSwipe}
+              onPointerMove={updateDeckSwipe}
               onPointerUp={finishDeckSwipe}
-              onPointerCancel={() => {
-                deckSwipe.current = null;
-              }}
+              onPointerCancel={cancelDeckSwipe}
+              onPointerEnter={reenterDeckSpread}
+              onPointerLeave={leaveDeckSpread}
             >
               <div
                 className="deck-shadow deck-shadow-one"
@@ -769,7 +869,8 @@ export function ResearchWorkspace() {
               />
 
               <AnimatePresence>
-                {deckMode ? (
+                {deckMode &&
+                (deckHoverIndex !== null || deckPreviewFocused) ? (
                   <motion.div
                     className="deck-spread-caption"
                     data-testid="deck-spread-caption"
@@ -782,11 +883,7 @@ export function ResearchWorkspace() {
                     exit={{ opacity: 0, y: 6 }}
                     transition={{ duration: reduceMotion ? 0 : 0.18 }}
                   >
-                    <span>
-                      {String(previewIndex + 1).padStart(2, "0")} /{" "}
-                      {String(stack.length).padStart(2, "0")}
-                    </span>
-                    <strong>{previewNode.shortTitle}</strong>
+                    <strong>{captionNode.shortTitle}</strong>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
@@ -801,18 +898,18 @@ export function ResearchWorkspace() {
                       node={node}
                       active={index === activeIndex}
                       deckIndex={index}
-                      deckSize={stack.length}
                       deckMode={deckMode}
                       deckPreviewed={
-                        deckMode && index === previewIndex
+                        deckMode && index === captionIndex
                       }
                       motionState={getCardMotionState(index)}
-                      draggingDeck={deckDragging}
+                      draggingDeck={mobileSwiping}
                       followups={followups[nodeId] ?? []}
                       thinking={thinkingNodeId === nodeId}
                       onAnchor={openNode}
                       onAsk={askFollowup}
                       onDeckPreview={previewDeckCard}
+                      onDeckPreviewEnd={endDeckCardPreview}
                       onDeckSelect={selectDeckCard}
                       onTextSelection={updateSelection}
                       reduceMotion={reduceMotion}
@@ -822,66 +919,43 @@ export function ResearchWorkspace() {
               </AnimatePresence>
 
               <AnimatePresence>
-                {stack.length > 1 ? (
-                  <motion.button
-                    type="button"
-                    className="deck-spread-handle"
-                    data-open={deckOpen ? "true" : "false"}
-                    onClick={toggleDeck}
-                    onPointerDown={beginDeckDrag}
-                    onPointerMove={updateDeckDrag}
-                    onPointerUp={finishDeckDrag}
-                    onPointerCancel={finishDeckDrag}
-                    onKeyDown={(event) => {
-                      if (!deckMode) return;
-                      if (
-                        event.key !== "ArrowLeft" &&
-                        event.key !== "ArrowRight"
-                      ) {
-                        return;
+                {stack.length > 1 && !compactDeck && !deckMode ? (
+                  <>
+                    <motion.button
+                      type="button"
+                      className="deck-edge-trigger deck-edge-trigger-left"
+                      onClick={openDeckSpread}
+                      onPointerEnter={hintDeck}
+                      onPointerLeave={unhintDeck}
+                      onFocus={hintDeck}
+                      onBlur={unhintDeck}
+                      aria-label="从左侧展开 Card 路径"
+                      initial={
+                        reduceMotion ? false : { opacity: 0 }
                       }
-                      event.preventDefault();
-                      setDeckPreviewIndex((current) =>
-                        clamp(
-                          current + (event.key === "ArrowRight" ? 1 : -1),
-                          0,
-                          stack.length - 1,
-                        ),
-                      );
-                    }}
-                    aria-label={
-                      deckOpen
-                        ? `收拢 ${stack.length} 张 Card`
-                        : `摊开 ${stack.length} 张 Card`
-                    }
-                    aria-pressed={deckOpen}
-                    title={deckOpen ? "向左拖动收拢" : "向右拖动摊开"}
-                    initial={
-                      reduceMotion ? false : { opacity: 0, x: 7, scale: 0.9 }
-                    }
-                    animate={{
-                      opacity: 1,
-                      x: deckHandleOffset,
-                      scale: 1,
-                    }}
-                    exit={{ opacity: 0, x: 5, scale: 0.9 }}
-                    transition={
-                      reduceMotion
-                        ? { duration: 0 }
-                        : {
-                            type: "spring",
-                            stiffness: 380,
-                            damping: 28,
-                          }
-                    }
-                  >
-                    <DotsSixVertical
-                      size={16}
-                      weight="bold"
-                      aria-hidden="true"
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.18 }}
                     />
-                    <span>{stack.length}</span>
-                  </motion.button>
+                    {activeIndex < stack.length - 1 ? (
+                      <motion.button
+                        type="button"
+                        className="deck-edge-trigger deck-edge-trigger-right"
+                        onClick={openDeckSpread}
+                        onPointerEnter={hintDeck}
+                        onPointerLeave={unhintDeck}
+                        onFocus={hintDeck}
+                        onBlur={unhintDeck}
+                        aria-label="从右侧展开 Card 路径"
+                        initial={
+                          reduceMotion ? false : { opacity: 0 }
+                        }
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.18 }}
+                      />
+                    ) : null}
+                  </>
                 ) : null}
               </AnimatePresence>
 

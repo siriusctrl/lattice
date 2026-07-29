@@ -23,8 +23,8 @@ ready for GitHub Pages.
 
 - immediate prepared-card navigation without a hover preview or generation state
 - direct active-card closing without graph deletion
-- adaptive desktop Deck Spread with historical Card selection
-- compact coverflow swiping and focus selection at phone widths
+- exposed-edge fan hint, desktop Deck Spread, and dwell preview partition
+- direct swipe focus with opposite Card peeks at phone widths
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
@@ -59,7 +59,7 @@ This produces:
 The recording follows one deterministic path:
 
 1. open the Musk root card
-2. build a five-Card early-life Deck and drag it into Deck Spread
+2. build a five-Card early-life Deck, trigger its edge fan, and open Deck Spread
 3. return to a historical Card without deleting its later history
 4. fork to SpaceX and then the 2008 crisis
 5. inspect the completed flat article
