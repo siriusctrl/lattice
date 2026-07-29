@@ -14,10 +14,11 @@ and context semantics behind the scenes.
 4. `docs/source-map.md`
 5. `app/lib/mock-research.ts`
 6. `app/lib/deck-motion.ts`
-7. `app/components/ResearchWorkspace.tsx`
-8. `app/components/ResearchCard.tsx`
-9. `app/components/GraphPreview.tsx`
-10. `docs/verification.md`
+7. `app/hooks/use-mobile-deck.ts`
+8. `app/components/ResearchWorkspace.tsx`
+9. `app/components/ResearchCard.tsx`
+10. `app/components/GraphPreview.tsx`
+11. `docs/verification.md`
 
 ## Product invariants
 
@@ -37,9 +38,10 @@ and context semantics behind the scenes.
   Clicking opens the lineage.
 - A sustained hover previews one Card in the center. Earlier Cards collect on
   its left and later Cards collect on its right.
-- Compact screens do not have a separate spread mode or visible Deck control.
-  Horizontal swipes directly change focus, with earlier and later Cards peeking
-  from opposite sides.
+- Compact reading Cards reserve touch gestures for vertical scrolling. Tapping
+  an exposed left or right sheet enters a folded preview where horizontal
+  swipes move only the preview focus. Tapping the centered preview commits that
+  Card and returns to full reading.
 - Starting a new fork from a historical Card replaces only the current
   lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
@@ -75,10 +77,11 @@ and context semantics behind the scenes.
 - Cards use a 22px radius; controls use 8px to 11px radii.
 - Support light and dark mode at the page level.
 - Motion must communicate fork, focus, depth, or feedback.
-- Mobile Deck movement must follow the swipe distance and settle with spring
-  weight. Desktop edge hints must rotate around a corner rather than lift the
-  stack vertically. Hover, fan, and dwell transitions must preserve card
-  materiality. Avoid equal-width thumbnail grids.
+- Mobile folded-preview movement must interpolate the centered Card and its
+  target, settle with spring weight, and keep earlier and later Cards on
+  opposite sides. Desktop edge hints must rotate around a corner rather than
+  lift the stack vertically. Hover, fan, and dwell transitions must preserve
+  card materiality. Avoid equal-width thumbnail grids.
 - Respect reduced-motion and reduced-transparency preferences.
 - Keep all visible copy free of long dash punctuation.
 - Use Phosphor for icons. Do not add hand-authored icon paths.
@@ -95,6 +98,8 @@ and context semantics behind the scenes.
 - Article compilation rules and node-to-section mapping belong in
   `article-research.ts`.
 - Pure Deck geometry and fixed-pivot motion math belong in `deck-motion.ts`.
+- Compact preview gesture state, cancellation, and pointer capture belong in
+  `use-mobile-deck.ts`.
 - Mock biography content, relations, and layout hints belong in
   `mock-research.ts`.
 - Durable model integration should enter through a typed adapter, not component
@@ -112,8 +117,9 @@ npm run verify:pages
 npm run verify:ui
 ```
 
-Run `npm run verify:proof` after a material interaction or visual change. Inspect
-the GIF, MP4, contact sheet, and all key frames in `outputs/proof/`.
+Run `npm run verify:proof` and `npm run verify:mobile-proof` after a material
+interaction or visual change. Inspect the GIFs, MP4s, contact sheets, and key
+frames in `outputs/proof/` and `outputs/mobile-proof/`.
 
 ## Commit conventions
 

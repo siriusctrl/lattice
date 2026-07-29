@@ -40,6 +40,8 @@ type ResearchCardProps = {
   active: boolean;
   deckIndex: number;
   deckMode: boolean;
+  mobilePreview: boolean;
+  deckPickable: boolean;
   deckPreviewed: boolean;
   motionState: CardMotionState;
   draggingDeck: boolean;
@@ -87,6 +89,8 @@ export function ResearchCard({
   active,
   deckIndex,
   deckMode,
+  mobilePreview,
+  deckPickable,
   deckPreviewed,
   motionState,
   draggingDeck,
@@ -156,8 +160,8 @@ export function ResearchCard({
   }`;
   const settledTransition = {
     type: "spring" as const,
-    stiffness: 275,
-    damping: 29,
+    stiffness: mobilePreview ? 260 : 275,
+    damping: mobilePreview ? 32 : 29,
     mass: 0.86,
   };
   const fanTransition = {
@@ -326,10 +330,11 @@ export function ResearchCard({
             </form>
           </article>
 
-          {deckMode ? (
+          {deckPickable ? (
             <button
               type="button"
               className="deck-card-picker"
+              data-deck-index={deckIndex}
               aria-label={`打开 Card：${node.shortTitle}`}
               onClick={() => onDeckSelect(deckIndex)}
               onFocus={() => onDeckPreview(deckIndex)}

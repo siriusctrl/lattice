@@ -1,4 +1,66 @@
-import { expect, test } from "@playwright/test";
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+} from "@playwright/test";
+
+type TouchCoordinate = {
+  x: number;
+  y: number;
+};
+
+async function dispatchTouchGesture(
+  page: Page,
+  points: TouchCoordinate[],
+  completion: "end" | "cancel" = "end",
+) {
+  if (points.length === 0) {
+    throw new Error("A touch gesture needs at least one coordinate");
+  }
+
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setTouchEmulationEnabled", {
+    enabled: true,
+    maxTouchPoints: 1,
+  });
+  const touchPoint = ({ x, y }: TouchCoordinate) => ({
+    x: Math.round(x),
+    y: Math.round(y),
+    radiusX: 5,
+    radiusY: 5,
+    force: 1,
+    id: 1,
+  });
+
+  await session.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [touchPoint(points[0])],
+  });
+  for (const point of points.slice(1)) {
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [touchPoint(point)],
+    });
+    await page.waitForTimeout(18);
+  }
+  await session.send("Input.dispatchTouchEvent", {
+    type: completion === "cancel" ? "touchCancel" : "touchEnd",
+    touchPoints: [],
+  });
+  await session.detach();
+}
+
+async function touchCenter(page: Page, target: Locator) {
+  const bounds = await target.boundingBox();
+  if (!bounds) throw new Error("Missing touch target bounds");
+  await dispatchTouchGesture(page, [
+    {
+      x: bounds.x + bounds.width / 2,
+      y: bounds.y + bounds.height / 2,
+    },
+  ]);
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -347,7 +409,7 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   ).toBeVisible();
 });
 
-test("swipes directly between opposite Deck sides on a phone viewport", async ({
+test("opens a folded mobile Deck before swiping and commits on tap", async ({
   page,
 }) => {
   await page.locator('[data-anchor-target="origin"]').click();
@@ -355,6 +417,14 @@ test("swipes directly between opposite Deck sides on a phone viewport", async ({
     .getByTestId("research-card-origin")
     .locator('[data-anchor-target="migration"]')
     .click();
+  await page
+    .getByTestId("graph-preview")
+    .locator('[data-node-id="musk"]')
+    .click();
+  await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
   await page.setViewportSize({ width: 390, height: 844 });
 
   const deck = page.getByTestId("research-deck");
@@ -363,22 +433,85 @@ test("swipes directly between opposite Deck sides on a phone viewport", async ({
     name: "从左侧展开 Card 路径",
   })).toHaveCount(0);
 
+  const readingTouchAction = await deck.evaluate(
+    (element) => window.getComputedStyle(element).touchAction,
+  );
+  expect(readingTouchAction).toBe("pan-y");
+
+  const rootCard = page.getByTestId("research-card-musk");
+  const readingSurface = rootCard.locator(".card-scroll");
+  await readingSurface.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  const readingBounds = await readingSurface.boundingBox();
+  if (!readingBounds) throw new Error("Missing mobile reading bounds");
+  expect(
+    await readingSurface.evaluate(
+      (element) => element.scrollHeight - element.clientHeight,
+    ),
+  ).toBeGreaterThan(80);
+
+  // A real vertical touch is left to the native Card scroller in read mode.
+  await dispatchTouchGesture(page, [
+    {
+      x: readingBounds.x + readingBounds.width * 0.52,
+      y: readingBounds.y + readingBounds.height * 0.72,
+    },
+    {
+      x: readingBounds.x + readingBounds.width * 0.53,
+      y: readingBounds.y + readingBounds.height * 0.62,
+    },
+    {
+      x: readingBounds.x + readingBounds.width * 0.54,
+      y: readingBounds.y + readingBounds.height * 0.48,
+    },
+    {
+      x: readingBounds.x + readingBounds.width * 0.55,
+      y: readingBounds.y + readingBounds.height * 0.32,
+    },
+  ]);
+  await expect
+    .poll(() => readingSurface.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(40);
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+
   const deckBounds = await deck.boundingBox();
   if (!deckBounds) throw new Error("Missing mobile deck bounds");
   const centerY = deckBounds.y + deckBounds.height * 0.54;
-  await page.mouse.move(deckBounds.x + deckBounds.width * 0.35, centerY);
-  await page.mouse.down();
-  await page.mouse.move(
-    deckBounds.x + deckBounds.width * 0.7,
-    centerY,
-    { steps: 8 },
-  );
-  await page.mouse.up();
 
-  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
-    "data-active",
-    "true",
-  );
+  const rightEdge = page.getByRole("button", {
+    name: "从右侧查看 Card 路径",
+  });
+  await touchCenter(page, rightEdge);
+  await expect(deck).toHaveAttribute("data-deck-mode", "preview");
+  await expect(deck).toHaveAttribute("data-deck-preview", "0");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+  expect(
+    await deck.evaluate(
+      (element) => window.getComputedStyle(element).touchAction,
+    ),
+  ).toBe("none");
+
+  // Preview owns the gesture, so modest vertical thumb drift still navigates.
+  const swipeStartX = deckBounds.x + deckBounds.width * 0.48;
+  await dispatchTouchGesture(page, [
+    { x: swipeStartX, y: centerY },
+    { x: swipeStartX - 28, y: centerY + 7 },
+    { x: swipeStartX - 72, y: centerY + 16 },
+    { x: swipeStartX - 118, y: centerY + 25 },
+  ]);
+  await expect(deck).toHaveAttribute("data-deck-preview", "1");
+  await expect(deck).toHaveAttribute("data-deck-mode", "preview");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+  await expect(deck).not.toHaveClass(/deck-wrap-swiping/);
+
+  // The touchend-generated click must not accidentally commit the swipe.
+  await page.waitForTimeout(120);
+  await expect(deck).toHaveAttribute("data-deck-mode", "preview");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+
+  await page.waitForTimeout(130);
   const cardCenters = await page.locator(".research-card").evaluateAll(
     (cards) =>
       cards.map((card) => {
@@ -388,6 +521,93 @@ test("swipes directly between opposite Deck sides on a phone viewport", async ({
   );
   expect(cardCenters[0]).toBeLessThan(cardCenters[1]);
   expect(cardCenters[2]).toBeGreaterThan(cardCenters[1]);
+
+  // Tapping the centered preview is the only operation that commits focus.
+  await touchCenter(
+    page,
+    page.locator('.deck-card-picker[data-deck-index="1"]'),
+  );
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+
+  // Re-enter preview, navigate to the first item, and resist its outer edge.
+  await touchCenter(
+    page,
+    page.getByRole("button", {
+      name: "从左侧查看 Card 路径",
+    }),
+  );
+  await expect(deck).toHaveAttribute("data-deck-preview", "1");
+  await dispatchTouchGesture(page, [
+    { x: swipeStartX, y: centerY },
+    { x: swipeStartX + 54, y: centerY + 8 },
+    { x: swipeStartX + 112, y: centerY + 17 },
+  ]);
+  await expect(deck).toHaveAttribute("data-deck-preview", "0");
+
+  await dispatchTouchGesture(page, [
+    { x: swipeStartX, y: centerY },
+    { x: swipeStartX + 62, y: centerY + 5 },
+    { x: swipeStartX + 124, y: centerY + 12 },
+  ]);
+  await expect(deck).toHaveAttribute("data-deck-preview", "0");
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+
+  // Browser cancellation restores a settled preview without committing.
+  await dispatchTouchGesture(
+    page,
+    [
+      { x: swipeStartX, y: centerY },
+      { x: swipeStartX - 38, y: centerY + 9 },
+      { x: swipeStartX - 82, y: centerY + 19 },
+    ],
+    "cancel",
+  );
+  await expect(deck).toHaveAttribute("data-deck-preview", "0");
+  await expect(deck).toHaveAttribute("data-deck-mode", "preview");
+  await expect(deck).not.toHaveClass(/deck-wrap-swiping/);
+  await expect(page.getByTestId("research-card-origin")).toHaveAttribute(
+    "data-active",
+    "true",
+  );
+
+  // A hybrid-device mouse click also opens the centered Card.
+  await page
+    .locator('.deck-card-picker[data-deck-index="0"]')
+    .click();
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+
+  // Keyboard cancel and view changes both leave folded browsing cleanly.
+  await touchCenter(
+    page,
+    page.getByRole("button", {
+      name: "从右侧查看 Card 路径",
+    }),
+  );
+  await expect(deck).toHaveAttribute("data-deck-mode", "preview");
+  await page.keyboard.press("Escape");
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+
+  await touchCenter(
+    page,
+    page.getByRole("button", {
+      name: "从右侧查看 Card 路径",
+    }),
+  );
+  await page.getByRole("button", { name: "Article" }).click();
+  await expect(page.getByRole("button", { name: "Explore" })).toBeVisible();
+  await page.getByRole("button", { name: "Explore" }).click();
+  await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
+  await expect(rootCard).toHaveAttribute("data-active", "true");
+
   await expect
     .poll(() => page.evaluate(() => window.getSelection()?.toString() ?? ""))
     .toBe("");

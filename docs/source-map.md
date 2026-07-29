@@ -11,7 +11,7 @@
 - `app/components/ResearchWorkspace.tsx`
   - Deck lineage and independent historical focus
   - desktop edge hint, spread, and dwell preview
-  - direct compact swipe navigation
+  - compact edge entry, folded preview, and commit-on-tap navigation
   - active-branch closing that removes the current Deck suffix, returns focus
     to the previous Card, and preserves the complete graph
   - prepared graph state
@@ -63,7 +63,12 @@
   - multi-path crisis synthesis
 
 - `app/lib/deck-motion.ts`
-  - pure Stack, fixed-pivot fan, Spread, preview, and mobile swipe geometry
+  - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
+
+- `app/hooks/use-mobile-deck.ts`
+  - compact Deck preview state and cancellation
+  - touch pointer capture, boundary resistance, and click suppression
+  - Escape, viewport, and selection cleanup
 
 ## Assets
 
@@ -81,5 +86,7 @@
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording
 - `scripts/render-proof.sh`: GIF, MP4, and contact sheet production
+- `scripts/record-mobile-demo.mjs`: deterministic touch-based mobile recording
+- `scripts/render-mobile-proof.sh`: mobile GIF, MP4, and contact sheet production
 - `tests/static-pages.test.mjs`: GitHub Pages static-export contract
 - `.github/workflows/pages.yml`: project Pages build and deployment

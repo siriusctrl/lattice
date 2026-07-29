@@ -4,7 +4,7 @@ export type DeckMotionContext = {
   activeIndex: number;
   stackLength: number;
   compact: boolean;
-  mobileSwiping: boolean;
+  mobilePreview: boolean;
   mobileSwipeDelta: number;
   viewportWidth: number;
   hintSide: DeckHintSide | null;
@@ -27,9 +27,6 @@ export type CardMotionState = {
   zIndex: number;
 };
 
-const clamp = (value: number, minimum = 0, maximum = 1) =>
-  Math.min(maximum, Math.max(minimum, value));
-
 const mix = (from: number, to: number, progress: number) =>
   from + (to - from) * progress;
 
@@ -41,7 +38,7 @@ export function getCardMotionState(
     activeIndex,
     stackLength,
     compact,
-    mobileSwiping,
+    mobilePreview,
     mobileSwipeDelta,
     viewportWidth,
     hintSide,
@@ -55,9 +52,16 @@ export function getCardMotionState(
   const distanceFromActive = Math.abs(index - activeIndex);
   const directionFromActive = Math.sign(index - activeIndex);
   const compactCollapsed = {
-    x: directionFromActive * Math.min(distanceFromActive, 5) * 18,
+    x:
+      directionFromActive *
+      Math.min(
+        24,
+        distanceFromActive === 0
+          ? 0
+          : 12 + (distanceFromActive - 1) * 4,
+      ),
     y: Math.min(distanceFromActive, 5) * 7,
-    scale: 1 - Math.min(distanceFromActive, 5) * 0.014,
+    scale: 1 - Math.min(distanceFromActive, 5) * 0.01,
     rotate: directionFromActive * Math.min(distanceFromActive, 5) * 0.7,
     opacity: distanceFromActive > 4 ? 0 : 1,
     zIndex: 80 - distanceFromActive,
@@ -89,24 +93,81 @@ export function getCardMotionState(
         : dormantFanAngle
       : 0;
 
-  if (compact && mobileSwiping) {
-    const swipeProgress = clamp(
-      Math.abs(mobileSwipeDelta) / (viewportWidth * 0.55),
+  if (compact && mobilePreview) {
+    const previewTravel = Math.max(188, viewportWidth * 0.61);
+    const getPreviewState = (focusIndex: number) => {
+      const focusDistance = index - focusIndex;
+      const absoluteFocusDistance = Math.abs(focusDistance);
+      return {
+        x:
+          focusDistance === 0
+            ? 0
+            : Math.sign(focusDistance) *
+              (previewTravel +
+                Math.max(0, absoluteFocusDistance - 1) * 34),
+        y:
+          focusDistance === 0
+            ? 11
+            : 23 + absoluteFocusDistance * 5,
+        scale:
+          focusDistance === 0
+            ? 0.9
+            : Math.max(0.78, 0.85 - absoluteFocusDistance * 0.016),
+        rotate:
+          focusDistance === 0
+            ? 0
+            : Math.sign(focusDistance) *
+              Math.min(4.6, 2.15 + absoluteFocusDistance * 0.62),
+        opacity: absoluteFocusDistance > 4 ? 0 : 1,
+        zIndex:
+          absoluteFocusDistance === 1
+            ? 114
+            : focusDistance === 0
+              ? 110
+              : 101 - absoluteFocusDistance,
+      };
+    };
+    const baseState = getPreviewState(previewIndex);
+    const swipeDirection =
+      mobileSwipeDelta === 0 ? 0 : mobileSwipeDelta < 0 ? 1 : -1;
+    const targetIndex = Math.min(
+      stackLength - 1,
+      Math.max(0, previewIndex + swipeDirection),
     );
-    const targetIndex = activeIndex + (mobileSwipeDelta < 0 ? 1 : -1);
-    if (index === activeIndex) {
-      collapsed.x = mobileSwipeDelta * 0.88;
-      collapsed.y = 0;
-      collapsed.scale = 1 - swipeProgress * 0.045;
-      collapsed.rotate = mobileSwipeDelta / 92;
-      collapsed.opacity = 1 - swipeProgress * 0.18;
-    } else if (index === targetIndex) {
-      collapsed.x = mix(collapsed.x, 0, swipeProgress);
-      collapsed.y = mix(collapsed.y, 0, swipeProgress);
-      collapsed.scale = mix(collapsed.scale, 1, swipeProgress);
-      collapsed.rotate = mix(collapsed.rotate, 0, swipeProgress);
-      collapsed.opacity = 1;
-    }
+    const swipeProgress = Math.min(
+      1,
+      Math.abs(mobileSwipeDelta) / Math.max(86, viewportWidth * 0.24),
+    );
+    const targetState = getPreviewState(targetIndex);
+    const movingCard =
+      index === previewIndex || index === targetIndex;
+    const interpolation = movingCard
+      ? swipeProgress
+      : swipeProgress * 0.16;
+    const boundaryPull =
+      targetIndex === previewIndex ? mobileSwipeDelta * 0.34 : 0;
+    const previewState = {
+      x: mix(baseState.x, targetState.x, interpolation) + boundaryPull,
+      y: mix(baseState.y, targetState.y, interpolation),
+      scale: mix(baseState.scale, targetState.scale, interpolation),
+      rotate: mix(baseState.rotate, targetState.rotate, interpolation),
+      opacity: mix(baseState.opacity, targetState.opacity, interpolation),
+      zIndex:
+        movingCard && swipeProgress >= 0.46
+          ? targetState.zIndex
+          : baseState.zIndex,
+    };
+
+    return {
+      x: previewState.x,
+      y: previewState.y,
+      scale: previewState.scale,
+      baseRotate: previewState.rotate,
+      leftFanRotate: 0,
+      rightFanRotate: 0,
+      opacity: previewState.opacity,
+      zIndex: previewState.zIndex,
+    };
   }
 
   const center = (stackLength - 1) / 2;

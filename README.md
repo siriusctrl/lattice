@@ -23,7 +23,8 @@ risk. Independent branches can converge on shared events or interpretations.
   corner, then click it to spread the current path across the desktop workspace.
 - Rest on a Card to preview it between earlier Cards on the left and later
   Cards on the right.
-- Swipe directly between Cards on phone widths without opening another mode.
+- On phone widths, tap an exposed Stack edge to enter a folded preview. Swipe
+  that preview without changing context, then tap the centered Card to open it.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
@@ -91,10 +92,12 @@ npm run verify:preview
 npm run verify:pages
 npm run verify:ui
 npm run verify:proof
+npm run verify:mobile-proof
 ```
 
 `verify:proof` records the complete interaction, produces a GIF and MP4, and
-builds a contact sheet from key states.
+builds a contact sheet from key states. `verify:mobile-proof` does the same for
+the edge-triggered folded preview using real touch input.
 
 `verify:pages` creates the static `/lattice/` build used by
 [siriusctrl.github.io/lattice](https://siriusctrl.github.io/lattice/). Pushes
@@ -111,6 +114,8 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/components/ResearchCard.tsx`: plain chat content, Deck hit area, anchors, selection, follow-ups
 - `app/components/ArticleView.tsx`: flat article and source-card traceability
 - `app/components/GraphPreview.tsx`: compact and expanded graph
+- `app/hooks/use-mobile-deck.ts`: mobile folded-preview gesture state
 - `app/lib/article-research.ts`: incremental article compiler fixture
 - `app/lib/mock-research.ts`: Musk research fixture, relations, and layout hints
 - `scripts/record-demo.mjs`: deterministic browser recording
+- `scripts/record-mobile-demo.mjs`: deterministic mobile touch recording

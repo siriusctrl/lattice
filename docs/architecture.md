@@ -83,10 +83,14 @@ on its left and later Cards collect on its right. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses
 the Deck around that historical focus.
 
-Compact screens do not enter Deck Spread. A horizontal drag moves the active
-Card with the finger and changes the active index after crossing the swipe
-threshold. Earlier and later Cards use opposite offsets and rotations, so a
-middle Card always has a visible sheet on both sides.
+Compact screens keep full-size reading and Deck browsing physically distinct.
+The reading Card uses native vertical scrolling; exposed Stack sheets are the
+only entry points into a folded preview. In that preview, pointer capture and
+horizontal motion move an independent preview index one Card at a time while
+the active research context stays unchanged. Earlier Cards remain on the left
+and later Cards on the right. Swiping centers one preview at a time; tapping
+the centered Card commits it and returns to full reading. Escape or switching
+workspace views cancels the preview without changing the active Card.
 
 If the user only reads, every later card remains available. If they open an
 anchor or create a selection fork from the historical card, the current Deck

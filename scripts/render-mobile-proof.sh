@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+input="$project_dir/outputs/lattice-mobile-demo.webm"
+gif="$project_dir/outputs/lattice-mobile-demo.gif"
+mp4="$project_dir/outputs/lattice-mobile-demo.mp4"
+contact_sheet="$project_dir/outputs/lattice-mobile-contact-sheet.png"
+
+ffmpeg -y -loglevel error -i "$input" \
+  -vf "fps=12,scale=390:-2:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=144:stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" \
+  "$gif"
+
+ffmpeg -y -loglevel error -i "$input" \
+  -c:v libx264 -preset medium -crf 21 -pix_fmt yuv420p -movflags +faststart \
+  "$mp4"
+
+montage "$project_dir"/outputs/mobile-proof/frame-*.png \
+  -thumbnail 260x563 \
+  -tile 5x1 \
+  -geometry +10+10 \
+  -background "#111410" \
+  "$contact_sheet"
+
+printf '%s\n' "$gif" "$mp4" "$contact_sheet"

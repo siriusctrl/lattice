@@ -28,7 +28,8 @@ ready for GitHub Pages.
   of that Card and every later Card from the Deck while their graph nodes remain
 - mirrored same-side lower-corner fans, desktop Deck Spread, and dwell preview
   partition
-- direct swipe focus with opposite Card peeks at phone widths
+- vertical-only mobile reading, edge-triggered folded preview, preview-only
+  swipes, and tap-to-commit with opposite Card peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
@@ -50,6 +51,7 @@ Run:
 
 ```bash
 npm run verify:proof
+npm run verify:mobile-proof
 ```
 
 This produces:
@@ -59,6 +61,17 @@ This produces:
 - `outputs/lattice-demo.webm`
 - `outputs/lattice-contact-sheet.png`
 - key PNG frames under `outputs/proof/`
+
+The mobile proof additionally produces:
+
+- `outputs/lattice-mobile-demo.gif`
+- `outputs/lattice-mobile-demo.mp4`
+- `outputs/lattice-mobile-demo.webm`
+- `outputs/lattice-mobile-contact-sheet.png`
+- key PNG frames under `outputs/mobile-proof/`
+
+It records real touch input at 390 by 844, including native vertical reading,
+edge entry, folded browsing, diagonal swipes, and tap-to-commit.
 
 The recording follows one deterministic path:
 

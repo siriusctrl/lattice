@@ -13,7 +13,6 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import {
   MouseEvent as ReactMouseEvent,
-  PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -27,6 +26,7 @@ import {
   ResearchCard,
   TextSelection,
 } from "@/app/components/ResearchCard";
+import { useMobileDeck } from "@/app/hooks/use-mobile-deck";
 import { getArticleSectionForNode } from "@/app/lib/article-research";
 import {
   DeckHintSide,
@@ -46,16 +46,6 @@ type WorkspaceView = "explore" | "article";
 type SelectionState = TextSelection & {
   nodeId: string;
 };
-
-type MobileSwipeState = {
-  pointerId: number;
-  startX: number;
-  startY: number;
-  horizontal: boolean;
-};
-
-const clamp = (value: number, minimum = 0, maximum = 1) =>
-  Math.min(maximum, Math.max(minimum, value));
 
 const FOLLOWUP_ANSWERS: Record<string, string> = {
   musk: "从整张人生图看，最稳定的线索不是某一家公司的成功，而是资本再投入、控制权与技术时间尺度三者不断重新组合。",
@@ -150,8 +140,6 @@ export function ResearchWorkspace() {
     null,
   );
   const [deckPreviewFocused, setDeckPreviewFocused] = useState(false);
-  const [mobileSwipeDelta, setMobileSwipeDelta] = useState(0);
-  const [mobileSwiping, setMobileSwiping] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [discoveredIds, setDiscoveredIds] = useState<Set<string>>(
     () => new Set(Object.keys(MOCK_RESEARCH_NODES)),
@@ -176,7 +164,7 @@ export function ResearchWorkspace() {
   const deckLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const mobileSwipe = useRef<MobileSwipeState | null>(null);
+  const clearDeckSelection = useCallback(() => setSelection(null), []);
 
   const nodes = useMemo(
     () => ({ ...MOCK_RESEARCH_NODES, ...customNodes }),
@@ -190,6 +178,28 @@ export function ResearchWorkspace() {
   const deckMode =
     !compactDeck && stack.length > 1 && deckProgress > 0.035;
   const previewIndex = Math.min(deckPreviewIndex, stack.length - 1);
+  const {
+    beginDeckSwipe,
+    cancelDeckSwipe,
+    finishDeckSwipe,
+    handleMobileDeckSelection,
+    loseDeckPointerCapture,
+    mobileDeckPreview,
+    mobileSwipeDelta,
+    mobileSwiping,
+    openMobileDeckPreview,
+    resetMobileDeck,
+    updateDeckSwipe,
+  } = useMobileDeck({
+    activeIndex,
+    compact: compactDeck,
+    onClearSelection: clearDeckSelection,
+    previewIndex,
+    setPreviewIndex: setDeckPreviewIndex,
+    stackLength: stack.length,
+    viewportWidth,
+  });
+  const deckNavigationMode = deckMode || mobileDeckPreview;
   const captionIndex = deckHoverIndex ?? previewIndex;
   const captionNode = nodes[stack[captionIndex]] ?? activeNode;
   const estimatedDeckWidth =
@@ -300,10 +310,9 @@ export function ResearchWorkspace() {
     setDeckPreviewFocused(false);
     setDeckHintSide(null);
     setDeckProgress(0);
-    setMobileSwipeDelta(0);
-    setMobileSwiping(false);
+    resetMobileDeck();
     setSelection(null);
-  }, []);
+  }, [resetMobileDeck]);
 
   const openNode = useCallback(
     (targetId: string) => {
@@ -362,6 +371,8 @@ export function ResearchWorkspace() {
   function openArticleForNode(nodeId: string) {
     setArticleFocusSectionId(getArticleSectionForNode(nodeId));
     setGraphExpanded(false);
+    resetMobileDeck();
+    setDeckPreviewIndex(activeIndex);
     setSelection(null);
     setWorkspaceView("article");
   }
@@ -506,6 +517,7 @@ export function ResearchWorkspace() {
   }
 
   function selectDeckCard(index: number) {
+    if (handleMobileDeckSelection(index)) return;
     collapseDeckTo(index);
   }
 
@@ -556,69 +568,6 @@ export function ResearchWorkspace() {
     deckLeaveTimer.current = null;
   }
 
-  function beginDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!compactDeck || stack.length <= 1) return;
-    const target = event.target as HTMLElement;
-    if (target.closest("button, input, a")) return;
-    mobileSwipe.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      horizontal: false,
-    };
-  }
-
-  function updateDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
-    const swipe = mobileSwipe.current;
-    if (!swipe || swipe.pointerId !== event.pointerId) return;
-    const deltaX = event.clientX - swipe.startX;
-    const deltaY = event.clientY - swipe.startY;
-    if (!swipe.horizontal) {
-      if (Math.abs(deltaX) < 6) return;
-      if (Math.abs(deltaY) > Math.abs(deltaX)) {
-        mobileSwipe.current = null;
-        return;
-      }
-      swipe.horizontal = true;
-      event.currentTarget.setPointerCapture(event.pointerId);
-      setMobileSwiping(true);
-      setSelection(null);
-      window.getSelection()?.removeAllRanges();
-    }
-    event.preventDefault();
-    setMobileSwipeDelta(
-      clamp(deltaX, -viewportWidth * 0.72, viewportWidth * 0.72),
-    );
-  }
-
-  function finishDeckSwipe(event: ReactPointerEvent<HTMLDivElement>) {
-    const swipe = mobileSwipe.current;
-    if (
-      !swipe ||
-      swipe.pointerId !== event.pointerId ||
-      !compactDeck
-    ) {
-      return;
-    }
-    const delta = event.clientX - swipe.startX;
-    mobileSwipe.current = null;
-    setMobileSwipeDelta(0);
-    setMobileSwiping(false);
-    if (!swipe.horizontal || Math.abs(delta) < 52) return;
-    const nextIndex = clamp(
-      activeIndex + (delta < 0 ? 1 : -1),
-      0,
-      stack.length - 1,
-    );
-    if (nextIndex !== activeIndex) collapseDeckTo(nextIndex);
-  }
-
-  function cancelDeckSwipe() {
-    mobileSwipe.current = null;
-    setMobileSwipeDelta(0);
-    setMobileSwiping(false);
-  }
-
   const selectionLeft = selection
     ? Math.max(
         104,
@@ -633,7 +582,7 @@ export function ResearchWorkspace() {
     <main
       className={`workspace-shell ${
         deckMode ? "workspace-deck-open" : ""
-      }`}
+      } ${mobileDeckPreview ? "workspace-mobile-deck-preview" : ""}`}
     >
       <header className="topbar">
         <div className="brand">
@@ -761,18 +710,34 @@ export function ResearchWorkspace() {
                 deckMode ? "deck-wrap-spread" : ""
               } ${deckHinted ? "deck-wrap-hinted" : ""} ${
                 mobileSwiping ? "deck-wrap-swiping" : ""
+              } ${
+                mobileDeckPreview ? "deck-wrap-mobile-preview" : ""
               }`}
               data-testid="research-deck"
-              data-deck-mode={deckMode ? "spread" : "stacked"}
+              data-deck-mode={
+                deckMode
+                  ? "spread"
+                  : mobileDeckPreview
+                    ? "preview"
+                    : "stacked"
+              }
               data-deck-size={stack.length}
               data-deck-hint={deckHintSide ?? "none"}
               data-deck-preview={
-                deckPreviewFocused ? String(previewIndex) : "none"
+                mobileDeckPreview || deckPreviewFocused
+                  ? String(previewIndex)
+                  : "none"
+              }
+              aria-label={
+                mobileDeckPreview
+                  ? `Card 折叠预览，${captionNode.shortTitle}，第 ${previewIndex + 1} 张，共 ${stack.length} 张`
+                  : undefined
               }
               onPointerDown={beginDeckSwipe}
               onPointerMove={updateDeckSwipe}
               onPointerUp={finishDeckSwipe}
               onPointerCancel={cancelDeckSwipe}
+              onLostPointerCapture={loseDeckPointerCapture}
               onPointerEnter={reenterDeckSpread}
               onPointerLeave={leaveDeckSpread}
             >
@@ -815,15 +780,22 @@ export function ResearchWorkspace() {
                       node={node}
                       active={index === activeIndex}
                       deckIndex={index}
-                      deckMode={deckMode}
+                      deckMode={deckNavigationMode}
+                      mobilePreview={mobileDeckPreview}
+                      deckPickable={
+                        deckMode ||
+                        (mobileDeckPreview &&
+                          Math.abs(index - previewIndex) <= 1)
+                      }
                       deckPreviewed={
-                        deckMode && index === captionIndex
+                        (deckMode && index === captionIndex) ||
+                        (mobileDeckPreview && index === previewIndex)
                       }
                       motionState={getCardMotionState(index, {
                         activeIndex,
                         stackLength: stack.length,
                         compact: compactDeck,
-                        mobileSwiping,
+                        mobilePreview: mobileDeckPreview,
                         mobileSwipeDelta,
                         viewportWidth,
                         hintSide: deckHintSide,
@@ -848,6 +820,17 @@ export function ResearchWorkspace() {
                   );
                 })}
               </AnimatePresence>
+
+              {mobileDeckPreview ? (
+                <span
+                  className="visually-hidden"
+                  role="status"
+                  aria-live="polite"
+                >
+                  正在预览 {captionNode.shortTitle}，第 {previewIndex + 1} 张，
+                  共 {stack.length} 张。左右滑动切换，点击中间 Card 打开。
+                </span>
+              ) : null}
 
               <AnimatePresence>
                 {stack.length > 1 && !compactDeck && !deckMode ? (
@@ -893,7 +876,58 @@ export function ResearchWorkspace() {
               </AnimatePresence>
 
               <AnimatePresence>
-                {activeIndex > 0 && !deckMode ? (
+                {stack.length > 1 &&
+                compactDeck &&
+                !mobileDeckPreview ? (
+                  <>
+                    {activeIndex > 0 ? (
+                      <motion.button
+                        type="button"
+                        className="mobile-deck-edge-trigger mobile-deck-edge-trigger-left"
+                        onClick={(event) =>
+                          openMobileDeckPreview(
+                            "left",
+                            event.detail === 0,
+                          )
+                        }
+                        aria-label="从左侧查看 Card 路径"
+                        initial={
+                          reduceMotion ? false : { opacity: 0 }
+                        }
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: reduceMotion ? 0 : 0.18,
+                        }}
+                      />
+                    ) : null}
+                    {activeIndex < stack.length - 1 ? (
+                      <motion.button
+                        type="button"
+                        className="mobile-deck-edge-trigger mobile-deck-edge-trigger-right"
+                        onClick={(event) =>
+                          openMobileDeckPreview(
+                            "right",
+                            event.detail === 0,
+                          )
+                        }
+                        aria-label="从右侧查看 Card 路径"
+                        initial={
+                          reduceMotion ? false : { opacity: 0 }
+                        }
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: reduceMotion ? 0 : 0.18,
+                        }}
+                      />
+                    ) : null}
+                  </>
+                ) : null}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {activeIndex > 0 && !deckNavigationMode ? (
                   <motion.button
                     type="button"
                     className="branch-close-button"
@@ -915,7 +949,7 @@ export function ResearchWorkspace() {
           </section>
 
           <AnimatePresence>
-            {graphVisible ? (
+            {graphVisible && !mobileDeckPreview ? (
               <GraphPreview
                 nodes={nodes}
                 discoveredIds={discoveredIds}
