@@ -31,8 +31,9 @@
 
 - `app/components/GraphPreview.tsx`
   - compact and expanded graph projections
-  - stable layered layout for the completed prepared DAG
-  - spring-driven active marker and connected-edge emphasis
+  - transitive-reduced primary-path projection
+  - curved routes over stable semantic positions
+  - spring-driven active marker and contextual-edge emphasis
   - crowded-label suppression and hover reveal
   - graph node navigation
 
@@ -49,7 +50,7 @@
   - visible mock copy
   - prepared anchors
   - complete prepared graph edges
-  - graph ordering hints
+  - curated graph positions
 
 - `app/lib/article-research.ts`
   - node-to-section mapping

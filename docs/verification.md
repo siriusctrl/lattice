@@ -23,8 +23,9 @@ ready for GitHub Pages.
 
 - immediate prepared-card navigation without a hover preview or generation state
 - direct active-card closing without graph deletion
-- the complete 21-node, 46-edge graph at first render
-- graph edges reaching both endpoint centers without path clipping
+- the complete 21-node map, 25 primary paths, and 46 retained semantic
+  relations at first render
+- curved graph paths reaching both endpoint centers without clipping
 - stable graph geometry and smooth active-focus movement during Card navigation
 - the prepared converging SpaceX and Tesla DAG
 - local follow-up loading, completion, and automatic reveal

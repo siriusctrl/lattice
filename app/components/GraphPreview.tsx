@@ -31,18 +31,27 @@ type LayoutPoint = {
   depth: number;
 };
 
-function buildDynamicLayout(
+const LANDMARK_NODE_IDS = new Set([
+  "musk",
+  "origin",
+  "spacex",
+  "tesla",
+  "crisis",
+  "x",
+  "management",
+  "risk",
+]);
+
+function getGraphDepths(
   visibleNodes: ResearchNode[],
   visibleEdges: GraphEdge[],
 ) {
   const nodeById = new Map(visibleNodes.map((node) => [node.id, node]));
-  const incoming = new Map<string, string[]>();
   const outgoing = new Map<string, string[]>();
   const indegree = new Map<string, number>();
   const depth = new Map<string, number>();
 
   for (const node of visibleNodes) {
-    incoming.set(node.id, []);
     outgoing.set(node.id, []);
     indegree.set(node.id, 0);
     depth.set(node.id, 0);
@@ -51,7 +60,6 @@ function buildDynamicLayout(
   for (const edge of visibleEdges) {
     if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) continue;
     outgoing.get(edge.from)?.push(edge.to);
-    incoming.get(edge.to)?.push(edge.from);
     indegree.set(edge.to, (indegree.get(edge.to) ?? 0) + 1);
   }
 
@@ -87,49 +95,110 @@ function buildDynamicLayout(
     }
   }
 
-  const maxDepth = Math.max(0, ...depth.values());
-  const layers = new Map<number, ResearchNode[]>();
-  for (const node of visibleNodes) {
-    const nodeDepth = depth.get(node.id) ?? 0;
-    layers.set(nodeDepth, [...(layers.get(nodeDepth) ?? []), node]);
+  return depth;
+}
+
+function buildResearchLayout(
+  visibleNodes: ResearchNode[],
+  visibleEdges: GraphEdge[],
+) {
+  const depth = getGraphDepths(visibleNodes, visibleEdges);
+  return new Map(
+    visibleNodes.map((node) => [
+      node.id,
+      {
+        x: node.position.x,
+        y: node.position.y,
+        depth: depth.get(node.id) ?? 0,
+      },
+    ]),
+  );
+}
+
+function edgeKey(edge: GraphEdge) {
+  return `${edge.from}-${edge.to}-${edge.kind}`;
+}
+
+function hasAlternatePath(
+  targetEdge: GraphEdge,
+  visibleEdges: GraphEdge[],
+) {
+  const queue = [targetEdge.from];
+  const visited = new Set(queue);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) break;
+
+    for (const edge of visibleEdges) {
+      if (edge === targetEdge || edge.from !== current) continue;
+      if (edge.to === targetEdge.to) return true;
+      if (visited.has(edge.to)) continue;
+      visited.add(edge.to);
+      queue.push(edge.to);
+    }
   }
 
-  const positions = new Map<string, LayoutPoint>();
-  for (let layer = 0; layer <= maxDepth; layer += 1) {
-    const layerNodes = layers.get(layer) ?? [];
-    layerNodes.sort((a, b) => {
-      const predecessorY = (node: ResearchNode) => {
-        const positionedParents = (incoming.get(node.id) ?? [])
-          .map((id) => positions.get(id)?.y)
-          .filter((value): value is number => value !== undefined);
-        if (positionedParents.length === 0) return node.position.y;
-        return (
-          positionedParents.reduce((sum, value) => sum + value, 0) /
-          positionedParents.length
+  return false;
+}
+
+function getDisplayEdges(
+  visibleEdges: GraphEdge[],
+  activeId: string,
+) {
+  const primaryEdges = visibleEdges.filter(
+    (edge) => !hasAlternatePath(edge, visibleEdges),
+  );
+  const primaryKeys = new Set(primaryEdges.map(edgeKey));
+  const contextualEdges =
+    activeId === "musk"
+      ? []
+      : visibleEdges.filter(
+          (edge) =>
+            !primaryKeys.has(edgeKey(edge)) &&
+            (edge.from === activeId || edge.to === activeId),
         );
-      };
-      return predecessorY(a) - predecessorY(b);
-    });
 
-    const padding = layerNodes.length > 10 ? 5 : layerNodes.length > 6 ? 7 : 10;
-    const availableHeight = 100 - padding * 2;
-    layerNodes.forEach((node, index) => {
-      positions.set(node.id, {
-        x:
-          maxDepth === 0
-            ? 50
-            : 8 + (layer / Math.max(1, maxDepth)) * 84,
-        y:
-          layerNodes.length === 1
-            ? 50
-            : padding +
-              (index / Math.max(1, layerNodes.length - 1)) * availableHeight,
-        depth: layer,
-      });
-    });
+  return {
+    primaryKeys,
+    displayEdges: [...primaryEdges, ...contextualEdges],
+  };
+}
+
+function getEdgePath(
+  edge: GraphEdge,
+  fromPoint: LayoutPoint,
+  toPoint: LayoutPoint,
+) {
+  if (edge.from === "blastar" && edge.to === "risk") {
+    return [
+      `M ${fromPoint.x} ${fromPoint.y}`,
+      `C 55 0, 91 5, ${toPoint.x} ${toPoint.y}`,
+    ].join(" ");
   }
 
-  return positions;
+  const deltaX = toPoint.x - fromPoint.x;
+  const direction = deltaX >= 0 ? 1 : -1;
+  const handle = Math.min(15, Math.max(4, Math.abs(deltaX) * 0.44));
+  return [
+    `M ${fromPoint.x} ${fromPoint.y}`,
+    `C ${fromPoint.x + handle * direction} ${fromPoint.y},`,
+    `${toPoint.x - handle * direction} ${toPoint.y},`,
+    `${toPoint.x} ${toPoint.y}`,
+  ].join(" ");
+}
+
+function getLabelPlacement(nodeId: string, point: LayoutPoint) {
+  if (nodeId === "tesla") {
+    return { x: 4.6, y: 6.7, textAnchor: "start" as const };
+  }
+  if (nodeId === "management") {
+    return { x: -4.8, y: 7.2, textAnchor: "end" as const };
+  }
+  if (point.x > 76) {
+    return { x: -4.8, y: -4.1, textAnchor: "end" as const };
+  }
+  return { x: 4.8, y: -4.1, textAnchor: "start" as const };
 }
 
 export function GraphPreview({
@@ -153,12 +222,16 @@ export function GraphPreview({
   const visibleEdges = edges.filter(
     (edge) => visibleIds.has(edge.from) && visibleIds.has(edge.to),
   );
+  const { displayEdges, primaryKeys } = getDisplayEdges(
+    visibleEdges,
+    activeId,
+  );
   const incomingCounts = new Map<string, number>();
   for (const edge of visibleEdges) {
     incomingCounts.set(edge.to, (incomingCounts.get(edge.to) ?? 0) + 1);
   }
 
-  const layout = buildDynamicLayout(visibleNodes, visibleEdges);
+  const layout = buildResearchLayout(visibleNodes, visibleEdges);
   const activePoint = layout.get(activeId);
   const crowdedLabels = visibleNodes.length > 7;
 
@@ -172,6 +245,8 @@ export function GraphPreview({
       exit={{ opacity: 0, y: 12, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 260, damping: 27 }}
       aria-label="研究图预览"
+      data-semantic-edge-count={visibleEdges.length}
+      data-primary-edge-count={primaryKeys.size}
     >
       <div className="graph-preview-header">
         <div className="graph-preview-title">
@@ -214,29 +289,41 @@ export function GraphPreview({
           role="img"
           aria-label={`完整研究图，共 ${discoveredIds.size} 个节点`}
         >
+          {expanded ? (
+            <g className="graph-regions" aria-hidden="true">
+              <text x="19" y="5.5">早期与互联网</text>
+              <text x="22" y="31">航天系统</text>
+              <text x="22" y="75">汽车与能源</text>
+              <text x="77" y="93">综合判断</text>
+            </g>
+          ) : null}
+
           <g className="graph-edges">
-            {visibleEdges.map((edge) => {
+            {displayEdges.map((edge) => {
               const from = nodes[edge.from];
               const to = nodes[edge.to];
               const fromPoint = layout.get(edge.from);
               const toPoint = layout.get(edge.to);
               if (!from || !to || !fromPoint || !toPoint) return null;
+              const primary = primaryKeys.has(edgeKey(edge));
               const converging =
                 (incomingCounts.get(edge.to) ?? 0) > 1;
               const activeConnection =
                 edge.from === activeId || edge.to === activeId;
               return (
-                <motion.line
-                  key={`${edge.from}-${edge.to}-${edge.kind}`}
+                <motion.path
+                  key={edgeKey(edge)}
                   data-edge-from={edge.from}
                   data-edge-to={edge.to}
-                  x1={fromPoint.x}
-                  y1={fromPoint.y}
-                  x2={toPoint.x}
-                  y2={toPoint.y}
+                  data-edge-start-x={fromPoint.x}
+                  data-edge-start-y={fromPoint.y}
+                  data-edge-end-x={toPoint.x}
+                  data-edge-end-y={toPoint.y}
+                  d={getEdgePath(edge, fromPoint, toPoint)}
                   className={[
                     "graph-edge",
                     "graph-edge-discovered",
+                    primary ? "graph-edge-primary" : "graph-edge-context",
                     edge.kind === "synthesis" ? "graph-edge-synthesis" : "",
                     converging ? "graph-edge-convergence" : "",
                     activeConnection ? "graph-edge-active" : "",
@@ -254,7 +341,7 @@ export function GraphPreview({
           {activePoint ? (
             <motion.circle
               className="graph-active-orbit"
-              r={6.1}
+              r={4.8}
               initial={false}
               animate={{ cx: activePoint.x, cy: activePoint.y }}
               transition={
@@ -275,7 +362,11 @@ export function GraphPreview({
               const isActive = node.id === activeId;
               const point = layout.get(node.id);
               if (!point) return null;
-              const labelOnLeft = point.x > 76;
+              const label = getLabelPlacement(node.id, point);
+              const labelIsSecondary =
+                crowdedLabels &&
+                !isActive &&
+                !LANDMARK_NODE_IDS.has(node.id);
               return (
                 <g
                   key={node.id}
@@ -304,7 +395,7 @@ export function GraphPreview({
                 >
                   <title>{node.shortTitle}</title>
                   <motion.circle
-                    r={isActive ? 4.2 : 2.8}
+                    r={isActive ? 2.8 : 1.9}
                     initial={reduceMotion ? false : { scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{
@@ -316,13 +407,13 @@ export function GraphPreview({
                   {expanded ? (
                     <text
                       className={
-                        crowdedLabels && !isActive
+                        labelIsSecondary
                           ? "graph-node-label-crowded"
                           : undefined
                       }
-                      x={labelOnLeft ? -5 : 5}
-                      y={-4}
-                      textAnchor={labelOnLeft ? "end" : "start"}
+                      x={label.x}
+                      y={label.y}
+                      textAnchor={label.textAnchor}
                     >
                       {node.shortTitle}
                     </text>

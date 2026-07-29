@@ -32,7 +32,15 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   ).toHaveCount(21);
   await expect(
     page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
-  ).toHaveCount(46);
+  ).toHaveCount(25);
+  await expect(page.getByTestId("graph-preview")).toHaveAttribute(
+    "data-semantic-edge-count",
+    "46",
+  );
+  await expect(page.getByTestId("graph-preview")).toHaveAttribute(
+    "data-primary-edge-count",
+    "25",
+  );
   await expect(page.getByTestId("graph-preview")).toContainText(
     "完整图谱 · 21 个节点",
   );
@@ -53,17 +61,20 @@ test("opens completed cards, closes the active branch, and preserves the full gr
   );
   await expect(page.getByTestId("graph-preview")).toContainText("21 个节点");
   await expect(
-    page.getByTestId("graph-preview").locator(".graph-edge-discovered"),
-  ).toHaveCount(46);
+    page.getByTestId("graph-preview").locator(".graph-edge-primary"),
+  ).toHaveCount(25);
+  await expect(
+    page.getByTestId("graph-preview").locator(".graph-edge-context"),
+  ).toHaveCount(1);
   const edgeGeometry = await page
     .getByTestId("graph-preview")
     .locator(".graph-edge-discovered")
     .first()
-    .evaluate((line) => {
-      const svgLine = line as SVGLineElement;
-      const svg = svgLine.ownerSVGElement;
-      const fromId = svgLine.getAttribute("data-edge-from");
-      const toId = svgLine.getAttribute("data-edge-to");
+    .evaluate((path) => {
+      const svgPath = path as SVGPathElement;
+      const svg = svgPath.ownerSVGElement;
+      const fromId = svgPath.getAttribute("data-edge-from");
+      const toId = svgPath.getAttribute("data-edge-to");
       if (!svg || !fromId || !toId) throw new Error("Incomplete graph edge");
 
       const from = svg.querySelector<SVGCircleElement>(
@@ -74,35 +85,34 @@ test("opens completed cards, closes the active branch, and preserves the full gr
       );
       if (!from || !to) throw new Error("Missing graph endpoint");
 
-      const lineMatrix = svgLine.getScreenCTM();
+      const pathMatrix = svgPath.getScreenCTM();
       const fromMatrix = from.getScreenCTM();
       const toMatrix = to.getScreenCTM();
-      if (!lineMatrix || !fromMatrix || !toMatrix) {
+      if (!pathMatrix || !fromMatrix || !toMatrix) {
         throw new Error("Missing graph transform");
       }
 
-      const lineStart = new DOMPoint(
-        Number(line.getAttribute("x1")),
-        Number(line.getAttribute("y1")),
-      ).matrixTransform(lineMatrix);
-      const lineEnd = new DOMPoint(
-        Number(line.getAttribute("x2")),
-        Number(line.getAttribute("y2")),
-      ).matrixTransform(lineMatrix);
+      const pathLength = svgPath.getTotalLength();
+      const start = svgPath.getPointAtLength(0);
+      const end = svgPath.getPointAtLength(pathLength);
+      const pathStart = new DOMPoint(start.x, start.y).matrixTransform(
+        pathMatrix,
+      );
+      const pathEnd = new DOMPoint(end.x, end.y).matrixTransform(pathMatrix);
       const fromCenter = new DOMPoint(0, 0).matrixTransform(fromMatrix);
       const toCenter = new DOMPoint(0, 0).matrixTransform(toMatrix);
 
       return {
         startDistance: Math.hypot(
-          lineStart.x - fromCenter.x,
-          lineStart.y - fromCenter.y,
+          pathStart.x - fromCenter.x,
+          pathStart.y - fromCenter.y,
         ),
         endDistance: Math.hypot(
-          lineEnd.x - toCenter.x,
-          lineEnd.y - toCenter.y,
+          pathEnd.x - toCenter.x,
+          pathEnd.y - toCenter.y,
         ),
-        dashArray: getComputedStyle(svgLine).strokeDasharray,
-        pathLength: svgLine.getAttribute("pathLength"),
+        dashArray: getComputedStyle(svgPath).strokeDasharray,
+        pathLength: svgPath.getAttribute("pathLength"),
       };
     });
   expect(edgeGeometry.startDistance).toBeLessThan(0.1);
@@ -203,7 +213,8 @@ test("keeps the completed graph fixed while active focus moves smoothly", async 
 
   expect(layoutMetrics.nodeCount).toBe(21);
   expect(layoutMetrics.minimumDistance).toBeGreaterThan(18);
-  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(20);
+  await expect(graph.locator(".graph-node-label-crowded")).toHaveCount(13);
+  await expect(graph.locator(".graph-regions text")).toHaveCount(4);
 });
 
 test("shows the completed converging DAG before cards are opened", async ({
@@ -212,10 +223,10 @@ test("shows the completed converging DAG before cards are opened", async ({
   const graph = page.getByTestId("graph-preview");
   await expect(
     graph.locator('.graph-edge-discovered[data-edge-to="crisis"]'),
-  ).toHaveCount(4);
+  ).toHaveCount(2);
   await expect(
     graph.locator('.graph-edge-convergence[data-edge-to="crisis"]'),
-  ).toHaveCount(4);
+  ).toHaveCount(2);
 
   await page.locator('[data-anchor-target="spacex"]').click();
   await expect(page.getByTestId("research-card-spacex")).toHaveAttribute(
@@ -230,6 +241,10 @@ test("shows the completed converging DAG before cards are opened", async ({
     "data-active",
     "true",
   );
+  await expect(
+    graph.locator('.graph-edge-discovered[data-edge-to="crisis"]'),
+  ).toHaveCount(4);
+  await expect(graph.locator(".graph-edge-context")).toHaveCount(3);
 
   await page.getByRole("button", { name: "Elon Musk" }).first().click();
   await page
@@ -249,7 +264,8 @@ test("shows the completed converging DAG before cards are opened", async ({
     "data-active",
     "true",
   );
-  await expect(graph.locator(".graph-edge-discovered")).toHaveCount(46);
+  await expect(graph.locator(".graph-edge-primary")).toHaveCount(25);
+  await expect(graph).toHaveAttribute("data-semantic-edge-count", "46");
   await expect(graph).toContainText("21 个节点");
 });
 

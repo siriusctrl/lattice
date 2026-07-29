@@ -20,7 +20,9 @@ and context semantics behind the scenes.
 
 ## Product invariants
 
-- The showcase starts with every prepared research node and edge visible.
+- The showcase starts with every prepared research node visible. The graph
+  projects all relations into a transitive-reduced set of primary paths, then
+  reveals redundant relations only when their node is active.
 - Clicking an anchor focuses an existing prepared node without changing graph
   geometry or duplicating content.
 - Closing the active Card changes focus but never deletes the persisted graph.
@@ -29,6 +31,9 @@ and context semantics behind the scenes.
 - The graph is visible but secondary to reading.
 - Prepared graph geometry stays fixed while Card focus changes. Only explicit
   user-created nodes may trigger a reflow.
+- Prepared node positions are semantic layout hints, not an automatic
+  topological layout. Keep the early web, space, mobility, platform, and
+  synthesis strands visually distinct.
 - The active graph marker moves between fixed nodes with a smooth transition.
 - Explore preserves the original conversation and spatial card history.
 - Article is one flat document, never a visual copy of the research DAG.

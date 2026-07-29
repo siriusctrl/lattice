@@ -12,7 +12,7 @@ risk. Independent branches can converge on shared events or interpretations.
 
 ## What works
 
-- See the complete prepared research graph before opening any branch.
+- See the complete prepared node map before opening any branch.
 - Click a thin underlined anchor to open its existing conversation card.
 - Keep asking questions inside the active card.
 - Select ordinary answer text and create a user-defined fork.
@@ -20,8 +20,9 @@ risk. Independent branches can converge on shared events or interpretations.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
-- Move through Cards without moving the graph geometry; only the active marker
-  and connected edges transition.
+- Move through Cards without moving the graph geometry; the map keeps a curated
+  semantic composition while the active marker and contextual relations
+  transition.
 - Switch between the original Explore workspace and a continuous Article.
 - Add local follow-ups or selected-text forks without rewriting prepared Cards.
 - Trace any article section back to the Card conversations that produced it.

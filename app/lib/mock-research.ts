@@ -141,7 +141,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 8, y: 50 },
+    position: { x: 7, y: 52 },
   },
   origin: {
     id: "origin",
@@ -180,7 +180,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
           "“局外人”不是性格标签，而是一种持续寻找新系统、再试图获得系统控制权的行动模式。",
       },
     ],
-    position: { x: 27, y: 14 },
+    position: { x: 18, y: 17 },
   },
   blastar: {
     id: "blastar",
@@ -210,7 +210,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
           "一个童年故事最可靠的用途，不是预测未来，而是帮助我们提出更好的后续问题。",
       },
     ],
-    position: { x: 45, y: 8 },
+    position: { x: 32, y: 8 },
   },
   migration: {
     id: "migration",
@@ -237,7 +237,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 45, y: 22 },
+    position: { x: 32, y: 18 },
   },
   education: {
     id: "education",
@@ -274,7 +274,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 56, y: 16 },
+    position: { x: 44, y: 18 },
   },
   zip2: {
     id: "zip2",
@@ -305,7 +305,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 28, y: 35 },
+    position: { x: 55, y: 18 },
   },
   paypal: {
     id: "paypal",
@@ -342,7 +342,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
           "这一阶段连接了两个后来反复出现的主题：控制权不可轻易外包，以及平台应覆盖尽可能多的用户行为。",
       },
     ],
-    position: { x: 46, y: 34 },
+    position: { x: 66, y: 18 },
   },
   spacex: {
     id: "spacex",
@@ -389,7 +389,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 46, y: 56 },
+    position: { x: 22, y: 39 },
   },
   tesla: {
     id: "tesla",
@@ -446,7 +446,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 46, y: 77 },
+    position: { x: 22, y: 65 },
   },
   crisis: {
     id: "crisis",
@@ -485,7 +485,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
           "当你从不同分支抵达这里，系统不会复制两份内容，而是为同一研究节点增加新的来源边。",
       },
     ],
-    position: { x: 66, y: 63 },
+    position: { x: 50, y: 47 },
   },
   falcon4: {
     id: "falcon4",
@@ -521,7 +521,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 83, y: 48 },
+    position: { x: 68, y: 45 },
   },
   roadster: {
     id: "roadster",
@@ -560,7 +560,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 83, y: 80 },
+    position: { x: 37, y: 59 },
   },
   starlink: {
     id: "starlink",
@@ -597,7 +597,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 76, y: 42 },
+    position: { x: 39, y: 32 },
   },
   model3: {
     id: "model3",
@@ -636,7 +636,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 76, y: 82 },
+    position: { x: 56, y: 69 },
   },
   energy: {
     id: "energy",
@@ -673,7 +673,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 58, y: 88 },
+    position: { x: 39, y: 79 },
   },
   neuralink: {
     id: "neuralink",
@@ -710,7 +710,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 58, y: 96 },
+    position: { x: 87, y: 42 },
   },
   boring: {
     id: "boring",
@@ -745,7 +745,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 75, y: 94 },
+    position: { x: 23, y: 89 },
   },
   management: {
     id: "management",
@@ -792,7 +792,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 91, y: 54 },
+    position: { x: 82, y: 72 },
   },
   risk: {
     id: "risk",
@@ -847,7 +847,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 91, y: 63 },
+    position: { x: 94, y: 53 },
   },
   x: {
     id: "x",
@@ -892,7 +892,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 66, y: 28 },
+    position: { x: 76, y: 23 },
   },
   xai: {
     id: "xai",
@@ -935,7 +935,7 @@ export const MOCK_RESEARCH_NODES: Record<string, ResearchNode> = {
         ],
       },
     ],
-    position: { x: 87, y: 26 },
+    position: { x: 85, y: 30 },
   },
 };
 

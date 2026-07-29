@@ -904,36 +904,49 @@ input:focus-visible,
   overflow: visible;
 }
 
+.graph-regions text {
+  fill: color-mix(in srgb, var(--ink) 32%, transparent);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 2.15px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
 .graph-edge {
   fill: none;
   stroke: var(--line-strong);
   stroke-linecap: round;
-  stroke-width: 0.72;
+  stroke-width: 0.62;
   vector-effect: non-scaling-stroke;
 }
 
 .graph-edge-discovered {
-  stroke: color-mix(in srgb, var(--ink) 48%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.graph-edge-context {
+  stroke-dasharray: 1.8 2.6;
+  stroke: color-mix(in srgb, var(--accent-strong) 52%, transparent);
 }
 
 .graph-edge-active {
   stroke: color-mix(in srgb, var(--accent-strong) 78%, var(--ink-soft));
-  stroke-width: 1.05;
+  stroke-width: 0.92;
 }
 
 .graph-edge-synthesis {
-  stroke: color-mix(in srgb, var(--accent-strong) 70%, var(--line));
+  stroke: color-mix(in srgb, var(--accent-strong) 56%, var(--line));
 }
 
 .graph-edge-convergence {
-  stroke: color-mix(in srgb, var(--accent-strong) 78%, var(--ink-soft));
-  stroke-width: 1;
+  stroke: color-mix(in srgb, var(--accent-strong) 64%, var(--ink-soft));
+  stroke-width: 0.78;
 }
 
 .graph-active-orbit {
-  fill: color-mix(in srgb, var(--accent) 18%, transparent);
-  stroke: color-mix(in srgb, var(--accent-strong) 58%, transparent);
-  stroke-width: 0.55;
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  stroke: color-mix(in srgb, var(--accent-strong) 48%, transparent);
+  stroke-width: 0.48;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
@@ -945,7 +958,7 @@ input:focus-visible,
 .graph-node circle {
   fill: var(--surface-raised);
   stroke: var(--line-strong);
-  stroke-width: 0.55;
+  stroke-width: 0.48;
   vector-effect: non-scaling-stroke;
   transition:
     fill 160ms ease,
@@ -971,13 +984,13 @@ input:focus-visible,
 .graph-node-active circle {
   fill: var(--accent);
   stroke: var(--accent-ink);
-  stroke-width: 0.8;
+  stroke-width: 0.68;
 }
 
 .graph-node text {
   fill: var(--ink-soft);
   font-family: var(--font-geist-sans), sans-serif;
-  font-size: 3px;
+  font-size: 2.7px;
   font-weight: 620;
   letter-spacing: -0.02em;
   opacity: 1;

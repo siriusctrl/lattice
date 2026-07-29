@@ -32,12 +32,12 @@ remain intentionally outside the mock.
 - theme and graph window state
 
 The static fixture defines every prepared biography node, its anchor targets,
-relations, and fallback ordering hints. The showcase reveals the entire
-prepared graph immediately. `GraphPreview` computes one layered layout from
-that completed DAG and keeps the geometry stable while the user changes Card
-focus. A spring-driven marker and connected-edge emphasis communicate movement
-without making the graph jump. Only an explicit user-created selection node
-changes the visible graph and triggers a new layout.
+relations, and semantic map position. The showcase reveals the entire prepared
+node map immediately. `GraphPreview` keeps those positions stable, projects the
+relation set into its transitive-reduced primary paths, and reveals redundant
+relations only when their node is active. A spring-driven marker and
+contextual-edge emphasis communicate movement without making the graph jump.
+Only an explicit user-created selection node changes the visible graph.
 
 The 2008 crisis already has incoming paths from both SpaceX and Tesla. Opening
 either branch focuses the same crisis Card, so the structure reads as a DAG
