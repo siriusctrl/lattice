@@ -1,0 +1,20 @@
+{
+  "name": "@lattice/codex-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "check": "node --check ./mcp/server.mjs && node --check ./mcp/lib/plugin-root.mjs && node --check ./mcp/lib/storage.mjs && node --check ./mcp/lib/static-widget.mjs && node --check ./mcp/lib/widget-resource.mjs && node --check ./scripts/start-mcp.mjs && node --check ./scripts/probe-mcp.mjs",
+    "test": "node --test ./mcp/lib/storage.test.mjs",
+    "probe:mcp": "node ./scripts/probe-mcp.mjs",
+    "quality": "npm run check && npm test && npm run probe:mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.4",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}

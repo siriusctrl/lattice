@@ -15,8 +15,9 @@ Append-only user actions
 ```
 
 The Card stack, exploration graph, and deterministic Article projection exist
-in this frontend prototype. Model-driven compilation and durable event storage
-remain intentionally outside the mock.
+in the frontend prototype. The published entry selects `DemoHost`; model-driven
+runs enter through the same browser protocol from an ACP sidecar, while the
+native Codex plugin has its own project-backed MCP Apps surface.
 
 ## Current frontend state
 
@@ -35,9 +36,10 @@ remain intentionally outside the mock.
 
 The workspace component remains the state boundary, while presentational and
 pure logic are kept outside it. `WorkspaceTopbar` renders navigation only.
-`research-workspace.ts` owns path lookup, mock follow-up answers, unique-edge
-insertion, and selection-node construction. `graph-layout.ts` owns graph depth,
-transitive reduction, curved routes, and hover-label placement.
+`research-workspace.ts` owns path lookup, unique-edge insertion, and
+selection-node construction. `DemoHost` owns deterministic follow-up and fork
+responses. `graph-layout.ts` owns graph depth, transitive reduction, curved
+routes, and hover-label placement.
 
 The static fixture defines every prepared biography node, its anchor targets,
 relations, and semantic map position. The showcase reveals the entire prepared
@@ -169,32 +171,46 @@ technology.
 
 ## Model and harness connection
 
-The recommended production boundary is a typed event adapter:
+The implemented browser boundary is `LatticeHost`:
 
 ```ts
-type AgentEvent =
+type LatticeHostEvent =
   | { type: "text_delta"; text: string }
-  | { type: "anchor"; label: string; targetHint: string }
-  | { type: "artifact"; path: string; mediaType: string }
-  | { type: "status"; state: "thinking" | "running_tool" | "done" }
-  | { type: "error"; message: string };
+  | { type: "anchor"; anchor: ResearchAnchor }
+  | { type: "status"; status: "thinking" | "running_tool" | "finalizing" }
+  | { type: "result"; result: LatticeHostResult }
+  | { type: "done" | "cancelled" }
+  | { type: "error"; error: { message: string; retryable?: boolean } };
 
-interface AgentAdapter {
-  start(input: {
-    prompt: string;
-    contextNodeIds: string[];
-    files: string[];
-  }): AsyncIterable<AgentEvent>;
-  cancel(runId: string): Promise<void>;
+interface LatticeHost {
+  start(request: LatticeHostRequest): {
+    id: string;
+    events: AsyncIterable<LatticeHostEvent>;
+    cancel(reason?: string): Promise<void>;
+  };
 }
 ```
 
-The browser can consume that stream through SSE or WebSocket. A Cloudflare
-Worker can call hosted model APIs. A local sidecar can expose the same protocol
-while launching Codex or Claude Code with workspace permissions.
+This is a product protocol, not another harness adapter. `DemoHost` implements
+it in memory. `AcpHost` maps an authenticated HTTP/SSE stream onto it. ACP
+already supplies the harness adapter and stable lifecycle for Codex and Claude
+Code.
 
 The browser must not receive provider keys or unrestricted filesystem access.
-Those capabilities belong to the gateway or sidecar.
+Those capabilities belong to the local sidecar and harness. The sidecar binds
+to loopback, requires a generated bearer token, rejects client-provided MCP
+process definitions by default, and owns permission and timeout policy.
+
+Codex has a second integration that does not route through ACP. The package
+under `plugins/lattice/` registers an MCP Apps resource plus workspace and
+research tools. Its widget runs inside Codex, while the tools persist multiple
+independent graph workspaces under the active project's `.lattice/` directory.
+Conversation launches are seeded by the owning agent from current task history;
+directory-only launches stay blank until the first question. This is the
+Cowart-like native surface.
+
+See [runtime-integrations.md](runtime-integrations.md) for the exact surfaces
+and commands.
 
 ## Why TypeScript
 
@@ -204,7 +220,7 @@ TypeScript gives one shared schema for:
 - graph events
 - streamed agent events
 - stored Markdown metadata
-- adapter capability negotiation
+- host request and cancellation semantics
 
 React is appropriate because card focus, selection, local follow-ups, and graph
 projection are stateful product interactions. Motion is isolated to visual
@@ -217,15 +233,10 @@ The default vinext build remains Cloudflare Worker compatible for Sites.
 browser assets with `/lattice/`. The resulting `dist/client` artifact contains
 the same client-side interactions and is published by GitHub Actions.
 
-## Future boundaries
+## Remaining boundaries
 
-The next technical layer should add:
-
-1. an append-only event store
-2. a model adapter with streamed events
-3. a context compiler service
-4. flat Markdown or article materialization
-5. file snapshot identities
-6. read-only and writable harness capability policies
-
-These additions should not require changing the card interaction contract.
+The native plugin currently renders a self-contained project-backed widget
+rather than hydrating the full showcase component tree. The next shared layer
+is durable workspace hydration and a common Article materializer, followed by
+file snapshot identities and richer harness capability negotiation. These
+additions should not require changing the Card interaction contract.

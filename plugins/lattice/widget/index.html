@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lattice</title>
+    <style>/* __LATTICE_WIDGET_CSS__ */</style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="workspace-identity">
+          <div class="brand">
+            <span class="mark" aria-hidden="true"></span>
+            <span>Lattice</span>
+          </div>
+          <label class="sr-only" for="workspaceSelect">Research workspace</label>
+          <select id="workspaceSelect" class="workspace-select" aria-label="Research workspace">
+            <option value="">Workspace</option>
+          </select>
+        </div>
+        <nav class="view-switch" aria-label="Workspace view">
+          <button type="button" data-view="explore" class="selected">Explore</button>
+          <button type="button" data-view="article">Article</button>
+        </nav>
+        <div class="status" id="status">Connecting</div>
+      </header>
+
+      <main>
+        <section class="explore-view" id="exploreView">
+          <aside class="graph-panel" aria-label="Research graph">
+            <div class="eyebrow">Research graph</div>
+            <div class="graph" id="graph"></div>
+          </aside>
+          <section class="deck-stage">
+            <div class="blank-surface" id="blankSurface" aria-label="Blank Lattice workspace"></div>
+            <div class="deck" id="deck"></div>
+          </section>
+        </section>
+
+        <section class="article-view" id="articleView" hidden>
+          <article class="paper">
+            <div class="eyebrow">Current edition</div>
+            <h1 id="articleTitle"></h1>
+            <div id="articleBody" class="article-body"></div>
+            <div id="articleSources" class="article-sources"></div>
+          </article>
+        </section>
+      </main>
+
+      <form class="composer" id="composer">
+        <textarea
+          id="prompt"
+          rows="1"
+          placeholder="Ask anything"
+          aria-label="Research question"
+        ></textarea>
+        <button type="submit" id="submitButton">Ask Codex</button>
+      </form>
+    </div>
+    <script>/* __LATTICE_WIDGET_JS__ */</script>
+  </body>
+</html>

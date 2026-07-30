@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lattice Research"
+  short_description: "Open and continue graph-native research in Lattice."
+  default_prompt: "Open Lattice for this project and continue the active research."

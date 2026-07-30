@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "lattice_mcp": {
+      "title": "Lattice Research Widget MCP",
+      "description": "Render the native Lattice workspace and persist research under the active project's .lattice directory.",
+      "command": "node",
+      "args": [
+        "./scripts/start-mcp.mjs"
+      ],
+      "cwd": "."
+    }
+  }
+}

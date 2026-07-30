@@ -43,14 +43,18 @@ test("server-renders the Lattice research workspace", async () => {
   assert.doesNotMatch(html, /react-loading-skeleton/i);
 });
 
-test("keeps product metadata and removes the disposable starter preview", async () => {
-  const [page, layout, packageJson] = await Promise.all([
+test("keeps the static DemoHost entry, product metadata, and no starter preview", async () => {
+  const [page, appShell, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/LatticeApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /ResearchWorkspace/);
+  assert.match(page, /LatticeApp/);
+  assert.match(appShell, /ResearchWorkspace/);
+  assert.match(appShell, /createDemoHost/);
+  assert.match(appShell, /__LATTICE_ACP_CONFIG__/);
   assert.match(layout, /Explore naturally, leave with an article/);
   assert.match(layout, /og\.png/);
   assert.match(packageJson, /lattice-research-prototype/);

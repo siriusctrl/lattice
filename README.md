@@ -46,10 +46,12 @@ risk. Independent branches can converge on shared events or interpretations.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
 
-This version uses a deterministic, completed mock research artifact. The
-interaction contract is real, including the distinction between original
-conversation, graph provenance, local follow-ups, and the compiled article.
-Model calls and persistence are the next implementation layer.
+The published site uses a deterministic, completed mock research artifact. The
+same workspace now also has a typed host boundary, a source-complete Codex MCP
+Apps plugin, and an ACP v1 sidecar/browser host for Codex or Claude Code. Those
+local sidecar and plugin runtimes stay outside the default static deployment;
+the browser ACP host remains dormant unless a trusted local connection is
+injected.
 
 ## Quick start
 
@@ -64,6 +66,118 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Run with Codex or Claude Code
+
+The static site stays a deterministic demo. To turn the same React workspace
+into a repository-backed client, keep the dev server running and start the ACP
+sidecar in a second terminal:
+
+Authenticate the harness you intend to use first:
+
+```bash
+codex login status
+# or
+claude auth status
+```
+
+```bash
+# Terminal 1, from the repository root
+npm install
+npm run dev
+
+# Terminal 2, research with Codex
+npm --prefix integrations/acp ci
+npm --prefix integrations/acp test
+node integrations/acp/dist/cli.js \
+  --preset codex \
+  --cwd /absolute/path/to/project \
+  --lattice-url http://localhost:3000/
+```
+
+For Claude Code, change only the preset:
+
+```bash
+node integrations/acp/dist/cli.js \
+  --preset claude \
+  --cwd /absolute/path/to/project \
+  --lattice-url http://localhost:3000/
+```
+
+Open the `workspaceUrl` printed by the sidecar. Starting the sidecar without
+`--workspace-id` creates a new blank workspace. Its first question creates the
+root Card; later follow-ups, selected-text forks, graph edges, and reading
+position are hydrated from and persisted to that workspace:
+
+```text
+<project>/.lattice/
+├── workspaces.json
+└── workspaces/
+    └── <workspace-id>/
+        ├── workspace.json
+        ├── events.ndjson
+        └── ui-state.json
+```
+
+The sidecar is bound to that project path. Codex and Claude credentials stay in
+their own harness configuration and are never written to `.lattice/`.
+
+## Install the local Codex plugin
+
+> **Publication status:** Lattice has not been uploaded to a remote or public
+> Codex marketplace. This repository only contains a local marketplace
+> manifest. The commands below register this checkout on your current machine;
+> they do not publish it.
+
+Install the locked plugin dependencies, register the repository as a local
+marketplace, and install `lattice` from that local source:
+
+```bash
+cd /absolute/path/to/lattice
+npm --prefix plugins/lattice ci --ignore-scripts
+npm --prefix plugins/lattice run quality
+
+codex plugin marketplace add /absolute/path/to/lattice
+codex plugin add lattice@personal
+codex plugin list
+```
+
+If this checkout is already listed as a marketplace, skip the
+`marketplace add` command and run `codex plugin add lattice@personal`.
+
+To use it, choose the launch that matches your context:
+
+1. Start a new Codex task so the newly installed skill and MCP server load.
+2. Open the repository you actually want to research. It does not need to be
+   the Lattice source repository.
+3. While discussing a topic, ask `Turn this conversation into a Lattice
+   research workspace.` Codex creates a new conversation workspace, uses the
+   current task history to initialize its first research graph, and opens it.
+4. To start without prior context, ask `Open a blank Lattice workspace for this
+   project.` Codex creates an empty workspace and opens a blank chat surface.
+5. To resume, ask Codex to list the project's Lattice workspaces and open one.
+6. Continue the remaining interaction in the native Lattice workspace.
+
+Every launch creates an independent workspace, even when `.lattice/` already
+exists. Research is stored under the active target repository, not under the
+Lattice checkout:
+
+```text
+<target-project>/.lattice/workspaces.json
+<target-project>/.lattice/workspaces/<workspace-id>/workspace.json
+<target-project>/.lattice/workspaces/<workspace-id>/events.ndjson
+<target-project>/.lattice/workspaces/<workspace-id>/ui-state.json
+```
+
+The native widget and the ACP workspace use this same schema, so either surface
+can continue the same research graph by workspace id. Existing repositories
+with the original flat `.lattice/workspace.json` layout expose it as a legacy
+workspace without moving or deleting it. A
+`codex://plugins/...marketplacePath=` link only opens this local plugin entry in
+Codex; it is not evidence that the plugin has been uploaded.
+
+The plugin and ACP packages are local runtimes. Installing or running them does
+not change the Cloudflare Sites or GitHub Pages static deployment.
 
 ## Technology choice
 
@@ -80,19 +194,25 @@ Codex or Claude Code process control. The boundary looks like this:
 ```text
 React Explore and Article workspace
         |
-   SSE or WebSocket
+   LatticeHost event protocol
         |
-Model gateway or local sidecar
-        |
-Codex, Claude Code, or direct model API
+  +-----+------------------+
+  |                        |
+DemoHost             AcpHost over HTTP/SSE
+                           |
+                     ACP sidecar
+                           |
+                  Codex or Claude Code
 ```
 
 TypeScript is a good fit because the same event types can describe browser
 actions, streamed model events, graph updates, and adapter capabilities. A
-desktop shell can be added later if local process and file permissions need a
-native installation, without rewriting the React interface.
+separate Codex plugin serves a native fullscreen MCP Apps widget and persists
+its graph under the active project's `.lattice/` directory.
 
-See [docs/architecture.md](docs/architecture.md) for the intended boundary.
+See [docs/architecture.md](docs/architecture.md) for the product boundary and
+[docs/runtime-integrations.md](docs/runtime-integrations.md) for the runnable
+surfaces.
 
 ## Verification
 
@@ -123,6 +243,8 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - [docs/INDEX.md](docs/INDEX.md): documentation entry point
 - [docs/source-map.md](docs/source-map.md): file ownership and reading path
 - `app/components/ResearchWorkspace.tsx`: interaction state and navigation
+- `app/components/LatticeApp.tsx`: DemoHost default and trusted local ACP
+  bootstrap
 - `app/components/WorkspaceTopbar.tsx`: Explore, Article, breadcrumb, graph, and
   theme controls
 - `app/components/ResearchCard.tsx`: plain chat content, Deck hit area, anchors, selection, follow-ups
@@ -136,5 +258,10 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/lib/research-workspace.ts`: graph path, follow-up, and selection-fork
   helpers
 - `app/lib/mock-research.ts`: Musk research fixture, relations, and layout hints
+- `app/lib/lattice-host.ts`: shared streamed host protocol
+- `app/lib/demo-host.ts`: deterministic static-site implementation
+- `app/lib/acp-host.ts`: browser HTTP/SSE implementation
+- `plugins/lattice/`: native Codex MCP Apps plugin
+- `integrations/acp/`: Codex and Claude Code ACP sidecar
 - `scripts/record-demo.mjs`: deterministic browser recording
 - `scripts/record-mobile-demo.mjs`: deterministic mobile touch recording

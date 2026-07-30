@@ -1,0 +1,25 @@
+{
+  "name": "lattice",
+  "version": "0.1.0+codex.20260730104949",
+  "description": "Open a graph-native research workspace inside Codex.",
+  "author": {
+    "name": "Xinyao (Morry) Niu"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Lattice",
+    "shortDescription": "Graph-native research in a native Codex workspace.",
+    "longDescription": "Open Lattice as a native fullscreen Codex widget, keep multiple research workspaces in the active project, and let Codex initialize or extend durable Cards, anchors, graph relations, follow-ups, and compiled articles.",
+    "developerName": "Xinyao (Morry) Niu",
+    "category": "Productivity",
+    "capabilities": [
+      "Native MCP Apps widget",
+      "Project-local multi-workspace persistence",
+      "Graph-native research"
+    ],
+    "defaultPrompt": [
+      "Open a blank Lattice workspace for this project."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

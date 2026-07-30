@@ -5,11 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ArticleOutline } from "@/app/components/article/ArticleOutline";
 import { ArticlePaper } from "@/app/components/article/ArticlePaper";
 import { ArticleSources } from "@/app/components/article/ArticleSources";
-import type { FollowupTurn } from "@/app/components/ResearchCard";
 import {
   buildArticleSections,
+  buildRepositoryArticleSections,
   type ArticleSection,
 } from "@/app/lib/article-research";
+import type { FollowupTurn } from "@/app/lib/lattice-host";
 import type {
   GraphEdge,
   ResearchNode,
@@ -20,6 +21,7 @@ type ArticleViewProps = {
   discoveredIds: Set<string>;
   edges: GraphEdge[];
   followups: Record<string, FollowupTurn[]>;
+  rootNodeId: string;
   focusSectionId: string;
   onOpenSource: (nodeId: string) => void;
   reduceMotion: boolean;
@@ -30,6 +32,7 @@ export function ArticleView({
   discoveredIds,
   edges,
   followups,
+  rootNodeId,
   focusSectionId,
   onOpenSource,
   reduceMotion,
@@ -45,12 +48,26 @@ export function ArticleView({
   );
   const sections = useMemo(
     () =>
-      buildArticleSections({
-        discoveredIds,
-        edges,
-        followupNodeIds,
-      }),
-    [discoveredIds, edges, followupNodeIds],
+      rootNodeId === "musk"
+        ? buildArticleSections({
+            discoveredIds,
+            edges,
+            followupNodeIds,
+          })
+        : buildRepositoryArticleSections({
+            nodes,
+            discoveredIds,
+            rootNodeId,
+            followups,
+          }),
+    [
+      discoveredIds,
+      edges,
+      followupNodeIds,
+      followups,
+      nodes,
+      rootNodeId,
+    ],
   );
   const availableFocus = sections.some(
     (section) => section.id === focusSectionId,

@@ -559,15 +559,6 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     card.setAttribute("data-mount-token", "preserved-through-close");
   });
   const leavingOrigin = page.getByTestId("research-card-origin");
-  const leavingStart = await leavingOrigin.evaluate((card) => {
-    const motionLayer = card.closest(".research-card-motion");
-    if (!motionLayer) throw new Error("Missing Card motion layer");
-    const bounds = motionLayer.getBoundingClientRect();
-    return {
-      left: bounds.left,
-      top: bounds.top,
-    };
-  });
 
   const rightTrigger = page.getByRole("button", {
     name: "从右侧展开 Card 路径",
@@ -581,11 +572,69 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
   await page.mouse.move(0, 0);
   await expect(deck).toHaveAttribute("data-deck-hint", "none");
 
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        type ExitSample = {
+          left: number;
+          opacity: number;
+          top: number;
+        };
+        type ExitMotionEvidence = {
+          idle: ExitSample | null;
+          samples: ExitSample[];
+        };
+        const evidenceWindow = window as typeof window & {
+          __latticeDeckExitMotion?: ExitMotionEvidence;
+        };
+        const evidence: ExitMotionEvidence = {
+          idle: null,
+          samples: [],
+        };
+        evidenceWindow.__latticeDeckExitMotion = evidence;
+
+        const sample = () => {
+          const deckElement = document.querySelector<HTMLElement>(
+            '[data-testid="research-deck"]',
+          );
+          const card = document.querySelector<HTMLElement>(
+            '[data-testid="research-card-origin"]',
+          );
+          const motionLayer =
+            card?.closest<HTMLElement>(".research-card-motion");
+          if (motionLayer) {
+            const bounds = motionLayer.getBoundingClientRect();
+            const frame = {
+              left: bounds.left,
+              top: bounds.top,
+              opacity: Number(getComputedStyle(motionLayer).opacity),
+            };
+            if (deckElement?.dataset.deckTransition === "removing-suffix") {
+              evidence.samples.push(frame);
+            } else if (evidence.samples.length === 0) {
+              evidence.idle = frame;
+            }
+          }
+          if (
+            evidence.samples.length === 0 ||
+            deckElement?.dataset.deckTransition === "removing-suffix"
+          ) {
+            requestAnimationFrame(sample);
+          }
+        };
+
+        requestAnimationFrame(() => {
+          sample();
+          resolve();
+        });
+      }),
+  );
   await page.getByRole("button", { name: "关闭当前分支" }).click();
   await expect(deck).toHaveAttribute(
     "data-deck-transition",
     "removing-suffix",
   );
+  await expect(deck).toHaveAttribute("data-deck-size", "5");
   await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
     "data-active",
     "true",
@@ -599,31 +648,45 @@ test("spreads a deep deck and returns to an earlier card without deleting histor
     "data-deck-leaving-primary",
     "false",
   );
-  await page.waitForTimeout(110);
-  const leavingInMotion = await leavingOrigin.evaluate((card) => {
-    const motionLayer = card.closest(".research-card-motion");
-    if (!motionLayer) throw new Error("Missing Card motion layer");
-    const bounds = motionLayer.getBoundingClientRect();
-    return {
-      left: bounds.left,
-      top: bounds.top,
-      opacity: Number(getComputedStyle(motionLayer).opacity),
-    };
-  });
-  expect(Math.abs(leavingInMotion.left - leavingStart.left)).toBeLessThan(28);
-  expect(leavingInMotion.top - leavingStart.top).toBeGreaterThan(5);
-  expect(leavingInMotion.top - leavingStart.top).toBeLessThan(32);
-  expect(leavingInMotion.opacity).toBeGreaterThan(0.98);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const evidenceWindow = window as typeof window & {
+          __latticeDeckExitMotion?: { samples: unknown[] };
+        };
+        return evidenceWindow.__latticeDeckExitMotion?.samples.length ?? 0;
+      }),
+    )
+    .toBeGreaterThan(1);
   await expect(page.getByTestId("research-card-migration")).toHaveCSS(
     "visibility",
     "hidden",
   );
-  await expect(page.getByTestId("research-deck")).toHaveAttribute(
-    "data-deck-size",
-    "5",
-  );
   await expect(deck).toHaveAttribute("data-deck-size", "1");
   await expect(deck).toHaveAttribute("data-deck-transition", "idle");
+  const exitMotion = await page.evaluate(() => {
+    const evidenceWindow = window as typeof window & {
+      __latticeDeckExitMotion?: {
+        idle: { left: number; opacity: number; top: number } | null;
+        samples: { left: number; opacity: number; top: number }[];
+      };
+    };
+    return evidenceWindow.__latticeDeckExitMotion;
+  });
+  expect(exitMotion?.idle).not.toBeNull();
+  const leavingInMotion = exitMotion?.samples.find(
+    (sample) => sample.top - (exitMotion.idle?.top ?? sample.top) > 5,
+  );
+  expect(leavingInMotion).toBeDefined();
+  expect(
+    Math.abs(
+      (leavingInMotion?.left ?? 0) - (exitMotion?.idle?.left ?? 0),
+    ),
+  ).toBeLessThan(28);
+  expect(
+    (leavingInMotion?.top ?? 0) - (exitMotion?.idle?.top ?? 0),
+  ).toBeLessThan(32);
+  expect(leavingInMotion?.opacity ?? 0).toBeGreaterThan(0.98);
   await expect(page.getByTestId("research-card-musk")).toHaveAttribute(
     "data-active",
     "true",

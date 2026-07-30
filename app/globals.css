@@ -127,6 +127,67 @@ input:focus-visible,
   background: var(--page);
 }
 
+.workspace-shell-empty {
+  display: grid;
+  min-height: 100dvh;
+  place-items: end center;
+  padding: 0 20px clamp(28px, 8vh, 84px);
+}
+
+.empty-research-composer {
+  position: relative;
+  display: grid;
+  width: min(680px, 100%);
+  grid-template-columns: minmax(0, 1fr) 40px;
+  gap: 10px;
+  align-items: end;
+  padding: 11px 11px 11px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 22px;
+  background: var(--surface-raised);
+}
+
+.empty-research-composer textarea {
+  width: 100%;
+  min-height: 40px;
+  max-height: 180px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.empty-research-composer textarea::placeholder {
+  color: var(--ink-muted);
+}
+
+.empty-research-composer button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.empty-research-composer button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.empty-research-error {
+  grid-column: 1 / -1;
+  margin: 0 4px;
+  color: color-mix(in srgb, #b42318 82%, var(--ink));
+  font-size: 12px;
+}
+
 .workspace-view-layer {
   position: relative;
   opacity: 0;
@@ -900,6 +961,17 @@ input:focus-visible,
   animation-delay: 120ms;
 }
 
+.ask-error {
+  margin-top: 18px;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, #b94b4b 42%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, #b94b4b 7%, var(--surface));
+  color: color-mix(in srgb, #b94b4b 78%, var(--ink));
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .card-composer {
   position: relative;
   z-index: 5;
@@ -984,6 +1056,9 @@ input:focus-visible,
 .selection-menu {
   position: fixed;
   z-index: 90;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
   transform: translateX(-50%);
 }
 
@@ -1010,6 +1085,23 @@ input:focus-visible,
 
 .selection-menu button:active {
   transform: translateY(1px) scale(0.98);
+}
+
+.selection-menu button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.selection-error {
+  width: max-content;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, #bd493f 34%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-raised) 94%, #bd493f);
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .graph-preview {

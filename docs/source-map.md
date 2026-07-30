@@ -2,7 +2,9 @@
 
 ## Entry points
 
-- `app/page.tsx`: renders the workspace
+- `app/page.tsx`: renders the host-selecting app shell
+- `app/components/LatticeApp.tsx`: selects DemoHost by default and accepts a
+  trusted local ACP bootstrap
 - `app/layout.tsx`: Geist UI fonts, bundled Noto Serif SC Article font,
   language, favicon, and product metadata
 - `app/globals.css`: complete light and dark visual system
@@ -16,7 +18,7 @@
   - active-branch closing that removes the current Deck suffix, returns focus
     to the previous Card, and preserves the complete graph
   - two-phase suffix exit and persistent Explore and Article view layers
-  - prepared graph state
+  - prepared or hydrated graph state
   - custom fork creation
   - graph focus
   - custom selection nodes
@@ -69,6 +71,7 @@
   - node-to-section mapping
   - complete current-edition compilation
   - multi-path crisis synthesis
+  - repository-backed flat Article compilation
 
 - `app/lib/graph-layout.ts`
   - stable semantic positions and graph depth
@@ -78,8 +81,19 @@
 - `app/lib/research-workspace.ts`
   - root-to-node path lookup
   - unique edge insertion
-  - mock follow-up responses
   - selection-node construction
+
+- `app/lib/lattice-host.ts`
+  - browser-safe host request, event, result, and cancellation protocol
+  - streamed follow-up consumption and navigation generation guards
+
+- `app/lib/demo-host.ts`
+  - deterministic static-site follow-up and selection behavior
+
+- `app/lib/acp-host.ts`
+  - authenticated ACP sidecar session and SSE client
+  - ACP message/tool events mapped into Lattice results
+  - project-backed hydration, durable patches, and UI-state persistence
 
 - `app/lib/deck-motion.ts`
   - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
@@ -101,6 +115,24 @@
 - `public/og.png`: social preview of Explore becoming Article
 - `public/favicon.svg`: Lattice stacked-card mark
 
+## Local runtimes
+
+- `plugins/lattice/`
+  - Codex plugin manifest and skill
+  - stdio MCP server and native MCP Apps widget
+  - project-local multi-workspace `.lattice` catalog and revision locking
+  - conversation-seeded, blank, and legacy workspace launch semantics
+
+- `.agents/plugins/marketplace.json`
+  - local Codex marketplace entry for the Lattice plugin
+
+- `integrations/acp/`
+  - ACP v1 stdio client
+  - authenticated loopback HTTP/SSE sidecar
+  - shared project-local `.lattice` workspace storage boundary
+  - Codex and Claude Code presets
+  - process, timeout, cancellation, and permission lifecycle tests
+
 ## Verification
 
 - `playwright.config.ts`: desktop browser verification environment
@@ -115,6 +147,8 @@
   coverage
 - `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
   hinted-fan to Spread transition coverage
+- `tests/lattice-host.spec.ts`: DemoHost and AcpHost protocol, streaming,
+  cancellation, error recovery, and stale-run regression coverage
 - `tests/rendered-html.test.mjs`: production Worker HTML checks
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording

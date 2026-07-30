@@ -15,6 +15,11 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  recoverComposerQuestion,
+  type FollowupTurn,
+  type LatticeAskOutcome,
+} from "@/app/lib/lattice-host";
 import type {
   InlineText,
   ResearchNode,
@@ -24,12 +29,9 @@ import {
   MOBILE_DECK_HANDOFF_DURATION_SECONDS,
   type CardMotionState,
 } from "@/app/lib/deck-motion";
+import type { DeckExitOrigin } from "@/app/hooks/use-deck-transition";
 
-export type FollowupTurn = {
-  id: string;
-  question: string;
-  answer: string;
-};
+export type { FollowupTurn } from "@/app/lib/lattice-host";
 
 export type TextSelection = {
   text: string;
@@ -53,19 +55,27 @@ type ResearchCardProps = {
   mobileGestureParticipant: boolean;
   mobileTransitioning: boolean;
   leavingDeck: boolean;
+  deckExitOrigin: DeckExitOrigin | null;
   leavingOrder: number;
   motionState: CardMotionState;
   draggingDeck: boolean;
   followups: FollowupTurn[];
+  streamingFollowup: FollowupTurn | null;
   thinking: boolean;
+  askError: string | null;
   onAnchor: (targetId: string) => void;
-  onAsk: (nodeId: string, question: string) => void;
+  onAsk: (
+    nodeId: string,
+    question: string,
+  ) => Promise<LatticeAskOutcome>;
   onDeckPreview: (
     index: number,
     pointer?: { x: number; y: number },
   ) => void;
   onDeckPreviewEnd: (index: number) => void;
   onDeckSelect: (index: number) => void;
+  onDeckExitComplete: () => void;
+  onDeckExitStart: () => void;
   onTextSelection: (selection: TextSelection | null) => void;
   reduceMotion: boolean;
 };
@@ -98,6 +108,56 @@ function InlineContent({
   });
 }
 
+export function getFollowupInlineContent(turn: FollowupTurn) {
+  const content: InlineText[] = [turn.answer];
+  for (const anchor of turn.anchors ?? []) {
+    if (content.length > 0) content.push(" ");
+    content.push(anchor);
+  }
+  return content;
+}
+
+export function FollowupAnswerContent({
+  turn,
+  onAnchor,
+}: {
+  turn: FollowupTurn;
+  onAnchor: (targetId: string) => void;
+}) {
+  const content = getFollowupInlineContent(turn);
+  return <InlineContent content={content} onAnchor={onAnchor} />;
+}
+
+function FollowupTurnView({
+  turn,
+  onAnchor,
+  streaming = false,
+}: {
+  turn: FollowupTurn;
+  onAnchor: (targetId: string) => void;
+  streaming?: boolean;
+}) {
+  return (
+    <div
+      className="followup-turn"
+      data-followup-streaming={streaming ? "true" : "false"}
+    >
+      <div className="followup-question">
+        <span aria-hidden="true">你</span>
+        <p>{turn.question}</p>
+      </div>
+      <div className="followup-answer">
+        <span className="assistant-mark" aria-hidden="true">
+          L
+        </span>
+        <p>
+          <FollowupAnswerContent turn={turn} onAnchor={onAnchor} />
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function ResearchCard({
   node,
   active,
@@ -111,16 +171,21 @@ export function ResearchCard({
   mobileGestureParticipant,
   mobileTransitioning,
   leavingDeck,
+  deckExitOrigin,
   leavingOrder,
   motionState,
   draggingDeck,
   followups,
+  streamingFollowup,
   thinking,
+  askError,
   onAnchor,
   onAsk,
   onDeckPreview,
   onDeckPreviewEnd,
   onDeckSelect,
+  onDeckExitComplete,
+  onDeckExitStart,
   onTextSelection,
   reduceMotion,
 }: ResearchCardProps) {
@@ -137,14 +202,32 @@ export function ResearchCard({
       top: scrollRef.current.scrollHeight,
       behavior: reduceMotion ? "auto" : "smooth",
     });
-  }, [active, followups.length, reduceMotion, thinking]);
+  }, [
+    active,
+    followups.length,
+    reduceMotion,
+    streamingFollowup?.anchors?.length,
+    streamingFollowup?.answer.length,
+    thinking,
+  ]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = question.trim();
     if (!trimmed || thinking) return;
-    onAsk(node.id, trimmed);
     setQuestion("");
+    let outcome: LatticeAskOutcome;
+    try {
+      outcome = await onAsk(node.id, trimmed);
+    } catch {
+      outcome = {
+        status: "failed",
+        message: "回答运行失败，请重试。",
+      };
+    }
+    setQuestion((current) =>
+      recoverComposerQuestion(current, trimmed, outcome),
+    );
   }
 
   function handleMouseUp(event: MouseEvent<HTMLElement>) {
@@ -210,8 +293,14 @@ export function ResearchCard({
   ];
   const leavingPrimary = leavingOrder === 0;
   const leavingTarget = {
-    x: motionState.x,
-    y: motionState.y + (leavingPrimary ? 16 : 0),
+    x:
+      leavingPrimary && deckExitOrigin
+        ? deckExitOrigin.x
+        : motionState.x,
+    y:
+      leavingPrimary && deckExitOrigin
+        ? deckExitOrigin.y + 16
+        : motionState.y + (leavingPrimary ? 16 : 0),
     scale: leavingPrimary ? 0.972 : motionState.scale,
     rotate: motionState.baseRotate + (leavingPrimary ? 0.35 : 0),
     opacity: leavingPrimary ? 1 : 0,
@@ -276,6 +365,12 @@ export function ResearchCard({
                 ? { duration: 0 }
               : settledTransition
       }
+      onAnimationStart={() => {
+        if (leavingDeck && leavingPrimary) onDeckExitStart();
+      }}
+      onAnimationComplete={() => {
+        if (leavingDeck && leavingPrimary) onDeckExitComplete();
+      }}
       style={{
         zIndex: leavingDeck
           ? leavingPrimary
@@ -377,26 +472,26 @@ export function ResearchCard({
                 })}
               </div>
 
-              {followups.length > 0 ? (
+              {followups.length > 0 || streamingFollowup ? (
                 <div
                   className="followup-thread"
                   aria-label="当前节点的继续追问"
                   data-testid={`followup-thread-${node.id}`}
                 >
                   {followups.map((turn) => (
-                    <div className="followup-turn" key={turn.id}>
-                      <div className="followup-question">
-                        <span aria-hidden="true">你</span>
-                        <p>{turn.question}</p>
-                      </div>
-                      <div className="followup-answer">
-                        <span className="assistant-mark" aria-hidden="true">
-                          L
-                        </span>
-                        <p>{turn.answer}</p>
-                      </div>
-                    </div>
+                    <FollowupTurnView
+                      key={turn.id}
+                      turn={turn}
+                      onAnchor={onAnchor}
+                    />
                   ))}
+                  {streamingFollowup ? (
+                    <FollowupTurnView
+                      turn={streamingFollowup}
+                      onAnchor={onAnchor}
+                      streaming
+                    />
+                  ) : null}
                 </div>
               ) : null}
 
@@ -412,6 +507,12 @@ export function ResearchCard({
                     <i />
                     <i />
                   </div>
+                </div>
+              ) : null}
+
+              {askError ? (
+                <div className="ask-error" role="alert">
+                  {askError}
                 </div>
               ) : null}
             </div>

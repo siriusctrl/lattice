@@ -1,4 +1,7 @@
-import type { GraphEdge } from "@/app/lib/mock-research";
+import type {
+  GraphEdge,
+  ResearchNode,
+} from "@/app/lib/mock-research";
 
 export type ArticleSection = {
   id: string;
@@ -51,9 +54,71 @@ function hasEdge(edges: GraphEdge[], from: string, to: string) {
   return edges.some((edge) => edge.from === from && edge.to === to);
 }
 
-export function getArticleSectionForNode(nodeId: string) {
+export function getArticleSectionForNode(
+  nodeId: string,
+  rootNodeId = ROOT_SOURCE_ID,
+) {
+  if (rootNodeId !== ROOT_SOURCE_ID) {
+    return nodeId === rootNodeId
+      ? "overview"
+      : `node-${encodeURIComponent(nodeId)}`;
+  }
   if (nodeId.startsWith("selection-")) return "research-notes";
   return SECTION_BY_NODE[nodeId] ?? "overview";
+}
+
+function nodeParagraphs(
+  node: ResearchNode,
+  followups: Array<{ answer: string }>,
+) {
+  const blockParagraphs = node.blocks.map((block) => {
+    if (block.kind === "paragraph") {
+      return block.content
+        .map((part) => typeof part === "string" ? part : part.label)
+        .join("")
+        .trim();
+    }
+    if (block.kind === "insight") {
+      return `${block.label}：${block.content}`;
+    }
+    return block.content;
+  });
+  return [node.lead, ...blockParagraphs, ...followups.map((turn) => turn.answer)]
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph, index, all) =>
+      Boolean(paragraph) && all.indexOf(paragraph) === index,
+    );
+}
+
+export function buildRepositoryArticleSections({
+  nodes,
+  discoveredIds,
+  rootNodeId,
+  followups,
+}: {
+  nodes: Record<string, ResearchNode>;
+  discoveredIds: Set<string>;
+  rootNodeId: string;
+  followups: Record<string, Array<{ answer: string }>>;
+}): ArticleSection[] {
+  const orderedNodes = [
+    nodes[rootNodeId],
+    ...Object.values(nodes).filter((node) => node.id !== rootNodeId),
+  ].filter(
+    (node): node is ResearchNode =>
+      Boolean(node && discoveredIds.has(node.id)),
+  );
+
+  return orderedNodes.map((node, index) => ({
+    id:
+      index === 0
+        ? "overview"
+        : `node-${encodeURIComponent(node.id)}`,
+    eyebrow: node.year || (index === 0 ? "概览" : "研究节点"),
+    title: node.title,
+    paragraphs: nodeParagraphs(node, followups[node.id] ?? []),
+    sourceIds: [node.id],
+  }));
 }
 
 export function buildArticleSections({

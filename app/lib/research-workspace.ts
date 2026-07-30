@@ -55,11 +55,12 @@ export function appendUniqueEdge(edges: GraphEdge[], next: GraphEdge) {
 export function getPathToNode(
   targetId: string,
   edges: GraphEdge[],
+  rootNodeId = ROOT_NODE_ID,
 ): string[] | null {
-  if (targetId === ROOT_NODE_ID) return [ROOT_NODE_ID];
+  if (targetId === rootNodeId) return [rootNodeId];
 
-  const queue: string[][] = [[ROOT_NODE_ID]];
-  const visited = new Set<string>([ROOT_NODE_ID]);
+  const queue: string[][] = [[rootNodeId]];
+  const visited = new Set<string>([rootNodeId]);
 
   while (queue.length > 0) {
     const path = queue.shift();

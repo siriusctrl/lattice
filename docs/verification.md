@@ -12,6 +12,9 @@ npm run verify:mobile-ui
 
 `check` runs TypeScript, ESLint, and visible-copy policy checks.
 
+The static gates intentionally run with no ACP bootstrap. This proves the
+published website remains the complete deterministic demo.
+
 `verify:preview` creates the production vinext build and executes the built
 Worker against an HTML request. It proves that product metadata, the Musk
 scenario, and the graph shell render without the disposable starter preview.
@@ -67,6 +70,34 @@ WebKit runtime. It samples every visible Card throughout the gesture, rejects
 direction reversal, an offscreen-return peak, or a post-commit position or
 opacity jump, and confirms that a pile edge enters or leaves continuously while
 the outgoing sheet owns the higher layer until the surfaces meet.
+
+## Runtime package checks
+
+The Codex plugin and ACP sidecar are independent packages:
+
+```bash
+cd plugins/lattice
+npm ci --ignore-scripts
+npm run quality
+
+cd ../../integrations/acp
+npm ci
+npm test
+npm run probe
+```
+
+The plugin probe starts two MCP processes to exercise cross-process revision
+conflicts. It also checks independent workspace creation and selection, legacy
+flat-layout compatibility, immutable retry behavior, hardlink rejection, DAG
+cycle rejection, output schemas, native widget packaging, attribute escaping,
+and the request-to-revision completion loop.
+
+The ACP tests use disposable fake agents to cover initialize, session creation,
+blank workspace creation and hydration, workspace selection, streaming,
+permissions, cancellation, timeout, malformed responses, missing executables,
+EPIPE, default MCP-process rejection, slow SSE consumers, and shutdown. The
+probe exercises the public HTTP/SSE API end to end without spending a model
+call.
 
 ## Visual proof
 
