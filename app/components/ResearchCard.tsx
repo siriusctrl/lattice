@@ -21,6 +21,7 @@ import type {
 } from "@/app/lib/mock-research";
 import {
   DECK_SUFFIX_EXIT_DURATION_SECONDS,
+  MOBILE_DECK_HANDOFF_DURATION_SECONDS,
   type CardMotionState,
 } from "@/app/lib/deck-motion";
 
@@ -47,6 +48,8 @@ type ResearchCardProps = {
   mobilePreview: boolean;
   deckPickable: boolean;
   deckPreviewed: boolean;
+  mobileOutgoing: boolean;
+  mobileTransitioning: boolean;
   leavingDeck: boolean;
   leavingOrder: number;
   motionState: CardMotionState;
@@ -101,6 +104,8 @@ export function ResearchCard({
   mobilePreview,
   deckPickable,
   deckPreviewed,
+  mobileOutgoing,
+  mobileTransitioning,
   leavingDeck,
   leavingOrder,
   motionState,
@@ -168,6 +173,8 @@ export function ResearchCard({
     active ? "research-card-active" : ""
   } ${deckMode ? "research-card-deck-mode" : ""} ${
     deckPreviewed ? "research-card-deck-previewed" : ""
+  } ${
+    mobileOutgoing ? "research-card-mobile-outgoing" : ""
   }`;
   const settledTransition = {
     type: "spring" as const,
@@ -243,8 +250,13 @@ export function ResearchCard({
         leavingDeck
           ? leavingTransition
           : draggingDeck || reduceMotion
-          ? { duration: 0 }
-          : settledTransition
+            ? { duration: 0 }
+            : mobileTransitioning
+              ? {
+                  duration: MOBILE_DECK_HANDOFF_DURATION_SECONDS,
+                  ease: [0.2, 0.78, 0.2, 1],
+                }
+              : settledTransition
       }
       style={{
         zIndex: leavingDeck
@@ -256,7 +268,10 @@ export function ResearchCard({
           !leavingDeck && (active || deckMode) ? "auto" : "none",
         transformOrigin: leavingDeck ? "50% 72%" : undefined,
         willChange:
-          leavingDeck && leavingPrimary ? "transform" : undefined,
+          (leavingDeck && leavingPrimary) ||
+          (mobilePreview && (deckPreviewed || mobileOutgoing))
+            ? "transform"
+            : undefined,
         backfaceVisibility:
           leavingDeck && leavingPrimary ? "hidden" : undefined,
       }}
@@ -280,6 +295,7 @@ export function ResearchCard({
             data-deck-leaving-primary={
               leavingDeck && leavingPrimary ? "true" : "false"
             }
+            data-mobile-outgoing={mobileOutgoing ? "true" : "false"}
             data-left-fan-rotate={motionState.leftFanRotate.toFixed(3)}
             data-right-fan-rotate={motionState.rightFanRotate.toFixed(3)}
             inert={!active || deckMode ? true : undefined}

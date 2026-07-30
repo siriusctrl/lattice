@@ -842,6 +842,29 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
       (shadow) => getMaxShadowPixel(shadow) <= 22,
     ),
   ).toBe(true);
+  const readMobileLayering = () =>
+    page.locator(".research-card").evaluateAll((cards) =>
+      Object.fromEntries(
+        cards.map((card) => {
+          const layer = card.closest<HTMLElement>(
+            ".research-card-motion",
+          );
+          if (!layer) throw new Error("Missing mobile Card motion layer");
+          return [
+            card.getAttribute("data-deck-index"),
+            {
+              zIndex: Number(getComputedStyle(layer).zIndex),
+              left: layer.getBoundingClientRect().left,
+              right: layer.getBoundingClientRect().right,
+            },
+          ];
+        }),
+      ),
+    );
+  const initialLayering = await readMobileLayering();
+  expect(initialLayering["0"].zIndex).toBeGreaterThan(
+    initialLayering["1"].zIndex,
+  );
 
   // Preview owns the gesture, so modest vertical thumb drift still navigates.
   const swipeStartX = deckBounds.x + deckBounds.width * 0.48;
@@ -851,7 +874,22 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
     { x: swipeStartX - 72, y: centerY + 16 },
     { x: swipeStartX - 118, y: centerY + 25 },
   ]);
+  await expect(deck).toHaveAttribute("data-mobile-transition", "0:1");
+  await expect(deck).toHaveAttribute("data-deck-preview", "0");
+  const handoffLayering = await readMobileLayering();
+  expect(handoffLayering["0"].zIndex).toBeGreaterThan(
+    handoffLayering["1"].zIndex,
+  );
+  await expect(rootCard).toHaveClass(/research-card-deck-previewed/);
   await expect(deck).toHaveAttribute("data-deck-preview", "1");
+  await expect(deck).toHaveAttribute("data-mobile-transition", "idle");
+  const settledLayering = await readMobileLayering();
+  expect(settledLayering["1"].zIndex).toBeGreaterThan(
+    settledLayering["0"].zIndex,
+  );
+  await expect(page.getByTestId("research-card-origin")).toHaveClass(
+    /research-card-deck-previewed/,
+  );
   await expect(deck).toHaveAttribute("data-deck-mode", "preview");
   await expect(rootCard).toHaveAttribute("data-active", "true");
   await expect(deck).not.toHaveClass(/deck-wrap-swiping/);

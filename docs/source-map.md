@@ -83,10 +83,12 @@
 
 - `app/lib/deck-motion.ts`
   - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
+  - top-sheet drag, offscreen handoff, and under-sheet return geometry
 
 - `app/hooks/use-mobile-deck.ts`
   - compact Deck preview state and cancellation
   - touch pointer capture, boundary resistance, and click suppression
+  - deterministic offscreen layer-handoff transaction
   - Escape, viewport, and selection cleanup
 
 - `app/hooks/use-deck-transition.ts`
@@ -104,14 +106,16 @@
 - `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
   tests, including top-Card and historical middle-Card unstack regressions,
   retained-Card DOM identity, view-state preservation, compact graph identity,
-  short-desktop topbar clearance, and current-edition Article coverage
+  mobile top-sheet ownership before, during, and after a swipe, short-desktop
+  topbar clearance, and current-edition Article coverage
 - `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
   hinted-fan to Spread transition coverage
 - `tests/rendered-html.test.mjs`: production Worker HTML checks
 - `scripts/check-content.mjs`: copy and starter-removal gate
 - `scripts/record-demo.mjs`: deterministic complete UI recording
 - `scripts/render-proof.sh`: GIF, MP4, and contact sheet production
-- `scripts/record-mobile-demo.mjs`: deterministic touch-based mobile recording
+- `scripts/record-mobile-demo.mjs`: deterministic touch-based mobile recording,
+  including drag and offscreen-handoff frames
 - `scripts/render-mobile-proof.sh`: mobile GIF, MP4, and contact sheet production
 - `tests/static-pages.test.mjs`: GitHub Pages static-export contract
 - `.github/workflows/pages.yml`: project Pages build and deployment

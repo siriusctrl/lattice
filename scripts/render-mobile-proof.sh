@@ -17,7 +17,7 @@ ffmpeg -y -loglevel error -i "$input" \
 
 montage "$project_dir"/outputs/mobile-proof/frame-*.png \
   -thumbnail 260x563 \
-  -tile 5x1 \
+  -tile 4x2 \
   -geometry +10+10 \
   -background "#111410" \
   "$contact_sheet"

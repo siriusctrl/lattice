@@ -24,8 +24,10 @@ risk. Independent branches can converge on shared events or interpretations.
   corner, then click it to spread the current path across the desktop workspace.
 - Rest on a Card to preview it between earlier Cards on the left and later
   Cards on the right.
-- On phone widths, tap an exposed Stack edge to enter a folded preview. Swipe
-  that preview without changing context, then tap the centered Card to open it.
+- On phone widths, tap an exposed Stack edge to enter a folded preview. The
+  centered Card stays above the Deck while it follows the swipe, leaves the
+  viewport before the next Card becomes the top sheet, and then returns beneath
+  it as the opposite edge. Tap the centered Card to open it.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.

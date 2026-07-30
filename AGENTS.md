@@ -47,6 +47,11 @@ and context semantics behind the scenes.
   an exposed left or right sheet enters a folded preview where horizontal
   swipes move only the preview focus. Tapping the centered preview commits that
   Card and returns to full reading.
+- In compact preview, the centered Card is always the top physical sheet.
+  During a swipe it stays above the incoming Card, exits beyond the viewport,
+  and only then hands off stacking order. The old Card may return as a side
+  peek only after it is behind the new centered Card; never switch `z-index`
+  while two readable surfaces overlap.
 - Starting a new fork from a historical Card replaces only the current
   lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
@@ -95,6 +100,9 @@ and context semantics behind the scenes.
 - Deck dwell preview follows deliberate pointer movement. Cards passing under a
   stationary pointer during semantic reflow must not chain-trigger a different
   preview.
+- Mobile Card handoff uses a deterministic transform-only exit followed by a
+  spring return underneath the new top sheet. Keep the semantic preview label
+  on the outgoing sheet until the invisible stacking handoff completes.
 - Surface handoffs must not pass through a blank frame or crossfade two text
   layers in the same position. A removed primary Card settles a short distance
   back into the Deck, then passes behind the retained Card without making two

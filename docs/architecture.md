@@ -103,6 +103,14 @@ that reflow cannot chain-trigger a new preview. The persisted fork-time title
 appears outside the chat only during inspection. Choosing the Card collapses
 the Deck around that historical focus.
 
+Compact preview uses a staged paper handoff. The centered Card owns the highest
+stacking layer and follows the finger while the adjacent target rises beneath
+it. On release, the outgoing Card completes a deterministic transform-only
+exit beyond the viewport. The preview index and stacking order change only
+after that sheet is invisible; the old Card then springs back underneath as the
+opposite side peek. This prevents readable surfaces from swapping `z-index`
+while they overlap.
+
 The desktop Deck reserves a block-axis safety band around its centered Card.
 This is part of the fan geometry, not a clipping workaround: outer sheets may
 rotate far enough to double their exposed edge, but their raised top edges must

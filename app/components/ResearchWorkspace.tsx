@@ -125,6 +125,7 @@ export function ResearchWorkspace() {
     mobileDeckPreview,
     mobileSwipeDelta,
     mobileSwiping,
+    mobileTransition,
     openMobileDeckPreview,
     resetMobileDeck,
     updateDeckSwipe,
@@ -133,6 +134,7 @@ export function ResearchWorkspace() {
     compact: compactDeck,
     onClearSelection: clearDeckSelection,
     previewIndex,
+    reduceMotion,
     setPreviewIndex: setDeckPreviewIndex,
     stackLength: stack.length,
     viewportWidth,
@@ -611,6 +613,8 @@ export function ResearchWorkspace() {
               } ${
                 mobileDeckPreview ? "deck-wrap-mobile-preview" : ""
               } ${
+                mobileTransition ? "deck-wrap-mobile-transitioning" : ""
+              } ${
                 deckTransition ? "deck-wrap-transitioning" : ""
               }`}
               data-testid="research-deck"
@@ -630,6 +634,11 @@ export function ResearchWorkspace() {
                 mobileDeckPreview || deckPreviewFocused
                   ? String(previewIndex)
                   : "none"
+              }
+              data-mobile-transition={
+                mobileTransition
+                  ? `${mobileTransition.fromIndex}:${mobileTransition.toIndex}`
+                  : "idle"
               }
               aria-label={
                 mobileDeckPreview
@@ -678,14 +687,21 @@ export function ResearchWorkspace() {
                       mobilePreview={mobileDeckPreview}
                       deckPickable={
                         !deckTransition &&
+                        !mobileTransition &&
                         (deckMode ||
                           (mobileDeckPreview &&
                             Math.abs(index - previewIndex) <= 1))
                       }
                       deckPreviewed={
                         (deckMode && index === captionIndex) ||
-                        (mobileDeckPreview && index === previewIndex)
+                        (mobileDeckPreview &&
+                          index ===
+                            (mobileTransition?.fromIndex ?? previewIndex))
                       }
+                      mobileOutgoing={
+                        mobileTransition?.fromIndex === index
+                      }
+                      mobileTransitioning={mobileTransition !== null}
                       leavingDeck={
                         deckTransition !== null &&
                         index >= deckTransition.removingFromIndex
@@ -704,6 +720,7 @@ export function ResearchWorkspace() {
                         compact: compactDeck,
                         mobilePreview: mobileDeckPreview,
                         mobileSwipeDelta,
+                        mobileTransition,
                         viewportWidth,
                         hintSide: deckHintSide,
                         previewFocused: deckPreviewFocused,

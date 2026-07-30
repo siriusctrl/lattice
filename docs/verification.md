@@ -38,7 +38,8 @@ ready for GitHub Pages.
 - a deep five-Card fan staying below the topbar at a 1512 by 822 desktop
   viewport while preserving lower-corner clearance
 - vertical-only mobile reading, edge-triggered folded preview, preview-only
-  swipes, and tap-to-commit with opposite Card peeks
+  swipes, top-sheet drag ownership, offscreen stacking handoff, and
+  tap-to-commit with opposite Card peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
@@ -85,8 +86,8 @@ The mobile proof additionally produces:
 - key PNG frames under `outputs/mobile-proof/`
 
 It records real touch input at 390 by 844, including native vertical reading,
-edge entry, folded browsing, diagonal swipes, tap-to-commit, and the final
-mobile Article typography.
+edge entry, folded browsing, the top-sheet drag and offscreen handoff,
+tap-to-commit, and the final mobile Article typography.
 
 The recording follows one deterministic path:
 

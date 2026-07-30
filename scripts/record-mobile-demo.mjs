@@ -72,7 +72,7 @@ const touchPoint = (x, y) => ({
   id: 1,
 });
 
-async function swipe(points) {
+async function dragSwipe(points) {
   const [first, ...rest] = points;
   await session.send("Input.dispatchTouchEvent", {
     type: "touchStart",
@@ -85,10 +85,18 @@ async function swipe(points) {
     });
     await page.waitForTimeout(70);
   }
+}
+
+async function releaseSwipe() {
   await session.send("Input.dispatchTouchEvent", {
     type: "touchEnd",
     touchPoints: [],
   });
+}
+
+async function swipe(points) {
+  await dragSwipe(points);
+  await releaseSwipe();
 }
 
 async function capture(name) {
@@ -160,14 +168,19 @@ const deckBounds = await page
 if (!deckBounds) throw new Error("Missing Deck bounds");
 const swipeX = deckBounds.x + deckBounds.width * 0.5;
 const swipeY = deckBounds.y + deckBounds.height * 0.5;
-await swipe([
+const forwardSwipe = [
   { x: swipeX, y: swipeY },
   { x: swipeX - 36, y: swipeY + 8 },
   { x: swipeX - 82, y: swipeY + 17 },
   { x: swipeX - 126, y: swipeY + 24 },
-]);
-await page.waitForTimeout(650);
-await capture("frame-04-next-preview");
+];
+await dragSwipe(forwardSwipe);
+await capture("frame-04-top-sheet-drag");
+await releaseSwipe();
+await page.waitForTimeout(170);
+await capture("frame-05-offscreen-handoff");
+await page.waitForTimeout(500);
+await capture("frame-06-next-preview");
 
 await swipe([
   { x: swipeX, y: swipeY },
@@ -180,12 +193,12 @@ await page
   .locator('.deck-card-picker[data-deck-index="2"]')
   .tap();
 await page.waitForTimeout(750);
-await capture("frame-05-reading-restored");
+await capture("frame-07-reading-restored");
 
 await page.getByRole("button", { name: "Article", exact: true }).tap();
 await page.getByTestId("article-view").waitFor();
 await page.waitForTimeout(850);
-await capture("frame-06-article");
+await capture("frame-08-article");
 
 await session.detach();
 await page.close();

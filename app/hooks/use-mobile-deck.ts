@@ -9,7 +9,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { DeckHintSide } from "@/app/lib/deck-motion";
+import {
+  DeckHintSide,
+  MOBILE_DECK_HANDOFF_COMMIT_DELAY_MS,
+  MobileDeckTransition,
+} from "@/app/lib/deck-motion";
 
 type MobileSwipeState = {
   pointerId: number;
@@ -22,6 +26,7 @@ type UseMobileDeckOptions = {
   compact: boolean;
   onClearSelection: () => void;
   previewIndex: number;
+  reduceMotion: boolean;
   setPreviewIndex: Dispatch<SetStateAction<number>>;
   stackLength: number;
   viewportWidth: number;
@@ -35,6 +40,7 @@ export function useMobileDeck({
   compact,
   onClearSelection,
   previewIndex,
+  reduceMotion,
   setPreviewIndex,
   stackLength,
   viewportWidth,
@@ -42,7 +48,12 @@ export function useMobileDeck({
   const [mobileDeckPreview, setMobileDeckPreview] = useState(false);
   const [mobileSwipeDelta, setMobileSwipeDelta] = useState(0);
   const [mobileSwiping, setMobileSwiping] = useState(false);
+  const [mobileTransition, setMobileTransition] =
+    useState<MobileDeckTransition | null>(null);
   const mobileSwipe = useRef<MobileSwipeState | null>(null);
+  const mobileTransitionTimer = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const mobileSuppressNextClick = useRef(false);
   const mobileSuppressClickFrame = useRef<number | null>(null);
 
@@ -56,17 +67,23 @@ export function useMobileDeck({
 
   const resetMobileDeck = useCallback(() => {
     mobileSwipe.current = null;
+    if (mobileTransitionTimer.current) {
+      clearTimeout(mobileTransitionTimer.current);
+      mobileTransitionTimer.current = null;
+    }
     setMobileSwipeDelta(0);
     setMobileSwiping(false);
+    setMobileTransition(null);
     setMobileDeckPreview(false);
     clearClickSuppression();
   }, [clearClickSuppression]);
 
   const cancelDeckSwipe = useCallback(() => {
+    if (mobileTransition) return;
     mobileSwipe.current = null;
     setMobileSwipeDelta(0);
     setMobileSwiping(false);
-  }, []);
+  }, [mobileTransition]);
 
   useEffect(() => {
     const compactViewport = window.matchMedia("(max-width: 720px)");
@@ -99,6 +116,9 @@ export function useMobileDeck({
       if (mobileSuppressClickFrame.current !== null) {
         window.cancelAnimationFrame(mobileSuppressClickFrame.current);
       }
+      if (mobileTransitionTimer.current) {
+        clearTimeout(mobileTransitionTimer.current);
+      }
     },
     [],
   );
@@ -106,6 +126,7 @@ export function useMobileDeck({
   const handleMobileDeckSelection = useCallback(
     (index: number) => {
       if (!mobileDeckPreview) return false;
+      if (mobileTransition) return true;
       if (mobileSuppressNextClick.current) {
         clearClickSuppression();
         return true;
@@ -120,6 +141,7 @@ export function useMobileDeck({
     [
       clearClickSuppression,
       mobileDeckPreview,
+      mobileTransition,
       previewIndex,
       setPreviewIndex,
     ],
@@ -133,6 +155,11 @@ export function useMobileDeck({
       setPreviewIndex(activeIndex);
       setMobileSwipeDelta(0);
       setMobileSwiping(false);
+      if (mobileTransitionTimer.current) {
+        clearTimeout(mobileTransitionTimer.current);
+        mobileTransitionTimer.current = null;
+      }
+      setMobileTransition(null);
       setMobileDeckPreview(true);
       onClearSelection();
       window.getSelection()?.removeAllRanges();
@@ -162,6 +189,7 @@ export function useMobileDeck({
         (event.pointerType === "mouse" && event.button !== 0) ||
         !compact ||
         !mobileDeckPreview ||
+        mobileTransition ||
         stackLength <= 1
       ) {
         return;
@@ -172,7 +200,7 @@ export function useMobileDeck({
         horizontal: false,
       };
     },
-    [compact, mobileDeckPreview, stackLength],
+    [compact, mobileDeckPreview, mobileTransition, stackLength],
   );
 
   const updateDeckSwipe = useCallback(
@@ -217,7 +245,8 @@ export function useMobileDeck({
         !swipe ||
         swipe.pointerId !== event.pointerId ||
         !compact ||
-        !mobileDeckPreview
+        !mobileDeckPreview ||
+        mobileTransition
       ) {
         return;
       }
@@ -244,13 +273,28 @@ export function useMobileDeck({
         stackLength - 1,
       );
       if (nextIndex !== previewIndex) {
-        setPreviewIndex(nextIndex);
+        if (reduceMotion) {
+          setPreviewIndex(nextIndex);
+          return;
+        }
+        setMobileTransition({
+          fromIndex: previewIndex,
+          toIndex: nextIndex,
+          direction: nextIndex > previewIndex ? -1 : 1,
+        });
+        mobileTransitionTimer.current = setTimeout(() => {
+          setPreviewIndex(nextIndex);
+          setMobileTransition(null);
+          mobileTransitionTimer.current = null;
+        }, MOBILE_DECK_HANDOFF_COMMIT_DELAY_MS);
       }
     },
     [
       compact,
       mobileDeckPreview,
+      mobileTransition,
       previewIndex,
+      reduceMotion,
       setPreviewIndex,
       stackLength,
     ],
@@ -273,6 +317,7 @@ export function useMobileDeck({
     mobileDeckPreview,
     mobileSwipeDelta,
     mobileSwiping,
+    mobileTransition,
     openMobileDeckPreview,
     resetMobileDeck,
     updateDeckSwipe,
