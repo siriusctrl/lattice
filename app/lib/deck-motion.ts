@@ -4,6 +4,7 @@ export const DECK_SUFFIX_EXIT_DURATION_SECONDS = 0.4;
 export const DECK_SUFFIX_COMMIT_DELAY_MS = 420;
 export const MOBILE_DECK_HANDOFF_DURATION_SECONDS = 0.28;
 export const MOBILE_DECK_HANDOFF_COMMIT_DELAY_MS = 300;
+export const MOBILE_DECK_VISIBLE_PILE_DEPTH = 4;
 
 export type MobileDeckTransition = {
   fromIndex: number;
@@ -145,14 +146,16 @@ export function getCardMotionState(
             ? 0
             : Math.sign(focusDistance) *
               Math.min(3.4, 1.7 + absoluteFocusDistance * 0.42),
-        opacity: absoluteFocusDistance > 4 ? 0 : 1,
+        opacity:
+          absoluteFocusDistance > MOBILE_DECK_VISIBLE_PILE_DEPTH
+            ? 0
+            : 1,
         zIndex:
           focusDistance === 0 ? 130 : 112 - absoluteFocusDistance,
       };
     };
 
     if (mobileTransition) {
-      const originState = getPreviewState(mobileTransition.fromIndex);
       const targetState = getPreviewState(mobileTransition.toIndex);
       if (index === mobileTransition.fromIndex) {
         return {
@@ -167,20 +170,18 @@ export function getCardMotionState(
         };
       }
 
-      const transitionState =
-        index === mobileTransition.toIndex ? targetState : originState;
       return {
-        x: transitionState.x,
-        y: transitionState.y,
-        scale: transitionState.scale,
-        baseRotate: transitionState.rotate,
+        x: targetState.x,
+        y: targetState.y,
+        scale: targetState.scale,
+        baseRotate: targetState.rotate,
         leftFanRotate: 0,
         rightFanRotate: 0,
-        opacity: transitionState.opacity,
+        opacity: targetState.opacity,
         zIndex:
           index === mobileTransition.toIndex
             ? 124
-            : Math.min(108, originState.zIndex),
+            : Math.min(108, targetState.zIndex),
       };
     }
 
@@ -202,11 +203,7 @@ export function getCardMotionState(
     const isCurrent = index === previewIndex;
     const isTarget =
       targetIndex !== previewIndex && index === targetIndex;
-    const interpolation = isTarget
-      ? swipeProgress
-      : isCurrent
-        ? 0
-        : 0;
+    const interpolation = isCurrent ? 0 : swipeProgress;
     const previewState = isCurrent
       ? {
           x: baseState.x + mobileSwipeDelta * 0.96 + boundaryPull,

@@ -27,8 +27,10 @@ risk. Independent branches can converge on shared events or interpretations.
 - On phone widths, tap an exposed Stack edge to enter a folded preview. The
   centered Card stays above the Deck while it follows the swipe, settles
   directly into the opposite-side peek, and hands its layer to the next Card
-  only after their visible surfaces stop overlapping. Tap the centered Card to
-  open it.
+  only after their visible surfaces stop overlapping. Cards already against
+  that wall compress deeper as one pile while the opposite pile advances into
+  the opened space, so no extra paper edges appear at the end of the gesture.
+  Tap the centered Card to open it.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.

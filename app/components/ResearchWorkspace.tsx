@@ -31,6 +31,7 @@ import { getArticleSectionForNode } from "@/app/lib/article-research";
 import {
   DeckHintSide,
   getCardMotionState,
+  MOBILE_DECK_VISIBLE_PILE_DEPTH,
 } from "@/app/lib/deck-motion";
 import {
   ALL_POSSIBLE_EDGES,
@@ -677,6 +678,10 @@ export function ResearchWorkspace() {
                 {stack.map((nodeId, index) => {
                   const node = nodes[nodeId];
                   if (!node) return null;
+                  const mobileGestureParticipant =
+                    mobileDeckPreview &&
+                    Math.abs(index - previewIndex) <=
+                      MOBILE_DECK_VISIBLE_PILE_DEPTH + 1;
                   return (
                     <ResearchCard
                       key={`${nodeId}-${index}`}
@@ -705,16 +710,11 @@ export function ResearchWorkspace() {
                         mobileTransition?.toIndex === index
                       }
                       mobileGestureParticipant={
-                        mobileDeckPreview &&
-                        (mobileTransition
-                          ? index === mobileTransition.fromIndex ||
-                            index === mobileTransition.toIndex
-                          : Math.abs(index - previewIndex) <= 1)
+                        mobileGestureParticipant
                       }
                       mobileTransitioning={
                         mobileTransition !== null &&
-                        (index === mobileTransition.fromIndex ||
-                          index === mobileTransition.toIndex)
+                        mobileGestureParticipant
                       }
                       leavingDeck={
                         deckTransition !== null &&

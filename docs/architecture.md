@@ -108,9 +108,13 @@ stacking layer and follows the finger while the adjacent target rises beneath
 it. On release, the outgoing Card follows one monotonic transform directly to
 its final opposite-side peek. The scaled Card widths determine an edge-to-edge
 resting position, so the preview index and stacking order can change after the
-readable surfaces stop overlapping without moving either Card again. Only the
-incoming and outgoing sheets animate; background sheets remain still and
-full-surface filters are disabled to reduce mobile compositing work.
+readable surfaces stop overlapping without moving any Card again. The gesture
+also drives every visible sheet in both side piles. Sheets at the destination
+wall compress one depth step while sheets at the source wall advance into the
+vacated space. Those pile transforms finish before the preview index commits,
+so semantic state never reveals a new edge or snaps an existing edge into
+place. Only the visible pile is promoted for transform animation, and
+full-surface filters remain disabled to reduce mobile compositing work.
 
 The desktop Deck reserves a block-axis safety band around its centered Card.
 This is part of the fan geometry, not a clipping workaround: outer sheets may

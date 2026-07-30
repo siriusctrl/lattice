@@ -39,8 +39,9 @@ ready for GitHub Pages.
 - a deep five-Card fan staying below the topbar at a 1512 by 822 desktop
   viewport while preserving lower-corner clearance
 - vertical-only mobile reading, edge-triggered folded preview, preview-only
-  swipes, top-sheet drag ownership, monotonic edge-to-edge stacking handoff, and
-  tap-to-commit with opposite Card peeks
+  swipes, top-sheet drag ownership, six-Card wall-pile compression and refill,
+  monotonic edge-to-edge stacking handoff, and tap-to-commit with opposite Card
+  peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
 - curved graph paths reaching both endpoint centers without clipping
@@ -61,10 +62,11 @@ ready for GitHub Pages.
 - light and dark theme persistence
 - Explore and Article mobile viewport containment
 
-`verify:mobile-ui` repeats the right-swipe trajectory in an iPhone-sized WebKit
-runtime. It samples the outgoing Card throughout the gesture, rejects direction
-reversal or an offscreen-return peak, and confirms that the outgoing sheet owns
-the higher layer until the surfaces meet.
+`verify:mobile-ui` repeats a six-Card right-swipe trajectory in an iPhone-sized
+WebKit runtime. It samples every visible Card throughout the gesture, rejects
+direction reversal, an offscreen-return peak, or a post-commit position or
+opacity jump, and confirms that a pile edge enters or leaves continuously while
+the outgoing sheet owns the higher layer until the surfaces meet.
 
 ## Visual proof
 

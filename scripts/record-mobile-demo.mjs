@@ -129,14 +129,18 @@ await page
   .locator('[data-anchor-target="zip2"]')
   .click();
 await page
+  .getByTestId("research-card-zip2")
+  .locator('[data-anchor-target="paypal"]')
+  .click();
+await page
   .getByTestId("graph-preview")
-  .locator('[data-node-id="migration"]')
+  .locator('[data-node-id="musk"]')
   .click({ force: true });
 await page.waitForTimeout(850);
-await capture("frame-02-middle-reading");
+await capture("frame-02-root-reading");
 
 const readingSurface = page
-  .getByTestId("research-card-migration")
+  .getByTestId("research-card-musk")
   .locator(".card-scroll");
 const readingBounds = await readingSurface.boundingBox();
 if (!readingBounds) throw new Error("Missing reading surface bounds");
@@ -157,7 +161,7 @@ await swipe([
 await page.waitForTimeout(650);
 
 await page
-  .getByRole("button", { name: "从左侧查看 Card 路径" })
+  .getByRole("button", { name: "从右侧查看 Card 路径" })
   .tap();
 await page.waitForTimeout(650);
 await capture("frame-03-folded-preview");
@@ -196,7 +200,7 @@ await capture("frame-08-right-handoff");
 await page.waitForTimeout(420);
 await capture("frame-09-returned-preview");
 await page
-  .locator('.deck-card-picker[data-deck-index="2"]')
+  .locator('.deck-card-picker[data-deck-index="0"]')
   .tap();
 await page.waitForTimeout(750);
 await capture("frame-10-reading-restored");

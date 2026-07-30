@@ -83,7 +83,8 @@
 
 - `app/lib/deck-motion.ts`
   - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
-  - top-sheet drag and edge-to-edge, no-return mobile handoff geometry
+  - top-sheet drag plus continuous wall-pile compression and refill geometry
+  - edge-to-edge, no-return mobile handoff geometry
 
 - `app/hooks/use-mobile-deck.ts`
   - compact Deck preview state and cancellation
@@ -104,13 +105,14 @@
 
 - `playwright.config.ts`: desktop browser verification environment
 - `playwright.mobile.config.ts`: iPhone-sized WebKit verification environment
-- `tests/mobile-webkit.spec.ts`: Safari-engine right-swipe monotonicity and
-  layer-ownership regression
+- `tests/mobile-webkit.spec.ts`: Safari-engine six-Card, whole-pile
+  monotonicity, layer-ownership, and commit-continuity regression
 - `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
   tests, including top-Card and historical middle-Card unstack regressions,
   retained-Card DOM identity, view-state preservation, compact graph identity,
-  mobile top-sheet ownership before, during, and after a swipe, short-desktop
-  topbar clearance, and current-edition Article coverage
+  mobile top-sheet ownership and six-Card pile continuity before, during, and
+  after a swipe, short-desktop topbar clearance, and current-edition Article
+  coverage
 - `tests/deck-motion.spec.ts`: frame-sampled fan continuity, fixed pivots, and
   hinted-fan to Spread transition coverage
 - `tests/rendered-html.test.mjs`: production Worker HTML checks

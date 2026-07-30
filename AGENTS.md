@@ -51,7 +51,10 @@ and context semantics behind the scenes.
   During a swipe it stays above the incoming Card and settles directly into its
   final opposite-side peek. Hand off stacking order only after the outgoing and
   centered Card edges meet; never switch `z-index` while two readable surfaces
-  overlap, and never send a Card away only to bring it back.
+  overlap, and never send a Card away only to bring it back. Every visible Card
+  in both side piles must move with the same gesture: the destination pile
+  compresses toward its wall while the source pile advances into the vacated
+  space.
 - Starting a new fork from a historical Card replaces only the current
   lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
@@ -102,9 +105,11 @@ and context semantics behind the scenes.
   preview.
 - Mobile Card handoff uses one deterministic, monotonic transform from the
   centered position to the final side peek. Its transform must be identical
-  immediately before and after the stacking handoff. Only the outgoing and
-  incoming Cards may animate during a swipe; avoid full-surface filters and
-  background springs on compact Cards.
+  immediately before and after the stacking handoff. All visible Cards in both
+  side piles participate in that transform and must reach their final depth
+  before the preview index commits. Never reveal, hide, or reposition a pile
+  edge at commit time. Avoid full-surface filters and independent background
+  springs on compact Cards.
 - Surface handoffs must not pass through a blank frame or crossfade two text
   layers in the same position. A removed primary Card settles a short distance
   back into the Deck, then passes behind the retained Card without making two
@@ -120,10 +125,11 @@ and context semantics behind the scenes.
 - Keep the workspace background optically flat. Do not reintroduce ambient
   radial gradients that can read as detached Card shadows.
 - Mobile folded-preview movement must interpolate the centered Card and its
-  target, settle with spring weight, and keep earlier and later Cards on
-  opposite sides. Desktop edge hints must rotate around a corner rather than
-  lift the stack vertically. Hover, fan, and dwell transitions must preserve
-  card materiality. Avoid equal-width thumbnail grids.
+  target together with every visible side-pile Card, settle with a controlled
+  monotonic ease, and keep earlier and later Cards on opposite sides. Desktop
+  edge hints must rotate around a corner rather than lift the stack vertically.
+  Hover, fan, and dwell transitions must preserve card materiality. Avoid
+  equal-width thumbnail grids.
 - Respect reduced-motion and reduced-transparency preferences.
 - Keep all visible copy free of long dash punctuation.
 - Use Phosphor for icons. Do not add hand-authored icon paths.

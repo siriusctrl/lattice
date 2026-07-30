@@ -18,6 +18,7 @@ type MobileMotionSample = {
     string,
     {
       left: number;
+      opacity: number;
       right: number;
       zIndex: number;
     }
@@ -57,6 +58,7 @@ async function beginMobileMotionSampling(
               String(index),
               {
                 left: bounds.left,
+                opacity: Number(getComputedStyle(layer).opacity),
                 right: bounds.right,
                 zIndex: Number(getComputedStyle(layer).zIndex),
               },
@@ -93,14 +95,21 @@ function expectMonotonic(
   values: number[],
   direction: "increasing" | "decreasing",
   tolerance = 1.5,
+  label = "motion",
 ) {
   expect(values.length).toBeGreaterThan(6);
   for (let index = 1; index < values.length; index += 1) {
     const difference = values[index] - values[index - 1];
     if (direction === "increasing") {
-      expect(difference).toBeGreaterThanOrEqual(-tolerance);
+      expect(
+        difference,
+        `${label} reversed between samples ${index - 1} and ${index}`,
+      ).toBeGreaterThanOrEqual(-tolerance);
     } else {
-      expect(difference).toBeLessThanOrEqual(tolerance);
+      expect(
+        difference,
+        `${label} reversed between samples ${index - 1} and ${index}`,
+      ).toBeLessThanOrEqual(tolerance);
     }
   }
 }
@@ -845,6 +854,18 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
     .locator('[data-anchor-target="migration"]')
     .click();
   await page
+    .getByTestId("research-card-migration")
+    .locator('[data-anchor-target="education"]')
+    .click();
+  await page
+    .getByTestId("research-card-education")
+    .locator('[data-anchor-target="zip2"]')
+    .click();
+  await page
+    .getByTestId("research-card-zip2")
+    .locator('[data-anchor-target="paypal"]')
+    .click();
+  await page
     .getByTestId("graph-preview")
     .locator('[data-node-id="musk"]')
     .click();
@@ -963,7 +984,8 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
 
   // Preview owns the gesture, so modest vertical thumb drift still navigates.
   const swipeStartX = deckBounds.x + deckBounds.width * 0.48;
-  await beginMobileMotionSampling(page, [0, 1]);
+  const mobileCardIndices = [0, 1, 2, 3, 4, 5];
+  await beginMobileMotionSampling(page, mobileCardIndices);
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },
     { x: swipeStartX - 28, y: centerY + 7 },
@@ -988,14 +1010,58 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
   );
   await page.waitForTimeout(330);
   const forwardSamples = await readMobileMotionSamples(page);
-  const forwardEdges = forwardSamples.map(
+  for (const index of mobileCardIndices) {
+    const cardCenters = forwardSamples.map(
+      (sample) =>
+        (sample.cards[String(index)].left +
+          sample.cards[String(index)].right) /
+        2,
+    );
+    expectMonotonic(
+      cardCenters,
+      "decreasing",
+      1.5,
+      `forward Card ${index}`,
+    );
+  }
+  const forwardOutgoingEdges = forwardSamples.map(
     (sample) => sample.cards["0"].right,
   );
-  expectMonotonic(forwardEdges, "decreasing");
   expect(
-    forwardEdges.at(-1)! - Math.min(...forwardEdges),
+    forwardOutgoingEdges.at(-1)! - Math.min(...forwardOutgoingEdges),
   ).toBeLessThan(3);
-  expect(Math.min(...forwardEdges)).toBeGreaterThan(18);
+  expect(Math.min(...forwardOutgoingEdges)).toBeGreaterThan(18);
+  const forwardLastTransition = forwardSamples.findLast(
+    (sample) => sample.transition === "0:1",
+  );
+  const forwardFirstSettled = forwardSamples.find(
+    (sample) =>
+      sample.time > (forwardLastTransition?.time ?? Number.POSITIVE_INFINITY) &&
+      sample.transition === "idle" &&
+      sample.preview === "1",
+  );
+  expect(forwardLastTransition).toBeDefined();
+  expect(forwardFirstSettled).toBeDefined();
+  for (const index of mobileCardIndices) {
+    expect(
+      Math.abs(
+        forwardLastTransition!.cards[String(index)].left -
+          forwardFirstSettled!.cards[String(index)].left,
+      ),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(
+        forwardLastTransition!.cards[String(index)].opacity -
+          forwardFirstSettled!.cards[String(index)].opacity,
+      ),
+    ).toBeLessThan(0.02);
+  }
+  expectMonotonic(
+    forwardSamples.map((sample) => sample.cards["5"].opacity),
+    "increasing",
+    0.02,
+    "forward revealed pile edge",
+  );
   await expect(deck).toHaveAttribute("data-deck-mode", "preview");
   await expect(rootCard).toHaveAttribute("data-active", "true");
   await expect(deck).not.toHaveClass(/deck-wrap-swiping/);
@@ -1035,7 +1101,8 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
     }),
   );
   await expect(deck).toHaveAttribute("data-deck-preview", "1");
-  await beginMobileMotionSampling(page, [0, 1]);
+  await page.waitForTimeout(280);
+  await beginMobileMotionSampling(page, mobileCardIndices);
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },
     { x: swipeStartX + 54, y: centerY + 8 },
@@ -1044,14 +1111,58 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
   await expect(deck).toHaveAttribute("data-deck-preview", "0");
   await page.waitForTimeout(330);
   const returnSamples = await readMobileMotionSamples(page);
+  for (const index of mobileCardIndices) {
+    const cardCenters = returnSamples.map(
+      (sample) =>
+        (sample.cards[String(index)].left +
+          sample.cards[String(index)].right) /
+        2,
+    );
+    expectMonotonic(
+      cardCenters,
+      "increasing",
+      1.5,
+      `return Card ${index}`,
+    );
+  }
   const returnEdges = returnSamples.map(
     (sample) => sample.cards["1"].left,
   );
-  expectMonotonic(returnEdges, "increasing");
   expect(
     Math.max(...returnEdges) - returnEdges.at(-1)!,
   ).toBeLessThan(3);
   expect(Math.max(...returnEdges)).toBeLessThan(372);
+  const returnLastTransition = returnSamples.findLast(
+    (sample) => sample.transition === "1:0",
+  );
+  const returnFirstSettled = returnSamples.find(
+    (sample) =>
+      sample.time > (returnLastTransition?.time ?? Number.POSITIVE_INFINITY) &&
+      sample.transition === "idle" &&
+      sample.preview === "0",
+  );
+  expect(returnLastTransition).toBeDefined();
+  expect(returnFirstSettled).toBeDefined();
+  for (const index of mobileCardIndices) {
+    expect(
+      Math.abs(
+        returnLastTransition!.cards[String(index)].left -
+          returnFirstSettled!.cards[String(index)].left,
+      ),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(
+        returnLastTransition!.cards[String(index)].opacity -
+          returnFirstSettled!.cards[String(index)].opacity,
+      ),
+    ).toBeLessThan(0.02);
+  }
+  expectMonotonic(
+    returnSamples.map((sample) => sample.cards["5"].opacity),
+    "decreasing",
+    0.02,
+    "returning hidden pile edge",
+  );
 
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },
@@ -1090,23 +1201,21 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
   await expect(rootCard).toHaveAttribute("data-active", "true");
 
   // Keyboard cancel and view changes both leave folded browsing cleanly.
-  await touchCenter(
-    page,
-    page.getByRole("button", {
-      name: "从右侧查看 Card 路径",
-    }),
-  );
+  const reopenedRightEdge = page.getByRole("button", {
+    name: "从右侧查看 Card 路径",
+  });
+  await reopenedRightEdge.focus();
+  await page.keyboard.press("Enter");
   await expect(deck).toHaveAttribute("data-deck-mode", "preview");
   await page.keyboard.press("Escape");
   await expect(deck).toHaveAttribute("data-deck-mode", "stacked");
   await expect(rootCard).toHaveAttribute("data-active", "true");
 
-  await touchCenter(
-    page,
-    page.getByRole("button", {
+  await page
+    .getByRole("button", {
       name: "从右侧查看 Card 路径",
-    }),
-  );
+    })
+    .click();
   await page.getByRole("button", { name: "Article" }).click();
   await expect(page.getByRole("button", { name: "Explore" })).toBeVisible();
   await page.getByRole("button", { name: "Explore" }).click();
