@@ -25,9 +25,10 @@ risk. Independent branches can converge on shared events or interpretations.
 - Rest on a Card to preview it between earlier Cards on the left and later
   Cards on the right.
 - On phone widths, tap an exposed Stack edge to enter a folded preview. The
-  centered Card stays above the Deck while it follows the swipe, leaves the
-  viewport before the next Card becomes the top sheet, and then returns beneath
-  it as the opposite edge. Tap the centered Card to open it.
+  centered Card stays above the Deck while it follows the swipe, settles
+  directly into the opposite-side peek, and hands its layer to the next Card
+  only after their visible surfaces stop overlapping. Tap the centered Card to
+  open it.
 - Reopen material from the breadcrumb or research graph.
 - Reach one node from multiple branches without duplicating it.
 - Expand, minimize, and close the live graph preview.
@@ -98,13 +99,15 @@ npm run check
 npm run verify:preview
 npm run verify:pages
 npm run verify:ui
+npm run verify:mobile-ui
 npm run verify:proof
 npm run verify:mobile-proof
 ```
 
 `verify:proof` records the complete interaction, produces a GIF and MP4, and
 builds a contact sheet from key states. `verify:mobile-proof` does the same for
-the edge-triggered folded preview using real touch input.
+the edge-triggered folded preview using real touch input. `verify:mobile-ui`
+repeats the monotonic right-swipe contract in mobile WebKit.
 
 `verify:pages` creates the static `/lattice/` build used by
 [siriusctrl.github.io/lattice](https://siriusctrl.github.io/lattice/). Pushes

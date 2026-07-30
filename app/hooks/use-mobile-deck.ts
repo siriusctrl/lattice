@@ -51,6 +51,8 @@ export function useMobileDeck({
   const [mobileTransition, setMobileTransition] =
     useState<MobileDeckTransition | null>(null);
   const mobileSwipe = useRef<MobileSwipeState | null>(null);
+  const mobilePendingSwipeDelta = useRef(0);
+  const mobileSwipeFrame = useRef<number | null>(null);
   const mobileTransitionTimer = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
@@ -65,8 +67,17 @@ export function useMobileDeck({
     }
   }, []);
 
+  const clearSwipeFrame = useCallback(() => {
+    mobilePendingSwipeDelta.current = 0;
+    if (mobileSwipeFrame.current !== null) {
+      window.cancelAnimationFrame(mobileSwipeFrame.current);
+      mobileSwipeFrame.current = null;
+    }
+  }, []);
+
   const resetMobileDeck = useCallback(() => {
     mobileSwipe.current = null;
+    clearSwipeFrame();
     if (mobileTransitionTimer.current) {
       clearTimeout(mobileTransitionTimer.current);
       mobileTransitionTimer.current = null;
@@ -76,14 +87,15 @@ export function useMobileDeck({
     setMobileTransition(null);
     setMobileDeckPreview(false);
     clearClickSuppression();
-  }, [clearClickSuppression]);
+  }, [clearClickSuppression, clearSwipeFrame]);
 
   const cancelDeckSwipe = useCallback(() => {
     if (mobileTransition) return;
     mobileSwipe.current = null;
+    clearSwipeFrame();
     setMobileSwipeDelta(0);
     setMobileSwiping(false);
-  }, [mobileTransition]);
+  }, [clearSwipeFrame, mobileTransition]);
 
   useEffect(() => {
     const compactViewport = window.matchMedia("(max-width: 720px)");
@@ -115,6 +127,9 @@ export function useMobileDeck({
     () => () => {
       if (mobileSuppressClickFrame.current !== null) {
         window.cancelAnimationFrame(mobileSuppressClickFrame.current);
+      }
+      if (mobileSwipeFrame.current !== null) {
+        window.cancelAnimationFrame(mobileSwipeFrame.current);
       }
       if (mobileTransitionTimer.current) {
         clearTimeout(mobileTransitionTimer.current);
@@ -153,6 +168,7 @@ export function useMobileDeck({
       if (side === "left" && activeIndex <= 0) return;
       if (side === "right" && activeIndex >= stackLength - 1) return;
       setPreviewIndex(activeIndex);
+      clearSwipeFrame();
       setMobileSwipeDelta(0);
       setMobileSwiping(false);
       if (mobileTransitionTimer.current) {
@@ -175,6 +191,7 @@ export function useMobileDeck({
     },
     [
       activeIndex,
+      clearSwipeFrame,
       compact,
       onClearSelection,
       setPreviewIndex,
@@ -222,13 +239,17 @@ export function useMobileDeck({
         previewIndex === stackLength - 1 && deltaX < 0;
       const resistedDelta =
         movingPastStart || movingPastEnd ? deltaX * 0.24 : deltaX;
-      setMobileSwipeDelta(
-        clamp(
-          resistedDelta,
-          -viewportWidth * 0.72,
-          viewportWidth * 0.72,
-        ),
+      mobilePendingSwipeDelta.current = clamp(
+        resistedDelta,
+        -viewportWidth * 0.72,
+        viewportWidth * 0.72,
       );
+      if (mobileSwipeFrame.current === null) {
+        mobileSwipeFrame.current = window.requestAnimationFrame(() => {
+          setMobileSwipeDelta(mobilePendingSwipeDelta.current);
+          mobileSwipeFrame.current = null;
+        });
+      }
     },
     [
       onClearSelection,
@@ -252,6 +273,7 @@ export function useMobileDeck({
       }
       const delta = event.clientX - swipe.startX;
       mobileSwipe.current = null;
+      clearSwipeFrame();
       setMobileSwipeDelta(0);
       setMobileSwiping(false);
       if (swipe.horizontal) {
@@ -280,7 +302,6 @@ export function useMobileDeck({
         setMobileTransition({
           fromIndex: previewIndex,
           toIndex: nextIndex,
-          direction: nextIndex > previewIndex ? -1 : 1,
         });
         mobileTransitionTimer.current = setTimeout(() => {
           setPreviewIndex(nextIndex);
@@ -291,6 +312,7 @@ export function useMobileDeck({
     },
     [
       compact,
+      clearSwipeFrame,
       mobileDeckPreview,
       mobileTransition,
       previewIndex,

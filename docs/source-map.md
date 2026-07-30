@@ -83,12 +83,12 @@
 
 - `app/lib/deck-motion.ts`
   - pure Stack, fixed-pivot fan, Spread, and folded mobile-preview geometry
-  - top-sheet drag, offscreen handoff, and under-sheet return geometry
+  - top-sheet drag and edge-to-edge, no-return mobile handoff geometry
 
 - `app/hooks/use-mobile-deck.ts`
   - compact Deck preview state and cancellation
   - touch pointer capture, boundary resistance, and click suppression
-  - deterministic offscreen layer-handoff transaction
+  - frame-coalesced gesture updates and deterministic layer handoff
   - Escape, viewport, and selection cleanup
 
 - `app/hooks/use-deck-transition.ts`
@@ -103,6 +103,9 @@
 ## Verification
 
 - `playwright.config.ts`: desktop browser verification environment
+- `playwright.mobile.config.ts`: iPhone-sized WebKit verification environment
+- `tests/mobile-webkit.spec.ts`: Safari-engine right-swipe monotonicity and
+  layer-ownership regression
 - `tests/workspace.spec.ts`: Deck, interaction, DAG, selection, theme, and mobile
   tests, including top-Card and historical middle-Card unstack regressions,
   retained-Card DOM identity, view-state preservation, compact graph identity,
@@ -115,7 +118,7 @@
 - `scripts/record-demo.mjs`: deterministic complete UI recording
 - `scripts/render-proof.sh`: GIF, MP4, and contact sheet production
 - `scripts/record-mobile-demo.mjs`: deterministic touch-based mobile recording,
-  including drag and offscreen-handoff frames
+  including left and right drag and handoff frames
 - `scripts/render-mobile-proof.sh`: mobile GIF, MP4, and contact sheet production
 - `tests/static-pages.test.mjs`: GitHub Pages static-export contract
 - `.github/workflows/pages.yml`: project Pages build and deployment

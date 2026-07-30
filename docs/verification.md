@@ -7,6 +7,7 @@ npm run check
 npm run verify:preview
 npm run verify:pages
 npm run verify:ui
+npm run verify:mobile-ui
 ```
 
 `check` runs TypeScript, ESLint, and visible-copy policy checks.
@@ -38,7 +39,7 @@ ready for GitHub Pages.
 - a deep five-Card fan staying below the topbar at a 1512 by 822 desktop
   viewport while preserving lower-corner clearance
 - vertical-only mobile reading, edge-triggered folded preview, preview-only
-  swipes, top-sheet drag ownership, offscreen stacking handoff, and
+  swipes, top-sheet drag ownership, monotonic edge-to-edge stacking handoff, and
   tap-to-commit with opposite Card peeks
 - the complete 21-node map, 25 primary paths, and 46 retained semantic
   relations at first render
@@ -59,6 +60,11 @@ ready for GitHub Pages.
 - article source links returning to original Cards
 - light and dark theme persistence
 - Explore and Article mobile viewport containment
+
+`verify:mobile-ui` repeats the right-swipe trajectory in an iPhone-sized WebKit
+runtime. It samples the outgoing Card throughout the gesture, rejects direction
+reversal or an offscreen-return peak, and confirms that the outgoing sheet owns
+the higher layer until the surfaces meet.
 
 ## Visual proof
 
@@ -86,8 +92,8 @@ The mobile proof additionally produces:
 - key PNG frames under `outputs/mobile-proof/`
 
 It records real touch input at 390 by 844, including native vertical reading,
-edge entry, folded browsing, the top-sheet drag and offscreen handoff,
-tap-to-commit, and the final mobile Article typography.
+edge entry, folded browsing, both directional top-sheet drags and edge-to-edge
+handoffs, tap-to-commit, and the final mobile Article typography.
 
 The recording follows one deterministic path:
 

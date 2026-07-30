@@ -105,11 +105,12 @@ the Deck around that historical focus.
 
 Compact preview uses a staged paper handoff. The centered Card owns the highest
 stacking layer and follows the finger while the adjacent target rises beneath
-it. On release, the outgoing Card completes a deterministic transform-only
-exit beyond the viewport. The preview index and stacking order change only
-after that sheet is invisible; the old Card then springs back underneath as the
-opposite side peek. This prevents readable surfaces from swapping `z-index`
-while they overlap.
+it. On release, the outgoing Card follows one monotonic transform directly to
+its final opposite-side peek. The scaled Card widths determine an edge-to-edge
+resting position, so the preview index and stacking order can change after the
+readable surfaces stop overlapping without moving either Card again. Only the
+incoming and outgoing sheets animate; background sheets remain still and
+full-surface filters are disabled to reduce mobile compositing work.
 
 The desktop Deck reserves a block-axis safety band around its centered Card.
 This is part of the fan geometry, not a clipping workaround: outer sheets may

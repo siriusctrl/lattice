@@ -178,27 +178,33 @@ await dragSwipe(forwardSwipe);
 await capture("frame-04-top-sheet-drag");
 await releaseSwipe();
 await page.waitForTimeout(170);
-await capture("frame-05-offscreen-handoff");
+await capture("frame-05-left-handoff");
 await page.waitForTimeout(500);
 await capture("frame-06-next-preview");
 
-await swipe([
+const returnSwipe = [
   { x: swipeX, y: swipeY },
   { x: swipeX + 34, y: swipeY + 6 },
   { x: swipeX + 78, y: swipeY + 14 },
   { x: swipeX + 122, y: swipeY + 21 },
-]);
-await page.waitForTimeout(500);
+];
+await dragSwipe(returnSwipe);
+await capture("frame-07-right-drag");
+await releaseSwipe();
+await page.waitForTimeout(140);
+await capture("frame-08-right-handoff");
+await page.waitForTimeout(420);
+await capture("frame-09-returned-preview");
 await page
   .locator('.deck-card-picker[data-deck-index="2"]')
   .tap();
 await page.waitForTimeout(750);
-await capture("frame-07-reading-restored");
+await capture("frame-10-reading-restored");
 
 await page.getByRole("button", { name: "Article", exact: true }).tap();
 await page.getByTestId("article-view").waitFor();
 await page.waitForTimeout(850);
-await capture("frame-08-article");
+await capture("frame-11-article");
 
 await session.detach();
 await page.close();

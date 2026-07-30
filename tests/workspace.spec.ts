@@ -10,6 +10,101 @@ type TouchCoordinate = {
   y: number;
 };
 
+type MobileMotionSample = {
+  time: number;
+  transition: string;
+  preview: string;
+  cards: Record<
+    string,
+    {
+      left: number;
+      right: number;
+      zIndex: number;
+    }
+  >;
+};
+
+async function beginMobileMotionSampling(
+  page: Page,
+  indices: number[],
+  duration = 620,
+) {
+  await page.evaluate(
+    ({ cardIndices, sampleDuration }) => {
+      const sampleWindow = window as typeof window & {
+        __latticeMobileMotionSamples?: MobileMotionSample[];
+      };
+      const startedAt = performance.now();
+      sampleWindow.__latticeMobileMotionSamples = [];
+
+      const sample = () => {
+        const deck = document.querySelector<HTMLElement>(
+          '[data-testid="research-deck"]',
+        );
+        const cards = Object.fromEntries(
+          cardIndices.map((index) => {
+            const card = document.querySelector<HTMLElement>(
+              `.research-card[data-deck-index="${index}"]`,
+            );
+            const layer = card?.closest<HTMLElement>(
+              ".research-card-motion",
+            );
+            if (!layer) {
+              throw new Error(`Missing sampled mobile Card ${index}`);
+            }
+            const bounds = layer.getBoundingClientRect();
+            return [
+              String(index),
+              {
+                left: bounds.left,
+                right: bounds.right,
+                zIndex: Number(getComputedStyle(layer).zIndex),
+              },
+            ];
+          }),
+        );
+        sampleWindow.__latticeMobileMotionSamples?.push({
+          time: performance.now() - startedAt,
+          transition: deck?.dataset.mobileTransition ?? "missing",
+          preview: deck?.dataset.deckPreview ?? "missing",
+          cards,
+        });
+        if (performance.now() - startedAt < sampleDuration) {
+          requestAnimationFrame(sample);
+        }
+      };
+
+      requestAnimationFrame(sample);
+    },
+    { cardIndices: indices, sampleDuration: duration },
+  );
+}
+
+async function readMobileMotionSamples(page: Page) {
+  return page.evaluate(() => {
+    const sampleWindow = window as typeof window & {
+      __latticeMobileMotionSamples?: MobileMotionSample[];
+    };
+    return sampleWindow.__latticeMobileMotionSamples ?? [];
+  });
+}
+
+function expectMonotonic(
+  values: number[],
+  direction: "increasing" | "decreasing",
+  tolerance = 1.5,
+) {
+  expect(values.length).toBeGreaterThan(6);
+  for (let index = 1; index < values.length; index += 1) {
+    const difference = values[index] - values[index - 1];
+    if (direction === "increasing") {
+      expect(difference).toBeGreaterThanOrEqual(-tolerance);
+    } else {
+      expect(difference).toBeLessThanOrEqual(tolerance);
+    }
+  }
+}
+
 async function dispatchTouchGesture(
   page: Page,
   points: TouchCoordinate[],
@@ -868,6 +963,7 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
 
   // Preview owns the gesture, so modest vertical thumb drift still navigates.
   const swipeStartX = deckBounds.x + deckBounds.width * 0.48;
+  await beginMobileMotionSampling(page, [0, 1]);
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },
     { x: swipeStartX - 28, y: centerY + 7 },
@@ -890,6 +986,16 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
   await expect(page.getByTestId("research-card-origin")).toHaveClass(
     /research-card-deck-previewed/,
   );
+  await page.waitForTimeout(330);
+  const forwardSamples = await readMobileMotionSamples(page);
+  const forwardEdges = forwardSamples.map(
+    (sample) => sample.cards["0"].right,
+  );
+  expectMonotonic(forwardEdges, "decreasing");
+  expect(
+    forwardEdges.at(-1)! - Math.min(...forwardEdges),
+  ).toBeLessThan(3);
+  expect(Math.min(...forwardEdges)).toBeGreaterThan(18);
   await expect(deck).toHaveAttribute("data-deck-mode", "preview");
   await expect(rootCard).toHaveAttribute("data-active", "true");
   await expect(deck).not.toHaveClass(/deck-wrap-swiping/);
@@ -929,12 +1035,23 @@ test("opens a folded mobile Deck before swiping and commits on tap", async ({
     }),
   );
   await expect(deck).toHaveAttribute("data-deck-preview", "1");
+  await beginMobileMotionSampling(page, [0, 1]);
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },
     { x: swipeStartX + 54, y: centerY + 8 },
     { x: swipeStartX + 112, y: centerY + 17 },
   ]);
   await expect(deck).toHaveAttribute("data-deck-preview", "0");
+  await page.waitForTimeout(330);
+  const returnSamples = await readMobileMotionSamples(page);
+  const returnEdges = returnSamples.map(
+    (sample) => sample.cards["1"].left,
+  );
+  expectMonotonic(returnEdges, "increasing");
+  expect(
+    Math.max(...returnEdges) - returnEdges.at(-1)!,
+  ).toBeLessThan(3);
+  expect(Math.max(...returnEdges)).toBeLessThan(372);
 
   await dispatchTouchGesture(page, [
     { x: swipeStartX, y: centerY },

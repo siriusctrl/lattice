@@ -2,13 +2,12 @@ export type DeckHintSide = "left" | "right";
 
 export const DECK_SUFFIX_EXIT_DURATION_SECONDS = 0.4;
 export const DECK_SUFFIX_COMMIT_DELAY_MS = 420;
-export const MOBILE_DECK_HANDOFF_DURATION_SECONDS = 0.34;
-export const MOBILE_DECK_HANDOFF_COMMIT_DELAY_MS = 360;
+export const MOBILE_DECK_HANDOFF_DURATION_SECONDS = 0.28;
+export const MOBILE_DECK_HANDOFF_COMMIT_DELAY_MS = 300;
 
 export type MobileDeckTransition = {
   fromIndex: number;
   toIndex: number;
-  direction: -1 | 1;
 };
 
 export type DeckMotionContext = {
@@ -107,7 +106,18 @@ export function getCardMotionState(
       : 0;
 
   if (compact && mobilePreview) {
-    const previewTravel = Math.max(196, viewportWidth * 0.54);
+    /*
+     * Compact Cards are `viewportWidth - 56px` wide. Rest adjacent sheets
+     * where their scaled edges meet the centered sheet instead of sending the
+     * outgoing Card off-screen and pulling it back after the z-index handoff.
+     * The one-pixel overlap prevents a subpixel seam while keeping the surfaces
+     * visually disjoint when stacking order changes.
+     */
+    const compactCardWidth = Math.max(264, viewportWidth - 56);
+    const centeredScale = 0.93;
+    const adjacentScale = 0.86;
+    const previewTravel =
+      (compactCardWidth * (centeredScale + adjacentScale)) / 2 - 1;
     const getPreviewState = (focusIndex: number) => {
       const focusDistance = index - focusIndex;
       const absoluteFocusDistance = Math.abs(focusDistance);
@@ -117,20 +127,24 @@ export function getCardMotionState(
             ? 0
             : Math.sign(focusDistance) *
               (previewTravel +
-                Math.max(0, absoluteFocusDistance - 1) * 34),
+                Math.max(0, absoluteFocusDistance - 1) * 8),
         y:
           focusDistance === 0
             ? 9
-            : 19 + absoluteFocusDistance * 5,
+            : 22 + Math.min(absoluteFocusDistance, 4) * 2,
         scale:
           focusDistance === 0
-            ? 0.93
-            : Math.max(0.78, 0.878 - absoluteFocusDistance * 0.018),
+            ? centeredScale
+            : Math.max(
+                0.82,
+                adjacentScale -
+                  Math.max(0, absoluteFocusDistance - 1) * 0.008,
+              ),
         rotate:
           focusDistance === 0
             ? 0
             : Math.sign(focusDistance) *
-              Math.min(4.4, 1.8 + absoluteFocusDistance * 0.56),
+              Math.min(3.4, 1.7 + absoluteFocusDistance * 0.42),
         opacity: absoluteFocusDistance > 4 ? 0 : 1,
         zIndex:
           focusDistance === 0 ? 130 : 112 - absoluteFocusDistance,
@@ -138,13 +152,14 @@ export function getCardMotionState(
     };
 
     if (mobileTransition) {
+      const originState = getPreviewState(mobileTransition.fromIndex);
       const targetState = getPreviewState(mobileTransition.toIndex);
       if (index === mobileTransition.fromIndex) {
         return {
-          x: mobileTransition.direction * viewportWidth * 1.08,
-          y: 18,
-          scale: 0.94,
-          baseRotate: mobileTransition.direction * 4.2,
+          x: targetState.x,
+          y: targetState.y,
+          scale: targetState.scale,
+          baseRotate: targetState.rotate,
           leftFanRotate: 0,
           rightFanRotate: 0,
           opacity: 1,
@@ -152,18 +167,20 @@ export function getCardMotionState(
         };
       }
 
+      const transitionState =
+        index === mobileTransition.toIndex ? targetState : originState;
       return {
-        x: targetState.x,
-        y: targetState.y,
-        scale: targetState.scale,
-        baseRotate: targetState.rotate,
+        x: transitionState.x,
+        y: transitionState.y,
+        scale: transitionState.scale,
+        baseRotate: transitionState.rotate,
         leftFanRotate: 0,
         rightFanRotate: 0,
-        opacity: targetState.opacity,
+        opacity: transitionState.opacity,
         zIndex:
           index === mobileTransition.toIndex
             ? 124
-            : Math.min(108, targetState.zIndex),
+            : Math.min(108, originState.zIndex),
       };
     }
 
@@ -176,7 +193,8 @@ export function getCardMotionState(
     );
     const swipeProgress = Math.min(
       1,
-      Math.abs(mobileSwipeDelta) / Math.max(112, viewportWidth * 0.34),
+      Math.abs(mobileSwipeDelta) /
+        Math.max(132, Math.min(174, previewTravel * 0.55)),
     );
     const targetState = getPreviewState(targetIndex);
     const boundaryPull =
@@ -188,15 +206,15 @@ export function getCardMotionState(
       ? swipeProgress
       : isCurrent
         ? 0
-        : swipeProgress * 0.14;
+        : 0;
     const previewState = isCurrent
       ? {
-          x: baseState.x + mobileSwipeDelta * 0.92 + boundaryPull,
-          y: baseState.y + swipeProgress * 7,
-          scale: baseState.scale - swipeProgress * 0.014,
+          x: baseState.x + mobileSwipeDelta * 0.96 + boundaryPull,
+          y: baseState.y + swipeProgress * 4,
+          scale: baseState.scale - swipeProgress * 0.008,
           rotate:
             baseState.rotate +
-            (mobileSwipeDelta / Math.max(320, viewportWidth)) * 4.6,
+            (mobileSwipeDelta / Math.max(320, viewportWidth)) * 2.8,
           opacity: 1,
           zIndex: 140,
         }

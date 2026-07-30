@@ -16,6 +16,7 @@
     "test": "npm run verify:preview",
     "verify": "npm run check && npm run verify:preview && npm run verify:ui",
     "verify:ui": "playwright test",
+    "verify:mobile-ui": "playwright test --config playwright.mobile.config.ts",
     "verify:pages": "npm run build:pages && node --test tests/static-pages.test.mjs",
     "verify:preview": "npm run build && node --test tests/rendered-html.test.mjs",
     "verify:proof": "node scripts/record-demo.mjs && bash scripts/render-proof.sh",

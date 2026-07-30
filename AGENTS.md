@@ -48,10 +48,10 @@ and context semantics behind the scenes.
   swipes move only the preview focus. Tapping the centered preview commits that
   Card and returns to full reading.
 - In compact preview, the centered Card is always the top physical sheet.
-  During a swipe it stays above the incoming Card, exits beyond the viewport,
-  and only then hands off stacking order. The old Card may return as a side
-  peek only after it is behind the new centered Card; never switch `z-index`
-  while two readable surfaces overlap.
+  During a swipe it stays above the incoming Card and settles directly into its
+  final opposite-side peek. Hand off stacking order only after the outgoing and
+  centered Card edges meet; never switch `z-index` while two readable surfaces
+  overlap, and never send a Card away only to bring it back.
 - Starting a new fork from a historical Card replaces only the current
   lineage suffix. The complete DAG and the abandoned suffix remain persisted.
 - Follow-up questions stay inside the active node.
@@ -100,9 +100,11 @@ and context semantics behind the scenes.
 - Deck dwell preview follows deliberate pointer movement. Cards passing under a
   stationary pointer during semantic reflow must not chain-trigger a different
   preview.
-- Mobile Card handoff uses a deterministic transform-only exit followed by a
-  spring return underneath the new top sheet. Keep the semantic preview label
-  on the outgoing sheet until the invisible stacking handoff completes.
+- Mobile Card handoff uses one deterministic, monotonic transform from the
+  centered position to the final side peek. Its transform must be identical
+  immediately before and after the stacking handoff. Only the outgoing and
+  incoming Cards may animate during a swipe; avoid full-surface filters and
+  background springs on compact Cards.
 - Surface handoffs must not pass through a blank frame or crossfade two text
   layers in the same position. A removed primary Card settles a short distance
   back into the Deck, then passes behind the retained Card without making two
@@ -165,6 +167,7 @@ npm run check
 npm run verify:preview
 npm run verify:pages
 npm run verify:ui
+npm run verify:mobile-ui
 ```
 
 Run `npm run verify:proof` and `npm run verify:mobile-proof` after a material

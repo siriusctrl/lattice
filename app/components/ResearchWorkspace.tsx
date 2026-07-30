@@ -701,7 +701,21 @@ export function ResearchWorkspace() {
                       mobileOutgoing={
                         mobileTransition?.fromIndex === index
                       }
-                      mobileTransitioning={mobileTransition !== null}
+                      mobileIncoming={
+                        mobileTransition?.toIndex === index
+                      }
+                      mobileGestureParticipant={
+                        mobileDeckPreview &&
+                        (mobileTransition
+                          ? index === mobileTransition.fromIndex ||
+                            index === mobileTransition.toIndex
+                          : Math.abs(index - previewIndex) <= 1)
+                      }
+                      mobileTransitioning={
+                        mobileTransition !== null &&
+                        (index === mobileTransition.fromIndex ||
+                          index === mobileTransition.toIndex)
+                      }
                       leavingDeck={
                         deckTransition !== null &&
                         index >= deckTransition.removingFromIndex

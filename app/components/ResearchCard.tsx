@@ -49,6 +49,8 @@ type ResearchCardProps = {
   deckPickable: boolean;
   deckPreviewed: boolean;
   mobileOutgoing: boolean;
+  mobileIncoming: boolean;
+  mobileGestureParticipant: boolean;
   mobileTransitioning: boolean;
   leavingDeck: boolean;
   leavingOrder: number;
@@ -105,6 +107,8 @@ export function ResearchCard({
   deckPickable,
   deckPreviewed,
   mobileOutgoing,
+  mobileIncoming,
+  mobileGestureParticipant,
   mobileTransitioning,
   leavingDeck,
   leavingOrder,
@@ -175,13 +179,25 @@ export function ResearchCard({
     deckPreviewed ? "research-card-deck-previewed" : ""
   } ${
     mobileOutgoing ? "research-card-mobile-outgoing" : ""
+  } ${
+    mobileIncoming ? "research-card-mobile-incoming" : ""
   }`;
-  const settledTransition = {
-    type: "spring" as const,
-    stiffness: mobilePreview ? 260 : 275,
-    damping: mobilePreview ? 32 : 29,
-    mass: 0.86,
-  };
+  const settledTransition = mobilePreview
+    ? {
+        duration: 0.24,
+        ease: [0.22, 0.82, 0.24, 1] as [
+          number,
+          number,
+          number,
+          number,
+        ],
+      }
+    : {
+        type: "spring" as const,
+        stiffness: 275,
+        damping: 29,
+        mass: 0.86,
+      };
   const fanTransition = {
     duration: reduceMotion ? 0 : 0.54,
     ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
@@ -254,8 +270,10 @@ export function ResearchCard({
             : mobileTransitioning
               ? {
                   duration: MOBILE_DECK_HANDOFF_DURATION_SECONDS,
-                  ease: [0.2, 0.78, 0.2, 1],
+                  ease: [0.22, 0.86, 0.24, 1],
                 }
+              : mobilePreview && !mobileGestureParticipant
+                ? { duration: 0 }
               : settledTransition
       }
       style={{
@@ -269,11 +287,16 @@ export function ResearchCard({
         transformOrigin: leavingDeck ? "50% 72%" : undefined,
         willChange:
           (leavingDeck && leavingPrimary) ||
-          (mobilePreview && (deckPreviewed || mobileOutgoing))
+          (mobilePreview && mobileGestureParticipant)
             ? "transform"
             : undefined,
         backfaceVisibility:
-          leavingDeck && leavingPrimary ? "hidden" : undefined,
+          (leavingDeck && leavingPrimary) ||
+          (mobilePreview && mobileGestureParticipant)
+            ? "hidden"
+            : undefined,
+        WebkitBackfaceVisibility:
+          mobilePreview && mobileGestureParticipant ? "hidden" : undefined,
       }}
     >
       <motion.div
@@ -296,6 +319,7 @@ export function ResearchCard({
               leavingDeck && leavingPrimary ? "true" : "false"
             }
             data-mobile-outgoing={mobileOutgoing ? "true" : "false"}
+            data-mobile-incoming={mobileIncoming ? "true" : "false"}
             data-left-fan-rotate={motionState.leftFanRotate.toFixed(3)}
             data-right-fan-rotate={motionState.rightFanRotate.toFixed(3)}
             inert={!active || deckMode ? true : undefined}

@@ -1927,17 +1927,17 @@ input:focus-visible,
 
   .deck-wrap-mobile-preview .research-card {
     box-shadow: none;
+    filter: none;
     transition:
       bottom 360ms cubic-bezier(0.22, 1, 0.36, 1),
       background-color 260ms ease,
       border-color 180ms ease,
-      color 260ms ease,
-      box-shadow 220ms ease,
-      filter 180ms ease;
+      color 260ms ease;
   }
 
   .deck-wrap-mobile-preview .research-card-deck-previewed,
-  .deck-wrap-mobile-preview .research-card-mobile-outgoing {
+  .deck-wrap-mobile-preview .research-card-mobile-outgoing,
+  .deck-wrap-mobile-preview .research-card-mobile-incoming {
     border-color: color-mix(
       in srgb,
       var(--accent-strong) 28%,
@@ -1956,7 +1956,7 @@ input:focus-visible,
   }
 
   .deck-wrap-mobile-preview
-    .research-card-mobile-outgoing
+    :is(.research-card-mobile-outgoing, .research-card-mobile-incoming)
     .card-scroll {
     opacity: 1;
   }
