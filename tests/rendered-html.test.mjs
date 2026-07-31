@@ -4,13 +4,13 @@ import test from "node:test";
 
 const root = new URL("../", import.meta.url);
 
-async function render() {
+async function render(path = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${path}`, {
       headers: { accept: "text/html" },
     }),
     {
@@ -41,6 +41,36 @@ test("server-renders the Lattice research workspace", async () => {
   assert.match(html, /Elon Musk/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/i);
   assert.doesNotMatch(html, /react-loading-skeleton/i);
+});
+
+test("server-renders both localized design essays", async () => {
+  const [chineseResponse, englishResponse] = await Promise.all([
+    render("/notes/beyond-linear-chat"),
+    render("/en/notes/beyond-linear-chat"),
+  ]);
+
+  assert.equal(chineseResponse.status, 200);
+  assert.equal(englishResponse.status, 200);
+
+  const [chineseHtml, englishHtml] = await Promise.all([
+    chineseResponse.text(),
+    englishResponse.text(),
+  ]);
+  assert.match(chineseHtml, /对话会分叉，阅读仍应成篇/);
+  assert.match(chineseHtml, /时间顺序是一种可靠的记录方式/);
+  assert.match(chineseHtml, /hrefLang="en"/);
+  assert.match(chineseHtml, /<article[^>]+lang="zh-CN"/);
+  assert.match(chineseHtml, /beyond-linear-chat\.png/);
+  assert.ok(
+    chineseHtml.indexOf('id="lattice-theme-init"') <
+      chineseHtml.indexOf("<body"),
+    "theme initialization should run before the body is painted",
+  );
+  assert.match(englishHtml, /A chat log is not a knowledge structure/);
+  assert.match(englishHtml, /Chronology is a good record of interaction/);
+  assert.match(englishHtml, /hrefLang="zh-CN"/);
+  assert.match(englishHtml, /<article[^>]+lang="en"/);
+  assert.match(englishHtml, /beyond-linear-chat\.png/);
 });
 
 test("keeps the static DemoHost entry, product metadata, and no starter preview", async () => {

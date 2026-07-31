@@ -2,6 +2,7 @@
 
 import {
   Article as ArticleIcon,
+  BookOpenText,
   ChatsCircle,
   Graph,
   Moon,
@@ -9,7 +10,9 @@ import {
   Sun,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import type { ResearchNode } from "@/app/lib/mock-research";
+import { essayPaths, toSitePath } from "@/app/lib/site-paths";
 
 export type WorkspaceTheme = "light" | "dark";
 export type WorkspaceView = "explore" | "article";
@@ -163,6 +166,15 @@ export function WorkspaceTopbar({
           },
         }}
       >
+        <Link
+          className="toolbar-button topbar-notes-link"
+          href={toSitePath(essayPaths.zh)}
+          aria-label="阅读 Lattice 设计观点"
+          title="设计观点"
+        >
+          <BookOpenText size={16} weight="bold" aria-hidden="true" />
+          <span>Notes</span>
+        </Link>
         <AnimatePresence initial={false} mode="popLayout">
           {view === "explore" && !graphVisible ? (
             <motion.button

@@ -467,6 +467,7 @@ input:focus-visible,
   cursor: pointer;
   font-size: 12px;
   font-weight: 620;
+  text-decoration: none;
   transition:
     background-color 180ms ease,
     transform 120ms ease;

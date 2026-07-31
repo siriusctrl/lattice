@@ -147,6 +147,10 @@ and context semantics behind the scenes.
   truth or mutate the graph.
 - Article compilation rules and node-to-section mapping belong in
   `article-research.ts`.
+- Public design essays are independent static routes. Keep them out of
+  `WorkspaceView` and keep their localized copy in `app/content/`.
+- Public essay layout, language navigation, and diagrams belong in
+  `components/essay/`; do not reuse the dynamic research Article shell.
 - Article outline, paper, and source rail rendering belong in
   `components/article/`.
 - Pure graph projection, edge routing, and hover-label geometry belong in

@@ -20,6 +20,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const title = "Lattice - Explore naturally, leave with an article";
 const description =
   "Explore ideas in stacked AI conversations while Lattice compiles the research into one living article.";
+const themeInitScript = `(() => { try { const saved = localStorage.getItem("lattice-theme"); const theme = saved === "light" || saved === "dark" ? saved : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; document.documentElement.dataset.theme = theme; } catch {} })();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -56,6 +57,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script
+          id="lattice-theme-init"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
