@@ -169,19 +169,6 @@ preserving Card scroll positions, unsent composer text, graph identity, and
 Article reading position. Inactive layers are inert and ignored by assistive
 technology.
 
-## Public editorial content
-
-The bilingual design note is ordinary site content, not a third workspace
-view. It lives on independent static routes and never enters
-`ResearchWorkspace` state. This keeps a published product argument separate
-from Article, which is the compiled result of one active research workspace.
-
-Chinese and English share one semantic layout and line-drawn header, but keep
-independently written copy. Their real routes provide localized metadata,
-canonical URLs, and reciprocal language links. The header diagram presents the
-same material as chronological conversation, Card and graph structure, and a
-flat reading form without adding another generated taxonomy.
-
 ## Model and harness connection
 
 The implemented browser boundary is `LatticeHost`:

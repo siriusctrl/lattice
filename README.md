@@ -43,8 +43,6 @@ risk. Independent branches can converge on shared events or interpretations.
 - Read Article as a complete current edition at every point. New research
   recompiles and expands the prose instead of exposing internal draft states.
 - Trace any article section back to the Card conversations that produced it.
-- Read the product argument as a standalone Chinese or English design essay,
-  with localized prose rather than one mechanically translated document.
 - Switch between carefully matched light and dark themes.
 - Use the layout on desktop and mobile widths.
 
@@ -237,10 +235,6 @@ repeats the monotonic right-swipe contract in mobile WebKit.
 [siriusctrl.github.io/lattice](https://siriusctrl.github.io/lattice/). Pushes
 to `main` publish that build through `.github/workflows/pages.yml`.
 
-The public design note is available in
-[Chinese](https://siriusctrl.github.io/lattice/notes/beyond-linear-chat) and
-[English](https://siriusctrl.github.io/lattice/en/notes/beyond-linear-chat).
-
 See [docs/verification.md](docs/verification.md) for the exact proof contract.
 
 ## Repository map
@@ -256,10 +250,6 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/components/ResearchCard.tsx`: plain chat content, Deck hit area, anchors, selection, follow-ups
 - `app/components/ArticleView.tsx`: Article selection and focus orchestration
 - `app/components/article/`: flat article outline, paper, and source rail
-- `app/components/essay/`: bilingual public essay shell, theme control, and
-  line-drawn conversation-to-knowledge header
-- `app/content/beyond-linear-chat.ts`: independently written Chinese and
-  English essay editions
 - `app/components/GraphPreview.tsx`: compact and expanded graph
 - `app/hooks/use-deck-transition.ts`: two-phase Deck suffix exit and commit
 - `app/hooks/use-mobile-deck.ts`: mobile folded-preview gesture state
@@ -271,7 +261,6 @@ See [docs/verification.md](docs/verification.md) for the exact proof contract.
 - `app/lib/lattice-host.ts`: shared streamed host protocol
 - `app/lib/demo-host.ts`: deterministic static-site implementation
 - `app/lib/acp-host.ts`: browser HTTP/SSE implementation
-- `app/lib/site-paths.ts`: base-aware public routes and absolute metadata URLs
 - `plugins/lattice/`: native Codex MCP Apps plugin
 - `integrations/acp/`: Codex and Claude Code ACP sidecar
 - `scripts/record-demo.mjs`: deterministic browser recording

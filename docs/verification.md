@@ -17,13 +17,11 @@ published website remains the complete deterministic demo.
 
 `verify:preview` creates the production vinext build and executes the built
 Worker against an HTML request. It proves that product metadata, the Musk
-scenario, graph shell, and both localized design essays render without the
-disposable starter preview.
+scenario, and the graph shell render without the disposable starter preview.
 
 `verify:pages` builds vinext in static-export mode and confirms that the
-interactive entrypoint, both essay routes, localized metadata, reciprocal
-language links, `.nojekyll`, and `/lattice/` asset URLs are ready for GitHub
-Pages.
+interactive entrypoint, metadata, `.nojekyll`, and `/lattice/` asset URLs are
+ready for GitHub Pages.
 
 `verify:ui` launches Chromium and checks:
 
@@ -66,10 +64,6 @@ Pages.
 - article source links returning to original Cards
 - light and dark theme persistence
 - Explore and Article mobile viewport containment
-- navigation from the workspace to the Chinese design note and back
-- independently localized Chinese and English article routes
-- responsive desktop and mobile line drawings without horizontal overflow
-- essay contents navigation and persisted light or dark appearance
 
 `verify:mobile-ui` repeats a six-Card right-swipe trajectory in an iPhone-sized
 WebKit runtime. It samples every visible Card throughout the gesture, rejects

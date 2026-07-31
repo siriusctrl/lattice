@@ -6,8 +6,6 @@
 - [Verification](verification.md): build, dual-view, theme, and recording gates
 - [Runtime integrations](runtime-integrations.md): DemoHost, Codex MCP Apps
   plugin, ACP sidecar, and browser host boundaries
-- [Design note, Chinese](../app/content/beyond-linear-chat.ts): localized public
-  essay source for the argument behind Cards, graphs, and flat reading
 
 The prototype's current product behavior is summarized in the root
 [README](../README.md). Long-term product decisions should move into explicit
